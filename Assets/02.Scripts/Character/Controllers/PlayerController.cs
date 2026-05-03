@@ -10,11 +10,20 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Camera inputCamera;
     [SerializeField] private LayerMask clickMask = ~0;
     [SerializeField] private float rayDistance = 200f;
-    [SerializeField] private float attackMoveRefreshInterval = 0.15f;
+    [SerializeField] private float chaseRefreshInterval = 0.15f;
 
     private CharacterActor actor;
-    private Health attackTarget;
-    private float nextAttackMoveRefreshTime;
+    private Health pendingAttackTarget;
+    private AttackCommandMode attackCommandMode;
+    private Vector3 stationaryAttackPoint;
+    private float nextChaseRefreshTime;
+
+    private enum AttackCommandMode
+    {
+        None,
+        ChaseTarget,
+        Stationary
+    }
 
     private void Awake()
     {
@@ -33,7 +42,7 @@ public class PlayerController : MonoBehaviour
             HandlePrimaryClick(GetPointerPosition());
         }
 
-        TickAttackTarget();
+        TickPendingAttack();
     }
 
     private void HandlePrimaryClick(Vector2 screenPosition)
@@ -51,44 +60,113 @@ public class PlayerController : MonoBehaviour
         }
 
         Health clickedHealth = hit.collider.GetComponentInParent<Health>();
-        if (IsValidAttackTarget(clickedHealth))
+        bool stationaryAttack = IsStationaryAttackHeld();
+
+        if (stationaryAttack)
         {
-            SetAttackTarget(clickedHealth);
+            SetStationaryAttack(clickedHealth, hit.point);
             return;
         }
 
-        attackTarget = null;
+        if (IsValidAttackTarget(clickedHealth))
+        {
+            SetTargetAttack(clickedHealth);
+            return;
+        }
+
+        ClearAttackCommand();
         actor.Motor.TryMoveTo(hit.point);
     }
 
-    private void TickAttackTarget()
+    private void TickPendingAttack()
     {
-        if (!IsValidAttackTarget(attackTarget))
+        switch (attackCommandMode)
         {
-            attackTarget = null;
-            return;
+            case AttackCommandMode.ChaseTarget:
+                TickChaseAttack();
+                break;
+            case AttackCommandMode.Stationary:
+                TickStationaryAttack();
+                break;
         }
-
-        if (actor.Combat.TryBasicAttack(attackTarget))
-        {
-            actor.Motor.Stop();
-            return;
-        }
-
-        if (Time.time < nextAttackMoveRefreshTime)
-        {
-            return;
-        }
-
-        nextAttackMoveRefreshTime = Time.time + attackMoveRefreshInterval;
-        actor.Motor.TryMoveTo(attackTarget.transform.position);
     }
 
-    private void SetAttackTarget(Health target)
+    private void TickChaseAttack()
     {
-        attackTarget = target;
-        nextAttackMoveRefreshTime = 0f;
-        TickAttackTarget();
+        if (!IsValidAttackTarget(pendingAttackTarget))
+        {
+            ClearAttackCommand();
+            return;
+        }
+
+        if (actor.Combat.IsInRange(pendingAttackTarget.transform))
+        {
+            actor.Motor.Stop();
+            actor.Motor.FaceToward(pendingAttackTarget.transform.position);
+
+            if (actor.Combat.TryBasicAttack(pendingAttackTarget))
+            {
+                ClearAttackCommand();
+            }
+
+            return;
+        }
+
+        if (Time.time < nextChaseRefreshTime)
+        {
+            return;
+        }
+
+        nextChaseRefreshTime = Time.time + chaseRefreshInterval;
+        actor.Motor.TryMoveTo(pendingAttackTarget.transform.position);
+    }
+
+    private void TickStationaryAttack()
+    {
+        actor.Motor.Stop();
+        Vector3 facePoint = IsValidAttackTarget(pendingAttackTarget)
+            ? pendingAttackTarget.transform.position
+            : stationaryAttackPoint;
+        actor.Motor.FaceToward(facePoint);
+
+        if (IsValidAttackTarget(pendingAttackTarget) && actor.Combat.IsInRange(pendingAttackTarget.transform))
+        {
+            if (actor.Combat.TryBasicAttack(pendingAttackTarget))
+            {
+                ClearAttackCommand();
+            }
+
+            return;
+        }
+
+        if (actor.Combat.TryPlayBasicAttackInPlace())
+        {
+            ClearAttackCommand();
+        }
+    }
+
+    private void SetTargetAttack(Health target)
+    {
+        pendingAttackTarget = target;
+        attackCommandMode = AttackCommandMode.ChaseTarget;
+        nextChaseRefreshTime = 0f;
+        TickChaseAttack();
+    }
+
+    private void SetStationaryAttack(Health target, Vector3 point)
+    {
+        pendingAttackTarget = IsValidAttackTarget(target) ? target : null;
+        stationaryAttackPoint = pendingAttackTarget == null ? point : pendingAttackTarget.transform.position;
+        attackCommandMode = AttackCommandMode.Stationary;
+        actor.Motor.Stop();
+        TickStationaryAttack();
+    }
+
+    private void ClearAttackCommand()
+    {
+        pendingAttackTarget = null;
+        attackCommandMode = AttackCommandMode.None;
+        nextChaseRefreshTime = 0f;
     }
 
     private bool IsValidAttackTarget(Health target)
@@ -122,6 +200,16 @@ public class PlayerController : MonoBehaviour
         return Mouse.current == null ? Vector2.zero : Mouse.current.position.ReadValue();
 #else
         return Input.mousePosition;
+#endif
+    }
+
+    private bool IsStationaryAttackHeld()
+    {
+#if ENABLE_INPUT_SYSTEM
+        return Keyboard.current != null
+            && (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed);
+#else
+        return Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 #endif
     }
 }

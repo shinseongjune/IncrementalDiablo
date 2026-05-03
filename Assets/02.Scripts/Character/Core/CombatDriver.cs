@@ -25,6 +25,17 @@ public class CombatDriver : MonoBehaviour
         return true;
     }
 
+    public bool TryPlayBasicAttackInPlace()
+    {
+        if (IsCoolingDown)
+        {
+            return false;
+        }
+
+        nextAttackTime = Time.time + stats.GetValue(StatId.AttackCooldown);
+        return true;
+    }
+
     public bool CanAttack(Health target)
     {
         if (target == null || !target.IsAlive || IsCoolingDown)

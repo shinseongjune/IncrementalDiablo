@@ -22,6 +22,13 @@ Dungeon code owns room-based expedition flow.
 
 Rooms should be prefab/runtime objects, not separate Unity scenes.
 
+## GroundDefense
+
+Ground defense code owns the continuous frontline, defense upgrades, local save support for the defense loop, and the HUD that inspects that loop.
+
+- `GroundDefense/Runtime/`: frontline state, Hold/Push simulation, upgrades, and defense save manager.
+- `GroundDefense/UI/`: HUD components for frontline status and defense actions.
+
 ## Items
 
 Item code owns definitions, instances, drops, equipment effects, and simple inventory.

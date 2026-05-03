@@ -67,6 +67,19 @@ public class CharacterMotor : MonoBehaviour
         agent.ResetPath();
     }
 
+    public void FaceToward(Vector3 position)
+    {
+        Vector3 direction = position - transform.position;
+        direction.y = 0f;
+
+        if (direction.sqrMagnitude <= 0.0001f)
+        {
+            return;
+        }
+
+        transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+    }
+
     public bool IsNearDestination(float distance = 0.15f)
     {
         if (!IsOnNavMesh || agent.pathPending)
