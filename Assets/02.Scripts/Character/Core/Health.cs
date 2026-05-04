@@ -16,6 +16,24 @@ public class Health : MonoBehaviour
         current = Max;
     }
 
+    private void OnEnable()
+    {
+        if (stats == null)
+        {
+            stats = GetComponent<CharacterStats>();
+        }
+
+        stats.Changed += HandleStatsChanged;
+    }
+
+    private void OnDisable()
+    {
+        if (stats != null)
+        {
+            stats.Changed -= HandleStatsChanged;
+        }
+    }
+
     public void TakeDamage(float amount)
     {
         if (!IsAlive)
@@ -39,5 +57,10 @@ public class Health : MonoBehaviour
     public void Refill()
     {
         current = Max;
+    }
+
+    private void HandleStatsChanged()
+    {
+        current = Mathf.Min(current, Max);
     }
 }

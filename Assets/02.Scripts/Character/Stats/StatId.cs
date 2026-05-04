@@ -4,5 +4,9 @@ public enum StatId
     AttackDamage,
     AttackRange,
     AttackCooldown,
-    MoveSpeed
+    AttackSpeed,
+    MoveSpeed,
+    DefenseWallHpBonus,
+    TowerDamageBonus,
+    DefenderDamageBonus
 }

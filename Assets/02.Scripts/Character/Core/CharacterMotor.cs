@@ -20,6 +20,25 @@ public class CharacterMotor : MonoBehaviour
         RefreshMoveSpeed();
     }
 
+    private void OnEnable()
+    {
+        if (stats == null)
+        {
+            stats = GetComponent<CharacterStats>();
+        }
+
+        stats.Changed += RefreshMoveSpeed;
+        RefreshMoveSpeed();
+    }
+
+    private void OnDisable()
+    {
+        if (stats != null)
+        {
+            stats.Changed -= RefreshMoveSpeed;
+        }
+    }
+
     private void OnValidate()
     {
         navMeshSampleRadius = Mathf.Max(0f, navMeshSampleRadius);

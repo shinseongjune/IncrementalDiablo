@@ -33,10 +33,14 @@ Ground defense code owns the continuous frontline, defense upgrades, local save 
 
 Item code owns definitions, instances, drops, equipment effects, and simple inventory.
 
+- `ItemSlot`
+- `ItemRarity`
 - `ItemDefinition`
 - `ItemInstance`
 - `LootDrop`
 - `SimpleInventory`
+
+Current implementation note: `ItemSlot`, `ItemRarity`, and `ItemDefinition` exist first. `EquipmentSlots` can equip definition assets and feed stat modifiers into `CharacterStats`; rolled item instances, inventory, drops, crafting, and save data are still future work.
 
 ## Shared
 
