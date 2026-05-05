@@ -36,11 +36,13 @@ Item code owns definitions, instances, drops, equipment effects, and simple inve
 - `ItemSlot`
 - `ItemRarity`
 - `ItemDefinition`
+- `ItemEconomyModel`
+- `ItemSalvageService`
 - `ItemInstance`
 - `LootDrop`
 - `SimpleInventory`
 
-Current implementation note: `ItemSlot`, `ItemRarity`, and `ItemDefinition` exist first. `EquipmentSlots` can equip definition assets and feed stat modifiers into `CharacterStats`; rolled item instances, inventory, drops, crafting, and save data are still future work.
+Current implementation note: `ItemSlot`, `ItemRarity`, `ItemDefinition`, `ItemEconomyModel`, and `ItemSalvageService` exist first. `EquipmentSlots` can equip definition assets and feed stat modifiers into `CharacterStats`; salvage can turn item definitions into Scrap/Essence for prototype economy tests. Rolled item instances, inventory, drops, crafting, and save data are still future work.
 
 ## Shared
 

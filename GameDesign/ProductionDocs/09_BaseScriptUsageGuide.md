@@ -9,6 +9,8 @@
 
 2026-05-04 추가 범위: 아이템 드롭률이나 제작 비용을 정하지 않고, 장비 정의 에셋을 영웅 슬롯에 장착하면 `CharacterStats`에 스탯 보정이 반영되는 최소 기반만 추가했다.
 
+2026-05-05 추가 범위: 인벤토리 UI 없이도 장비 정의를 `Scrap/Essence`로 바꾸는 분해 보상 계산과 `ItemSalvageService`를 추가했다. 이 값은 장기 밸런스 확정값이 아니라 중복 장비가 무의미해지는 문제를 막기 위한 프로토타입 경제 규칙이다.
+
 목표는 다음 한 문장이 Unity Play 모드에서 돌아가는 것이다.
 
 ```text
@@ -46,6 +48,8 @@
 | `ItemSlot` | `Assets/02.Scripts/Items/ItemSlot.cs` | Weapon, Armor, Ring 같은 MVP 장비 부위를 정의한다. | 직접 붙이지 않는다. `ItemDefinition`과 `EquipmentSlots`가 사용한다. | MVP 부위가 너무 많거나 적은지 |
 | `ItemRarity` | `Assets/02.Scripts/Items/ItemRarity.cs` | Normal, Magic, Rare 등급만 우선 정의한다. | 직접 붙이지 않는다. `ItemDefinition`이 사용한다. | 초반 등급 구분이 충분한지 |
 | `ItemDefinition` | `Assets/02.Scripts/Items/ItemDefinition.cs` | 장비 에셋의 ID, 이름, 슬롯, 등급, 요구 레벨, 파워 범위, 스탯 보정을 정의한다. | Project 창에서 `Create > Incremental Diablo > Items > Item Definition`으로 만든 뒤 스탯 보정을 입력한다. | 장비 한 개가 주는 스탯 체감이 과하거나 약한지 |
+| `ItemEconomyModel` | `Assets/02.Scripts/Items/ItemEconomyModel.cs` | 장비 부위/등급/티어에 따라 분해 보상을 계산한다. | 직접 붙이지 않는다. `ItemDefinition.SalvageRewards`와 `ItemSalvageService`가 사용한다. | Scrap/Essence 회수량이 너무 후하거나 짠지 |
+| `ItemSalvageService` | `Assets/02.Scripts/Items/ItemSalvageService.cs` | 선택한 장비 정의를 분해해 `CurrencyWallet`에 보상을 더한다. | `GameSystems` 같은 오브젝트에 붙이고 `CurrencyWallet`을 연결한다. 인벤토리 구현 전에는 테스트 버튼/임시 호출에서 사용한다. | 중복 장비가 재료 순환으로 충분히 의미가 생기는지 |
 | `StatMod` | `Assets/02.Scripts/Character/Stats/StatMod.cs` | 특정 스탯에 Flat, PercentAdd, PercentMult 보정을 준다. Percent 값은 10 = 10%로 입력한다. | `ItemDefinition`의 Modifiers 배열에서 사용한다. | 퍼센트 입력 방식이 이해되는지 |
 | `EquipmentSlots` | `Assets/02.Scripts/Character/Core/EquipmentSlots.cs` | Weapon/Armor/Ring에 장비 정의를 장착하고 `CharacterStats`로 보정을 전달한다. | 영웅 오브젝트의 `CharacterActor`와 함께 붙어 있다. 슬롯에 `ItemDefinition` 에셋을 넣으면 스탯이 바뀐다. | 장비 장착 후 공격력/체력/이동 속도 체감이 맞는지 |
 | `DefenseHud` | `Assets/02.Scripts/GroundDefense/UI/DefenseHud.cs` | TMP 텍스트와 버튼을 연결해서 현재 상태와 강화 버튼을 보여준다 | Canvas 안의 HUD 오브젝트에 붙이고 Text/Button 슬롯을 연결한다. | 화면에 보이는 문구가 충분히 직관적인지 |
@@ -129,4 +133,4 @@ Push는 위험하지만 다음 단계로 미는 선택처럼 느껴지는가?
 
 지금은 일부러 시스템을 작게 유지했다. 먼저 숫자로 전선 압박, Hold/Push, 단계 상승 속도를 확인하고, 그 다음 화면과 저장을 붙이는 편이 피드백하기 쉽다.
 
-장비 기반은 아직 더 작다. 지금 가능한 것은 `ItemDefinition` 에셋을 만들어 영웅의 Weapon/Armor/Ring 슬롯에 직접 넣고, `CharacterStats.GetValue(...)` 결과가 바뀌는지 확인하는 수준이다. 드롭, 인벤토리, 장비 인스턴스 저장, 분해, 제작, 희귀도별 옵션 개수는 아직 구현하지 않았다.
+장비 기반은 아직 더 작다. 지금 가능한 것은 `ItemDefinition` 에셋을 만들어 영웅의 Weapon/Armor/Ring 슬롯에 직접 넣고, `CharacterStats.GetValue(...)` 결과가 바뀌는지 확인하는 수준이다. 분해는 `ItemDefinition` 기준의 보상 계산과 지갑 지급만 가능하다. 드롭, 인벤토리, 장비 인스턴스 저장, 제작, 희귀도별 옵션 개수는 아직 구현하지 않았다.

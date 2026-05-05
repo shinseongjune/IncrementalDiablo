@@ -22,6 +22,7 @@ public class ItemDefinition : ScriptableObject
     public int BaseMinPower => baseMinPower;
     public int BaseMaxPower => baseMaxPower;
     public StatMod[] Modifiers => modifiers;
+    public ResourceAmount[] SalvageRewards => ItemEconomyModel.GetSalvageRewards(this);
 
     private void OnValidate()
     {
