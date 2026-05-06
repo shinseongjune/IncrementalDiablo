@@ -23,6 +23,8 @@ public class ItemDefinition : ScriptableObject
     public int BaseMaxPower => baseMaxPower;
     public StatMod[] Modifiers => modifiers;
     public ResourceAmount[] SalvageRewards => ItemEconomyModel.GetSalvageRewards(this);
+    public bool CanRerollAffix => ItemEconomyModel.CanRerollAffix(this);
+    public ResourceAmount[] AffixRerollCost => ItemEconomyModel.GetAffixRerollCost(this);
 
     private void OnValidate()
     {

@@ -42,7 +42,7 @@ Item code owns definitions, instances, drops, equipment effects, and simple inve
 - `LootDrop`
 - `SimpleInventory`
 
-Current implementation note: `ItemSlot`, `ItemRarity`, `ItemDefinition`, `ItemEconomyModel`, and `ItemSalvageService` exist first. `EquipmentSlots` can equip definition assets and feed stat modifiers into `CharacterStats`; salvage can turn item definitions into Scrap/Essence for prototype economy tests. Rolled item instances, inventory, drops, crafting, and save data are still future work.
+Current implementation note: `ItemSlot`, `ItemRarity`, `ItemDefinition`, `ItemEconomyModel`, and `ItemSalvageService` exist first. `EquipmentSlots` can equip definition assets and feed stat modifiers into `CharacterStats`; salvage can turn item definitions into Scrap/Essence and late Rare duplicates into small amounts of AlterStone for prototype economy tests. `ItemEconomyModel` also exposes Rare affix reroll costs, but rolled item instances, inventory, drops, actual affix mutation, crafting UI, and save data are still future work.
 
 ## Shared
 

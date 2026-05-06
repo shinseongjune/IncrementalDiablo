@@ -11,6 +11,8 @@
 
 2026-05-05 추가 범위: 인벤토리 UI 없이도 장비 정의를 `Scrap/Essence`로 바꾸는 분해 보상 계산과 `ItemSalvageService`를 추가했다. 이 값은 장기 밸런스 확정값이 아니라 중복 장비가 무의미해지는 문제를 막기 위한 프로토타입 경제 규칙이다.
 
+2026-05-06 추가 범위: Rare 장비 분해에서 `AlterStone`을 아주 늦고 적게 회수하는 규칙과 Rare 옵션 변형 비용 계산을 `ItemEconomyModel`에 추가했다. 아직 실제 옵션을 바꾸는 인벤토리/아이템 인스턴스 기능은 없고, 지금은 비용/보상 페이싱을 테스트하기 위한 코드 기반이다.
+
 목표는 다음 한 문장이 Unity Play 모드에서 돌아가는 것이다.
 
 ```text
@@ -53,6 +55,8 @@
 | `StatMod` | `Assets/02.Scripts/Character/Stats/StatMod.cs` | 특정 스탯에 Flat, PercentAdd, PercentMult 보정을 준다. Percent 값은 10 = 10%로 입력한다. | `ItemDefinition`의 Modifiers 배열에서 사용한다. | 퍼센트 입력 방식이 이해되는지 |
 | `EquipmentSlots` | `Assets/02.Scripts/Character/Core/EquipmentSlots.cs` | Weapon/Armor/Ring에 장비 정의를 장착하고 `CharacterStats`로 보정을 전달한다. | 영웅 오브젝트의 `CharacterActor`와 함께 붙어 있다. 슬롯에 `ItemDefinition` 에셋을 넣으면 스탯이 바뀐다. | 장비 장착 후 공격력/체력/이동 속도 체감이 맞는지 |
 | `DefenseHud` | `Assets/02.Scripts/GroundDefense/UI/DefenseHud.cs` | TMP 텍스트와 버튼을 연결해서 현재 상태와 강화 버튼을 보여준다 | Canvas 안의 HUD 오브젝트에 붙이고 Text/Button 슬롯을 연결한다. | 화면에 보이는 문구가 충분히 직관적인지 |
+
+아이템 경제 테스트 시 `ItemDefinition.SalvageRewards`는 분해 보상 미리보기이고, `ItemDefinition.AffixRerollCost`는 Rare 장비 옵션 변형 비용 미리보기다. Normal/Magic은 변형 비용을 반환하지 않는다. Rare도 낮은 `baseTier`에서는 `AlterStone` 분해 보상이 없으므로, 초반 장비가 너무 빨리 재굴림 루프로 들어가지 않는지 확인해야 한다.
 
 ## 3. 가장 빠른 테스트 세팅
 

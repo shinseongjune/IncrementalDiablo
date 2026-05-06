@@ -3,6 +3,9 @@ using UnityEngine;
 
 public static class ItemEconomyModel
 {
+    private const float RerollGoldBaseCost = 50f;
+    private const float RerollGoldGrowth = 1.35f;
+
     public static ResourceAmount[] GetSalvageRewards(ItemDefinition item)
     {
         if (item == null)
@@ -23,7 +26,34 @@ public static class ItemEconomyModel
             rewards.Add(new ResourceAmount(ResourceId.Essence, essence));
         }
 
+        int alterStone = GetAlterStoneReward(item.Rarity, tier);
+        if (alterStone > 0)
+        {
+            rewards.Add(new ResourceAmount(ResourceId.AlterStone, alterStone));
+        }
+
         return rewards.ToArray();
+    }
+
+    public static bool CanRerollAffix(ItemDefinition item)
+    {
+        return item != null && item.Rarity == ItemRarity.Rare;
+    }
+
+    public static ResourceAmount[] GetAffixRerollCost(ItemDefinition item)
+    {
+        if (!CanRerollAffix(item))
+        {
+            return new ResourceAmount[0];
+        }
+
+        int tier = Mathf.Max(1, item.BaseTier);
+        return new[]
+        {
+            new ResourceAmount(ResourceId.Gold, Mathf.CeilToInt(RerollGoldBaseCost * Mathf.Pow(RerollGoldGrowth, tier - 1))),
+            new ResourceAmount(ResourceId.Essence, Mathf.Max(1, Mathf.CeilToInt(tier * 0.75f))),
+            new ResourceAmount(ResourceId.AlterStone, 1 + tier / 10)
+        };
     }
 
     private static int GetSlotScrapWeight(ItemSlot slot)
@@ -67,5 +97,15 @@ public static class ItemEconomyModel
             default:
                 return 0;
         }
+    }
+
+    private static int GetAlterStoneReward(ItemRarity rarity, int tier)
+    {
+        if (rarity != ItemRarity.Rare || tier < 4)
+        {
+            return 0;
+        }
+
+        return Mathf.Max(1, tier / 4);
     }
 }

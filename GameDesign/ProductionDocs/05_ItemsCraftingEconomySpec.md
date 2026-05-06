@@ -186,6 +186,8 @@ Rare 장비 -> 더 많은 Scrap + Essence
 
 이 값은 장기 밸런스 확정값이 아니라 프로토타입 기준이다. D2 참고 자료에서는 아이템 품질 판정이 Normal/Magic/Rare 이상으로 나뉘고, 큐브 조합이 Magic/Rare 아이템과 보석/룬을 다시 성장 재료로 순환시킨다. 이 게임은 거래가 없으므로 중복 장비가 죽은 드랍이 되지 않게 분해를 먼저 열어 둔다. 다만 `AlterStone`은 옵션 변형의 핵심 재료라서 초반 분해에서 쉽게 풀지 않는다.
 
+2026-05-06 구현 메모: `ItemEconomyModel`은 `AlterStone`을 Normal/Magic 분해에서는 지급하지 않고, Rare 장비도 `baseTier >= 4`부터만 소량 지급한다. 이 값은 장기 밸런스 목표가 아니라 프로토타입 페이싱 규칙이다. D2 참고 자료의 Magic/Rare 아이템과 보석/룬 순환 구조를 그대로 복제하지 않고, 거래가 없는 싱글 플레이에서 중복 Rare가 느린 옵션 변형 재료가 되도록 축약했다.
+
 ### 옵션 변형
 
 입력:
@@ -203,6 +205,8 @@ Gold
 ```
 
 MVP에서는 플레이어가 변형할 옵션을 직접 고르는 기능은 보류해도 된다. 처음에는 마지막 옵션 1개 재굴림으로 충분하다.
+
+현재 코드에서는 `ItemDefinition.CanRerollAffix`와 `ItemDefinition.AffixRerollCost`로 Rare 장비의 변형 가능 여부와 비용을 미리 계산한다. 비용은 `Gold + Essence + AlterStone`이고 `baseTier`에 따라 증가한다. 실제 옵션 1개를 바꾸는 런타임 `ItemInstance` 변형은 인벤토리/아이템 인스턴스 구현 이후에 연결한다.
 
 ## 8. 지상과 지하 연결 방식
 
