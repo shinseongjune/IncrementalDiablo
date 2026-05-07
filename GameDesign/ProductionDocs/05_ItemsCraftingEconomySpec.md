@@ -188,6 +188,8 @@ Rare 장비 -> 더 많은 Scrap + Essence
 
 2026-05-06 구현 메모: `ItemEconomyModel`은 `AlterStone`을 Normal/Magic 분해에서는 지급하지 않고, Rare 장비도 `baseTier >= 4`부터만 소량 지급한다. 이 값은 장기 밸런스 목표가 아니라 프로토타입 페이싱 규칙이다. D2 참고 자료의 Magic/Rare 아이템과 보석/룬 순환 구조를 그대로 복제하지 않고, 거래가 없는 싱글 플레이에서 중복 Rare가 느린 옵션 변형 재료가 되도록 축약했다.
 
+2026-05-07 implementation note: `ItemInstance` and `SimpleInventory` now cover the first runtime inventory slice. An item can be rolled from an `ItemDefinition`, receive a stable instance id, carry rarity/level/power/durability/affix-roll placeholders, and be exported through `InventorySaveData`. This is still a foundation, not the final loot loop: drop tables, item-definition lookup after loading, affix mutation, crafting UI, and inventory UI remain future work.
+
 ### 옵션 변형
 
 입력:

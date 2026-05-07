@@ -7,6 +7,7 @@ using UnityEngine;
 public class DefenseSaveManager : MonoBehaviour
 {
     [SerializeField] private DefenseDirector director;
+    [SerializeField] private SimpleInventory inventory;
     [SerializeField] private string saveFileName = "incremental_diablo_save.json";
     [SerializeField] private bool loadOnStart = true;
     [SerializeField] private bool simulateOfflineOnLoad = true;
@@ -71,7 +72,8 @@ public class DefenseSaveManager : MonoBehaviour
             savedAtUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
             playTimeSeconds = director.Runtime.TotalElapsed,
             currencies = director.Wallet == null ? null : director.Wallet.ExportAmounts(),
-            defense = director.CreateSaveData()
+            defense = director.CreateSaveData(),
+            inventory = inventory == null ? new InventorySaveData() : inventory.CreateSaveData()
         };
 
         try
@@ -115,6 +117,11 @@ public class DefenseSaveManager : MonoBehaviour
             }
 
             director.ApplySaveData(saveData.defense);
+            if (inventory != null)
+            {
+                inventory.ApplySaveData(saveData.inventory);
+            }
+
             ApplyOfflineProgress(saveData);
             autoSaveElapsed = 0f;
             return true;
@@ -148,6 +155,11 @@ public class DefenseSaveManager : MonoBehaviour
         if (director == null)
         {
             director = FindAnyObjectByType<DefenseDirector>();
+        }
+
+        if (inventory == null)
+        {
+            inventory = FindAnyObjectByType<SimpleInventory>();
         }
     }
 }

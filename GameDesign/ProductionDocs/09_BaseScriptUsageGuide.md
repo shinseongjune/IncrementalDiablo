@@ -13,6 +13,8 @@
 
 2026-05-06 추가 범위: Rare 장비 분해에서 `AlterStone`을 아주 늦고 적게 회수하는 규칙과 Rare 옵션 변형 비용 계산을 `ItemEconomyModel`에 추가했다. 아직 실제 옵션을 바꾸는 인벤토리/아이템 인스턴스 기능은 없고, 지금은 비용/보상 페이싱을 테스트하기 위한 코드 기반이다.
 
+2026-05-07 implementation scope: `ItemInstance` and `SimpleInventory` add the first runtime item-storage layer. A scene can now keep individual rolled item instances, assign stable ids, export/import inventory save data, and remove an item instance through `ItemSalvageService` when salvaging from an attached inventory. This does not yet add loot drops, inventory UI, item registry lookup after load, or actual affix mutation.
+
 목표는 다음 한 문장이 Unity Play 모드에서 돌아가는 것이다.
 
 ```text
@@ -52,6 +54,8 @@
 | `ItemDefinition` | `Assets/02.Scripts/Items/ItemDefinition.cs` | 장비 에셋의 ID, 이름, 슬롯, 등급, 요구 레벨, 파워 범위, 스탯 보정을 정의한다. | Project 창에서 `Create > Incremental Diablo > Items > Item Definition`으로 만든 뒤 스탯 보정을 입력한다. | 장비 한 개가 주는 스탯 체감이 과하거나 약한지 |
 | `ItemEconomyModel` | `Assets/02.Scripts/Items/ItemEconomyModel.cs` | 장비 부위/등급/티어에 따라 분해 보상을 계산한다. | 직접 붙이지 않는다. `ItemDefinition.SalvageRewards`와 `ItemSalvageService`가 사용한다. | Scrap/Essence 회수량이 너무 후하거나 짠지 |
 | `ItemSalvageService` | `Assets/02.Scripts/Items/ItemSalvageService.cs` | 선택한 장비 정의를 분해해 `CurrencyWallet`에 보상을 더한다. | `GameSystems` 같은 오브젝트에 붙이고 `CurrencyWallet`을 연결한다. 인벤토리 구현 전에는 테스트 버튼/임시 호출에서 사용한다. | 중복 장비가 재료 순환으로 충분히 의미가 생기는지 |
+| `ItemInstance` | `Assets/02.Scripts/Items/ItemInstance.cs` | Holds one rolled runtime item with instance id, definition id, rarity, level, power, durability, and affix placeholders. | Created by `SimpleInventory.TryAdd(ItemDefinition, out ItemInstance)` or loaded from `InventorySaveData`. | Whether saved item ids and rolled power remain stable after save/load. |
+| `SimpleInventory` | `Assets/02.Scripts/Items/SimpleInventory.cs` | Stores item instances, assigns stable ids, and exports/imports the inventory save slice. | Add it to `GameSystems` beside `CurrencyWallet`, `DefenseSaveManager`, and `ItemSalvageService` for prototype testing. | Capacity, duplicate-id handling, and whether salvage removes the item before paying materials. |
 | `StatMod` | `Assets/02.Scripts/Character/Stats/StatMod.cs` | 특정 스탯에 Flat, PercentAdd, PercentMult 보정을 준다. Percent 값은 10 = 10%로 입력한다. | `ItemDefinition`의 Modifiers 배열에서 사용한다. | 퍼센트 입력 방식이 이해되는지 |
 | `EquipmentSlots` | `Assets/02.Scripts/Character/Core/EquipmentSlots.cs` | Weapon/Armor/Ring에 장비 정의를 장착하고 `CharacterStats`로 보정을 전달한다. | 영웅 오브젝트의 `CharacterActor`와 함께 붙어 있다. 슬롯에 `ItemDefinition` 에셋을 넣으면 스탯이 바뀐다. | 장비 장착 후 공격력/체력/이동 속도 체감이 맞는지 |
 | `DefenseHud` | `Assets/02.Scripts/GroundDefense/UI/DefenseHud.cs` | TMP 텍스트와 버튼을 연결해서 현재 상태와 강화 버튼을 보여준다 | Canvas 안의 HUD 오브젝트에 붙이고 Text/Button 슬롯을 연결한다. | 화면에 보이는 문구가 충분히 직관적인지 |
@@ -61,7 +65,7 @@
 ## 3. 가장 빠른 테스트 세팅
 
 1. 씬에 빈 오브젝트를 만들고 이름을 `GameSystems`로 둔다.
-2. `GameSystems`에 `CurrencyWallet`, `DefenseUpgradeModel`, `DefenseDirector`, `DefenseSaveManager`를 붙인다.
+2. `GameSystems`에 `CurrencyWallet`, `DefenseUpgradeModel`, `DefenseDirector`, `DefenseSaveManager`를 붙인다. Add `SimpleInventory` and `ItemSalvageService` when testing item instance save/salvage.
 3. `CurrencyWallet > Starting Amounts`에 다음을 넣는다.
 
 ```text

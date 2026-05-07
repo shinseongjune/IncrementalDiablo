@@ -138,12 +138,17 @@ nextItemInstanceId
 ```text
 instanceId
 definitionId
+displayName
+slot
 rarity
 level
 rolledPower
 affixRolls
 durability
+equipped
 ```
+
+2026-05-07 implementation note: `GameSaveData` now includes `hero` and `inventory` sections. `DefenseSaveManager` still owns the local JSON file, but it will also save/load `SimpleInventory` when that component exists in the scene. Loaded items keep ids and rolled values; reconnecting them to `ItemDefinition` assets is a later item registry task.
 
 ## 5. 저장 시점
 
