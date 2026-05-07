@@ -1,0 +1,236 @@
+# Playable Loop MVP Automation Plan
+
+작성일: 2026-05-07
+문서 목적: daily automation이 실제 플레이 루프 MVP를 향해 매일 가장 앞의 연결부를 구현하도록 고정하는 작업 큐
+
+## 1. MVP 목표
+
+이 문서의 목표는 완성품이 아니라, Unity Play Mode에서 다음 흐름이 한 번이라도 끊기지 않고 보이는 것이다.
+
+```text
+Ground defense earns Gold/Scrap
+-> player starts a dungeon expedition
+-> one room combat resolves
+-> loot or materials are awarded
+-> item enters inventory
+-> player equips or salvages it
+-> rewards improve hero or ground defense
+-> save/load preserves the loop state
+```
+
+첫 MVP는 작아도 된다. 방은 1개, 적은 1종, 아이템은 3-6개, UI는 디버그형이어도 된다. 다만 각 시스템은 실제 게임 루프 안에서 서로 연결되어야 한다.
+
+## 2. 자동화 운영 규칙
+
+Daily automation은 매 실행 시작 시 이 문서를 읽고, `MVP Task Queue`에서 가장 앞에 있는 미완료/막힌 항목을 우선 선택한다.
+
+자동화는 작업 후 이 문서를 개선해야 한다.
+
+- 완료된 항목은 `Done`으로 표시한다.
+- 새로 발견한 막힌 연결부는 `Discovered` 섹션에 추가한다.
+- 구현 중 범위가 커지면 작은 다음 작업으로 쪼갠다.
+- Unity Editor 수동 배치가 필요한 경우 정확한 GameObject/Component/Inspector 연결 순서를 남긴다.
+- Git commit/push는 하지 않는다. 변경이 검증되어 올릴 만하면 보고서에서 "사용자 확인 필요: 커밋/푸시 요청"으로 요청한다.
+
+## 3. 완료 판정
+
+Playable loop MVP는 다음 조건을 모두 만족하면 완료로 본다.
+
+| ID | 완료 조건 | 현재 상태 |
+| --- | --- | --- |
+| MVP-01 | 지상전이 Play Mode에서 Gold/Scrap을 생성한다. | Mostly Done |
+| MVP-02 | 던전 시작 명령이 있고, 런 상태가 Ready/Running/Cleared/Failed로 바뀐다. | Missing |
+| MVP-03 | 던전 방 1개에서 영웅과 적의 전투가 자동 또는 간단 직접 조작으로 끝난다. | Missing |
+| MVP-04 | 적 또는 방 클리어가 보상을 지급한다. | Missing |
+| MVP-05 | 보상 아이템이 `SimpleInventory`에 들어간다. | Foundation Done |
+| MVP-06 | 장비 장착이 영웅 스탯에 반영된다. | Partial |
+| MVP-07 | 장비 분해가 인벤토리에서 아이템을 제거하고 재료를 지급한다. | Partial |
+| MVP-08 | 재료나 보상이 지상 방어 강화에 다시 쓰인다. | Partial |
+| MVP-09 | 저장/로드가 지상전, 재화, 인벤토리의 최소 상태를 유지한다. | Partial |
+| MVP-10 | 한 화면 또는 임시 HUD에서 현재 루프 상태를 확인할 수 있다. | Partial |
+
+## Post-MVP Phase Runway
+
+This document must not stop at the first MVP. When the current phase is complete, the automation must promote the next phase and keep moving toward a fuller game loop instead of polishing the same small surface forever.
+
+| Phase | Entry condition | Exit condition | Default next work |
+| --- | --- | --- | --- |
+| Phase A - Playable Loop MVP | Current phase. Ground/inventory foundations exist, but dungeon loop is not visible yet. | MVP-01 through MVP-10 are `Done`; Play Mode can show ground reward -> dungeon -> loot -> equip/salvage -> save/load at debug quality. | Finish P0/P1 tasks below. |
+| Phase B - 30-Minute Retention Slice | Phase A is done. The loop exists but may be shallow. | A new player can play about 30 minutes with at least three meaningful upgrade decisions, one failure/recovery moment, and no dev-console-only step. | Replace debug HUD with minimal player HUD, tune early pacing, repeat dungeon attempts, clarify failure/reward feedback. |
+| Phase C - Long-Horizon Systems Foundation | Phase B is done. The first session works, but long-term scaling is not proven. | Formula-driven dungeon tiers, ground scaling, item rarity/material sinks, and save migration hooks exist without hand-authored content ladders. | Add generated tiers, item/drop pacing tables, material sinks, balance validation scripts, and extensible save schemas. |
+| Phase D - Early Access Readiness Slice | Phase C is done. Systems scale, but the game is not yet release-shaped. | A 2-4 hour repeatable slice is playable with stable UI, recoverable failure, basic settings, readable onboarding, QA checklist, and no known progression blocker. | Add usability polish, error handling, content breadth, performance checks, settings, and release-scope triage. |
+
+## Phase Promotion Rule
+
+- If every completion criterion in the current phase is `Done`, update `Current phase` in the progress tracker, mark the first actionable task of the next phase as `Next`, and continue from that task.
+- If the next phase is too broad, split the first risky item into one P0 task that can be completed in one automation run.
+- If all listed phases are done or stale, add a `Next Production Phase Proposal` section with 2-3 options, a recommendation, and user-confirmation needs. Do not spend the run on filler cleanup.
+- If a phase cannot be advanced because it requires Unity Editor/manual gameplay judgment, document the exact manual check and choose the next safe code/docs task that still moves the playable loop.
+
+## No-Stagnation Rules
+
+Each automation run must satisfy at least one of these:
+
+- change at least one completion criterion toward `Done`;
+- implement or verify a missing system link in the playable loop;
+- fix a blocker that prevents Play Mode or build verification;
+- add a missing verification path that allows the next run to implement safely.
+
+Docs-only work is allowed only when it directly unblocks code work, records required Unity scene setup, captures a major design decision, or updates this plan after real implementation. Do not repeat the same category of minor cleanup in two consecutive runs. Every report must state what moved closer to visible gameplay.
+
+## Progress Tracker
+
+| Field | Current value |
+| --- | --- |
+| Current phase | Phase A - Playable Loop MVP |
+| Last meaningful movement | 2026-05-07: item instance inventory/save foundation exists; automation plan now targets full visible loop rather than item-only work. |
+| Next unlock | Dungeon run state can start, complete, fail, and be saved at minimum runtime-data quality. |
+| Loop coverage | Ground reward: mostly present; dungeon state: missing; room combat: missing; loot-to-inventory: foundation only; equip/salvage feedback: partial; save/load: partial; HUD: partial/debug only. |
+| Known blockers | Real dungeon scene/prefab wiring and gameplay feel still need Unity Play Mode review after code foundations are connected. |
+
+## 4. MVP Task Queue
+
+### P0. 던전 런 상태 연결
+
+상태: Next
+
+목표:
+`DungeonRunState`와 `ExpeditionDirector`를 추가해서 던전 시작/완료/실패를 코드에서 표현한다.
+
+완료 기준:
+
+- `StartExpedition()` 호출로 런 상태가 `Running`이 된다.
+- `CompleteRoom()` 또는 `FailExpedition()` 호출로 상태가 바뀐다.
+- 최소 런타임 데이터가 `GameSaveData`에 들어갈 수 있는 구조를 가진다.
+- 아직 실제 방 프리팹이 없어도 코드 단위로 빌드된다.
+
+추천 파일:
+
+- `Assets/02.Scripts/Dungeon/ExpeditionDirector.cs`
+- `Assets/02.Scripts/Dungeon/DungeonRunState.cs`
+- `Assets/02.Scripts/Shared/GameSaveData.cs`
+- `GameDesign/ScriptFolderStructure.md`
+
+### P0. 방 1개 전투 결과 만들기
+
+상태: Pending
+
+목표:
+`CombatRoom`이 영웅/적 전투 결과를 받거나 간단 계산으로 클리어/실패를 결정한다.
+
+완료 기준:
+
+- 방 시작 시 적 카운트 또는 enemy health가 생긴다.
+- 적 사망/방 클리어 이벤트가 발생한다.
+- 실패 시 런 상태가 `Failed`가 된다.
+- 수동 Unity 배치가 필요한 경우 빈 씬 세팅 순서를 문서화한다.
+
+추천 파일:
+
+- `Assets/02.Scripts/Dungeon/CombatRoom.cs`
+- `Assets/02.Scripts/Character/Controllers/EnemyAIController.cs`
+- `Assets/02.Scripts/Character/Controllers/AutoCombatController.cs`
+
+### P0. 던전 보상을 인벤토리에 연결
+
+상태: Pending
+
+목표:
+방 클리어나 보스 클리어가 `ItemDefinition` 기반 보상을 만들고 `SimpleInventory`에 넣는다.
+
+완료 기준:
+
+- 보상 생성 코드가 `ItemInstance`를 만든다.
+- `SimpleInventory.Count`가 증가한다.
+- 보상 지급 실패 시 이유가 로그로 남는다.
+- 아이템 정의 에셋이 없으면 임시 정의/테스트 경로가 명확하다.
+
+추천 파일:
+
+- `Assets/02.Scripts/Items/LootDropper.cs`
+- `Assets/02.Scripts/Items/SimpleInventory.cs`
+- `Assets/02.Scripts/Dungeon/ExpeditionDirector.cs`
+
+### P0. 임시 루프 HUD
+
+상태: Pending
+
+목표:
+Play Mode에서 지상전/던전/인벤토리 상태를 한 화면에서 확인하고 버튼으로 다음 행동을 실행한다.
+
+완료 기준:
+
+- Start Dungeon 버튼이 있다.
+- Inventory count와 마지막 획득 아이템 이름이 보인다.
+- Equip 또는 Salvage 테스트 버튼이 있다.
+- 지상전 재화/강화 결과가 기존 HUD 또는 임시 HUD로 보인다.
+
+추천 파일:
+
+- `Assets/02.Scripts/Dungeon/UI/DungeonDebugHud.cs`
+- `Assets/02.Scripts/Items/UI/InventoryDebugHud.cs`
+- `GameDesign/ProductionDocs/06_UnitySceneAndPrefabSetupGuide.md`
+
+### P1. 인스턴스 장착과 저장 연결
+
+상태: Pending
+
+목표:
+`SimpleInventory`의 `ItemInstance`를 실제 장착 슬롯과 연결한다.
+
+완료 기준:
+
+- 인벤토리 아이템을 장착하면 이전 장비와 교체된다.
+- `EquipmentSlots` 또는 새 장착 서비스가 `ItemInstance`의 definition/modifier를 사용한다.
+- 저장/로드 후 장착 상태가 유지된다.
+- 로드 후 `ItemDefinition` 에셋 연결이 필요한 경우 item registry 계획을 함께 남긴다.
+
+추천 파일:
+
+- `Assets/02.Scripts/Character/Core/EquipmentSlots.cs`
+- `Assets/02.Scripts/Items/SimpleInventory.cs`
+- `Assets/02.Scripts/Shared/GameSaveData.cs`
+
+### P1. 저장/로드 검증 루프
+
+상태: Pending
+
+목표:
+실제 Play Mode에서 지상전 + 던전 런 + 인벤토리 저장이 깨지지 않는지 확인한다.
+
+완료 기준:
+
+- JSON 저장 파일에 currencies/defense/inventory가 들어간다.
+- Play Mode 종료 후 다시 시작해 인벤토리 count가 유지된다.
+- 정의 에셋 lookup이 아직 없으면 그 한계를 보고서와 문서에 명확히 적는다.
+
+## 5. 2주 목표 일정
+
+이 일정은 약속된 출시 일정이 아니라 자동화 작업 순서를 고정하기 위한 예상이다.
+
+| 기간 | 목표 | 기대 결과 |
+| --- | --- | --- |
+| Day 1-2 | 던전 런 상태와 시작/완료/실패 코드 | 버튼 또는 임시 호출로 던전 상태 변화 확인 |
+| Day 3-4 | 방 1개 전투 결과 | 적 또는 계산 전투가 클리어/실패를 만든다 |
+| Day 5-6 | 보상과 인벤토리 연결 | 방 클리어 후 아이템/재료가 들어온다 |
+| Day 7-8 | 임시 HUD 연결 | 한 화면에서 지상전/던전/아이템 루프 확인 |
+| Day 9-10 | 장착/분해/강화 순환 | 장비 선택이 스탯 또는 재화 흐름에 영향을 준다 |
+| Day 11-12 | 저장/로드와 문서 보정 | 루프 상태가 세션 사이에 유지된다 |
+| Day 13-14 | 플레이 테스트와 작은 튜닝 | 10-20분 동안 루프가 끊기지 않는다 |
+
+## 6. 지금 하지 않을 것
+
+MVP 전까지 다음은 보류한다.
+
+- 여러 던전 테마
+- 고급 인벤토리 UI
+- 수십 개 이상의 수동 아이템 테이블
+- Legendary/Unique/Set 등급
+- 복잡한 affix mutation
+- 자동분해/필터 전체 시스템
+- Steam/네트워크/클라우드 저장
+- 완성형 밸런스
+
+## 7. Discovered
+
+아직 없음.

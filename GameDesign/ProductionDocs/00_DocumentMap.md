@@ -95,3 +95,7 @@ Unity 구현 단위
 제작은 두 루프를 연결한다.
 MVP는 세 루프가 작게라도 한 바퀴 도는 상태다.
 ```
+
+## 7. Automation MVP Queue
+
+`10_PlayableLoopMvpAutomationPlan.md` is the current daily automation task queue for the playable loop MVP. Read it before choosing autonomous production work, and update it whenever a task is completed, split, blocked, or newly discovered.
