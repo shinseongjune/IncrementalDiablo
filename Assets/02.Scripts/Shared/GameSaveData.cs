@@ -8,6 +8,7 @@ public class GameSaveData
     public float playTimeSeconds;
     public ResourceAmount[] currencies;
     public DefenseSaveData defense = new DefenseSaveData();
+    public DungeonSaveData dungeon = new DungeonSaveData();
     public HeroSaveData hero = new HeroSaveData();
     public InventorySaveData inventory = new InventorySaveData();
 }
@@ -36,6 +37,20 @@ public class HeroSaveData
     public float experience;
     public float currentHealth = 100f;
     public long[] equippedItemInstanceIds = new long[0];
+}
+
+[Serializable]
+public class DungeonSaveData
+{
+    public DungeonRunState state = DungeonRunState.Ready;
+    public string dungeonId;
+    public int depth = 1;
+    public int totalRooms = 1;
+    public int currentRoomIndex;
+    public int roomsCompleted;
+    public float elapsedSeconds;
+    public bool rewardPending;
+    public string lastResult;
 }
 
 [Serializable]

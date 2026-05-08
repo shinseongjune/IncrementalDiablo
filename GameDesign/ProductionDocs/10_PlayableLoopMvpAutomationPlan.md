@@ -39,7 +39,7 @@ Playable loop MVP는 다음 조건을 모두 만족하면 완료로 본다.
 | ID | 완료 조건 | 현재 상태 |
 | --- | --- | --- |
 | MVP-01 | 지상전이 Play Mode에서 Gold/Scrap을 생성한다. | Mostly Done |
-| MVP-02 | 던전 시작 명령이 있고, 런 상태가 Ready/Running/Cleared/Failed로 바뀐다. | Missing |
+| MVP-02 | 던전 시작 명령이 있고, 런 상태가 Ready/Running/Cleared/Failed로 바뀐다. | Code Done |
 | MVP-03 | 던전 방 1개에서 영웅과 적의 전투가 자동 또는 간단 직접 조작으로 끝난다. | Missing |
 | MVP-04 | 적 또는 방 클리어가 보상을 지급한다. | Missing |
 | MVP-05 | 보상 아이템이 `SimpleInventory`에 들어간다. | Foundation Done |
@@ -83,16 +83,16 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase A - Playable Loop MVP |
-| Last meaningful movement | 2026-05-07: item instance inventory/save foundation exists; automation plan now targets full visible loop rather than item-only work. |
-| Next unlock | Dungeon run state can start, complete, fail, and be saved at minimum runtime-data quality. |
-| Loop coverage | Ground reward: mostly present; dungeon state: missing; room combat: missing; loot-to-inventory: foundation only; equip/salvage feedback: partial; save/load: partial; HUD: partial/debug only. |
-| Known blockers | Real dungeon scene/prefab wiring and gameplay feel still need Unity Play Mode review after code foundations are connected. |
+| Last meaningful movement | 2026-05-08: `ExpeditionDirector` and `DungeonRunState` added; dungeon run save data now flows through `GameSaveData` and `DefenseSaveManager`. |
+| Next unlock | One-room combat can resolve into `CompleteRoom()` or `FailExpedition()` and drive the saved run state. |
+| Loop coverage | Ground reward: mostly present; dungeon state: code foundation done; room combat: missing; loot-to-inventory: foundation only; equip/salvage feedback: partial; save/load: partial plus dungeon run state; HUD: partial/debug only. |
+| Known blockers | Real dungeon scene/prefab wiring, generated Unity meta files for the repaired Dungeon folder, and gameplay feel still need Unity Play Mode review after code foundations are connected. |
 
 ## 4. MVP Task Queue
 
 ### P0. 던전 런 상태 연결
 
-상태: Next
+상태: Done
 
 목표:
 `DungeonRunState`와 `ExpeditionDirector`를 추가해서 던전 시작/완료/실패를 코드에서 표현한다.
@@ -111,9 +111,15 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 - `Assets/02.Scripts/Shared/GameSaveData.cs`
 - `GameDesign/ScriptFolderStructure.md`
 
+2026-05-08 완료 메모:
+
+- `ExpeditionDirector`가 `Ready`, `Running`, `Cleared`, `Failed` 상태와 `StartExpedition()`, `CompleteRoom()`, `FailExpedition()` 호출을 제공한다.
+- `DungeonSaveData`가 `GameSaveData`에 추가되었고, `DefenseSaveManager`가 씬의 `ExpeditionDirector`를 찾아 저장/로드한다.
+- 실제 전투, 보상, HUD 버튼은 다음 P0 작업 범위로 남긴다.
+
 ### P0. 방 1개 전투 결과 만들기
 
-상태: Pending
+상태: Next
 
 목표:
 `CombatRoom`이 영웅/적 전투 결과를 받거나 간단 계산으로 클리어/실패를 결정한다.

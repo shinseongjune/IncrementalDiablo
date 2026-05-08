@@ -14,6 +14,7 @@ Character code owns actors, stats, health, movement, combat execution, equipment
 
 Dungeon code owns room-based expedition flow.
 
+- `DungeonRunState`
 - `ExpeditionDirector`
 - `CombatRoom`
 - `EnemySpawner`
@@ -21,6 +22,8 @@ Dungeon code owns room-based expedition flow.
 - room clear conditions
 
 Rooms should be prefab/runtime objects, not separate Unity scenes.
+
+Current implementation note: `DungeonRunState` and `ExpeditionDirector` exist first. `ExpeditionDirector` can start a prototype expedition, complete a room, fail the run, expose Ready/Running/Cleared/Failed state, and export/import `DungeonSaveData` through `DefenseSaveManager`. `CombatRoom`, enemy controllers, loot drops, dungeon HUD buttons, and Unity room prefab wiring are still future work.
 
 ## GroundDefense
 

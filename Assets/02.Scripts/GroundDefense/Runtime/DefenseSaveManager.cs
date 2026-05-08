@@ -7,6 +7,7 @@ using UnityEngine;
 public class DefenseSaveManager : MonoBehaviour
 {
     [SerializeField] private DefenseDirector director;
+    [SerializeField] private ExpeditionDirector expedition;
     [SerializeField] private SimpleInventory inventory;
     [SerializeField] private string saveFileName = "incremental_diablo_save.json";
     [SerializeField] private bool loadOnStart = true;
@@ -73,6 +74,7 @@ public class DefenseSaveManager : MonoBehaviour
             playTimeSeconds = director.Runtime.TotalElapsed,
             currencies = director.Wallet == null ? null : director.Wallet.ExportAmounts(),
             defense = director.CreateSaveData(),
+            dungeon = expedition == null ? new DungeonSaveData() : expedition.CreateSaveData(),
             inventory = inventory == null ? new InventorySaveData() : inventory.CreateSaveData()
         };
 
@@ -117,6 +119,11 @@ public class DefenseSaveManager : MonoBehaviour
             }
 
             director.ApplySaveData(saveData.defense);
+            if (expedition != null)
+            {
+                expedition.ApplySaveData(saveData.dungeon);
+            }
+
             if (inventory != null)
             {
                 inventory.ApplySaveData(saveData.inventory);
@@ -160,6 +167,11 @@ public class DefenseSaveManager : MonoBehaviour
         if (inventory == null)
         {
             inventory = FindAnyObjectByType<SimpleInventory>();
+        }
+
+        if (expedition == null)
+        {
+            expedition = FindAnyObjectByType<ExpeditionDirector>();
         }
     }
 }
