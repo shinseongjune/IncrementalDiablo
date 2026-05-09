@@ -40,7 +40,7 @@ Playable loop MVP는 다음 조건을 모두 만족하면 완료로 본다.
 | --- | --- | --- |
 | MVP-01 | 지상전이 Play Mode에서 Gold/Scrap을 생성한다. | Mostly Done |
 | MVP-02 | 던전 시작 명령이 있고, 런 상태가 Ready/Running/Cleared/Failed로 바뀐다. | Code Done |
-| MVP-03 | 던전 방 1개에서 영웅과 적의 전투가 자동 또는 간단 직접 조작으로 끝난다. | Missing |
+| MVP-03 | 던전 방 1개에서 영웅과 적의 전투가 자동 또는 간단 직접 조작으로 끝난다. | Code Done |
 | MVP-04 | 적 또는 방 클리어가 보상을 지급한다. | Missing |
 | MVP-05 | 보상 아이템이 `SimpleInventory`에 들어간다. | Foundation Done |
 | MVP-06 | 장비 장착이 영웅 스탯에 반영된다. | Partial |
@@ -83,10 +83,10 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase A - Playable Loop MVP |
-| Last meaningful movement | 2026-05-08: `ExpeditionDirector` and `DungeonRunState` added; dungeon run save data now flows through `GameSaveData` and `DefenseSaveManager`. |
-| Next unlock | One-room combat can resolve into `CompleteRoom()` or `FailExpedition()` and drive the saved run state. |
-| Loop coverage | Ground reward: mostly present; dungeon state: code foundation done; room combat: missing; loot-to-inventory: foundation only; equip/salvage feedback: partial; save/load: partial plus dungeon run state; HUD: partial/debug only. |
-| Known blockers | Real dungeon scene/prefab wiring, generated Unity meta files for the repaired Dungeon folder, and gameplay feel still need Unity Play Mode review after code foundations are connected. |
+| Last meaningful movement | 2026-05-09: `CombatRoom` added; a one-room dungeon can now auto-start from `ExpeditionDirector`, resolve through tracked `Health` actors or prototype simulation, and call `CompleteRoom()`/`FailExpedition()`. |
+| Next unlock | Dungeon room clear should create a reward and push an `ItemInstance` into `SimpleInventory`. |
+| Loop coverage | Ground reward: mostly present; dungeon state: code foundation done; room combat: code done; loot-to-inventory: foundation only; equip/salvage feedback: partial; save/load: partial plus dungeon run state; HUD: partial/debug only. |
+| Known blockers | Real dungeon scene/prefab wiring, reward-to-inventory connection, and gameplay feel still need Unity Play Mode review after code foundations are connected. |
 
 ## 4. MVP Task Queue
 
@@ -119,7 +119,7 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 
 ### P0. 방 1개 전투 결과 만들기
 
-상태: Next
+상태: Code Done
 
 목표:
 `CombatRoom`이 영웅/적 전투 결과를 받거나 간단 계산으로 클리어/실패를 결정한다.
@@ -137,9 +137,17 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 - `Assets/02.Scripts/Character/Controllers/EnemyAIController.cs`
 - `Assets/02.Scripts/Character/Controllers/AutoCombatController.cs`
 
+2026-05-09 코드 완료 메모:
+
+- `CombatRoom`이 실행 중인 `ExpeditionDirector`를 찾아 방을 시작하고, 시작 카운트다운 뒤 전투 상태로 들어간다.
+- 실제 `Health` 참조가 연결되어 있으면 영웅 사망/모든 적 사망으로 실패/클리어를 판정한다.
+- 아직 적 프리팹이 없으면 프로토타입 영웅 체력/DPS와 적 체력/DPS 계산으로 방 결과를 만든다.
+- 클리어/실패 결과는 `ExpeditionDirector.CompleteRoom()` 또는 `ExpeditionDirector.FailExpedition()`으로 전달된다.
+- 실제 씬 배치와 전투 체감은 Unity Play Mode에서 확인해야 한다.
+
 ### P0. 던전 보상을 인벤토리에 연결
 
-상태: Pending
+상태: Next
 
 목표:
 방 클리어나 보스 클리어가 `ItemDefinition` 기반 보상을 만들고 `SimpleInventory`에 넣는다.

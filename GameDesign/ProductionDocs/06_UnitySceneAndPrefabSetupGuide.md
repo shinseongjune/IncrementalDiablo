@@ -155,6 +155,15 @@ Camera
 Canvas_Dungeon
 ```
 
+2026-05-09 기준 최소 방 결과 테스트:
+
+1. 빈 오브젝트 `DungeonRoot`를 만든다.
+2. `DungeonRoot`에 `ExpeditionDirector`와 `CombatRoom`을 붙인다.
+3. 아직 영웅/적 프리팹이 없으면 `CombatRoom > Simulate When No Enemies`를 켜 둔다.
+4. Play Mode에서 `ExpeditionDirector.StartExpedition()`을 호출한다.
+5. `CombatRoom`이 시작 카운트다운 뒤 프로토타입 체력/DPS 계산으로 `CompleteRoom()` 또는 `FailExpedition()`을 호출하는지 Inspector에서 확인한다.
+6. 실제 적 프리팹을 붙인 뒤에는 `CombatRoom > Hero Health`와 `Enemy Healths`에 각 `Health` 컴포넌트를 연결해서 생존 판정 기반으로 바꾼다.
+
 ## 4. 프리팹 목록
 
 ### 지상 디펜스 프리팹

@@ -23,7 +23,7 @@ Dungeon code owns room-based expedition flow.
 
 Rooms should be prefab/runtime objects, not separate Unity scenes.
 
-Current implementation note: `DungeonRunState` and `ExpeditionDirector` exist first. `ExpeditionDirector` can start a prototype expedition, complete a room, fail the run, expose Ready/Running/Cleared/Failed state, and export/import `DungeonSaveData` through `DefenseSaveManager`. `CombatRoom`, enemy controllers, loot drops, dungeon HUD buttons, and Unity room prefab wiring are still future work.
+Current implementation note: `DungeonRunState`, `ExpeditionDirector`, and `CombatRoom` exist first. `ExpeditionDirector` can start a prototype expedition, complete a room, fail the run, expose Ready/Running/Cleared/Failed state, and export/import `DungeonSaveData` through `DefenseSaveManager`. `CombatRoom` can auto-start when an expedition is running, resolve through tracked `Health` references, or fall back to prototype health/DPS simulation when enemy prefabs are not wired yet. Enemy controllers, loot drops, dungeon HUD buttons, and Unity room prefab wiring are still future work.
 
 ## GroundDefense
 

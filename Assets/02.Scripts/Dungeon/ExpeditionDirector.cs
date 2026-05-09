@@ -93,6 +93,11 @@ public class ExpeditionDirector : MonoBehaviour
         return true;
     }
 
+    public void StartExpeditionFromButton()
+    {
+        StartExpedition();
+    }
+
     public bool CompleteRoom()
     {
         EnsureRuntime();
@@ -121,6 +126,11 @@ public class ExpeditionDirector : MonoBehaviour
         return true;
     }
 
+    public void CompleteRoomFromButton()
+    {
+        CompleteRoom();
+    }
+
     public bool FailExpedition()
     {
         EnsureRuntime();
@@ -135,6 +145,11 @@ public class ExpeditionDirector : MonoBehaviour
         runtime.lastResult = "Expedition failed";
         NotifyChanged();
         return true;
+    }
+
+    public void FailExpeditionFromButton()
+    {
+        FailExpedition();
     }
 
     public DungeonSaveData CreateSaveData()

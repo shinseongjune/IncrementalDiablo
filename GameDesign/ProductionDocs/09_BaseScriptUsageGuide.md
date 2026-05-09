@@ -17,6 +17,8 @@
 
 2026-05-08 implementation scope: `DungeonRunState` and `ExpeditionDirector` add the first dungeon run-state layer. A scene can now start a prototype expedition, complete its current room, fail the run, and save/load the run state through the existing JSON save path. This does not yet add combat room resolution, loot rewards, dungeon HUD buttons, or room prefab setup.
 
+2026-05-09 implementation scope: `CombatRoom` adds the first one-room result layer. A scene can now start a room from a running `ExpeditionDirector`, wait through a short countdown, resolve by connected `Health` components or by prototype health/DPS simulation, and push the result back into `CompleteRoom()` or `FailExpedition()`. This does not yet add loot rewards, dungeon HUD buttons, enemy AI controllers, or finished room prefab setup.
+
 목표는 다음 한 문장이 Unity Play 모드에서 돌아가는 것이다.
 
 ```text
@@ -27,7 +29,7 @@
 
 - 실제 적 오브젝트가 달려오는 시각 전투
 - 던전 방/보스/아이템 드랍
-- 던전 전투 결과/보상 연결
+- 던전 보상 연결
 - 인벤토리 UI와 장비 드래그 장착
 - 복잡한 제작, 옵션, 장비 장착 UI
 
@@ -51,6 +53,7 @@
 | `DefenseDirector` | `Assets/02.Scripts/GroundDefense/Runtime/DefenseDirector.cs` | 지속 압박 생성, 보상 지급, 단계 상승, 돌파 판정을 관리 | `GameSystems` 오브젝트에 붙이고 `Wallet`, `Upgrades`를 연결한다. 비워도 같은 오브젝트에서 자동 탐색한다. | Hold/Push 위험도, 보상 속도, 단계 상승 속도가 맞는지 |
 | `DungeonRunState` | `Assets/02.Scripts/Dungeon/DungeonRunState.cs` | Ready, Running, Cleared, Failed 던전 런 상태를 정의한다. | 직접 붙이지 않는다. `ExpeditionDirector`와 `DungeonSaveData`가 사용한다. | 상태명이 던전 HUD에 보여도 이해되는지 |
 | `ExpeditionDirector` | `Assets/02.Scripts/Dungeon/ExpeditionDirector.cs` | 프로토타입 던전 런을 시작/완료/실패시키고 저장 데이터를 만든다. | `GameSystems`나 `DungeonRoot`에 붙인다. 임시 테스트는 Inspector/디버그 버튼에서 `StartExpedition()`, `CompleteRoom()`, `FailExpedition()`을 호출한다. | 시작, 클리어, 실패 흐름이 플레이어가 기대하는 던전 흐름과 맞는지 |
+| `CombatRoom` | `Assets/02.Scripts/Dungeon/CombatRoom.cs` | 던전 방 시작 카운트다운, 적/영웅 생존 판정, 프로토타입 전투 계산, 클리어/실패 결과 전달을 맡는다. | `ExpeditionDirector`와 같은 오브젝트나 `DungeonRoot` 자식에 붙인다. `Expedition`을 비워도 자동 탐색한다. 적 프리팹이 없으면 `Simulate When No Enemies`를 켜서 계산형 방 결과를 테스트한다. | 클리어/실패 시간이 너무 빠르거나 느린지, 실패가 납득 가능한지 |
 | `GameSaveData` | `Assets/02.Scripts/Shared/GameSaveData.cs` | 저장 파일의 루트 데이터와 지상 방어, 던전, 영웅, 인벤토리 저장 데이터를 정의한다. | 직접 붙이지 않는다. `DefenseSaveManager`가 JSON으로 읽고 쓴다. | 저장해야 할 값이 빠졌는지 |
 | `DefenseSaveManager` | `Assets/02.Scripts/GroundDefense/Runtime/DefenseSaveManager.cs` | Gold/Scrap/Frontline Level/강화/성벽/던전 런/인벤토리 상태를 로컬 JSON으로 저장하고, 재접속 시 최대 8시간 오프라인 진행을 계산한다. | `GameSystems` 오브젝트에 붙인다. `DefenseDirector`, `ExpeditionDirector`, `SimpleInventory`는 비워도 자동 탐색한다. | 오프라인 보상이 너무 후하거나, 돌파 정지와 던전 런 저장이 너무 가혹한지 |
 | `ItemSlot` | `Assets/02.Scripts/Items/ItemSlot.cs` | Weapon, Armor, Ring 같은 MVP 장비 부위를 정의한다. | 직접 붙이지 않는다. `ItemDefinition`과 `EquipmentSlots`가 사용한다. | MVP 부위가 너무 많거나 적은지 |
@@ -69,7 +72,7 @@
 ## 3. 가장 빠른 테스트 세팅
 
 1. 씬에 빈 오브젝트를 만들고 이름을 `GameSystems`로 둔다.
-2. `GameSystems`에 `CurrencyWallet`, `DefenseUpgradeModel`, `DefenseDirector`, `DefenseSaveManager`를 붙인다. Add `ExpeditionDirector` when testing dungeon run save state, and add `SimpleInventory` plus `ItemSalvageService` when testing item instance save/salvage.
+2. `GameSystems`에 `CurrencyWallet`, `DefenseUpgradeModel`, `DefenseDirector`, `DefenseSaveManager`를 붙인다. Add `ExpeditionDirector` and `CombatRoom` when testing dungeon run and one-room combat state, and add `SimpleInventory` plus `ItemSalvageService` when testing item instance save/salvage.
 3. `CurrencyWallet > Starting Amounts`에 다음을 넣는다.
 
 ```text
@@ -92,7 +95,7 @@ Scrap 25
 5. `ExpeditionDirector`가 있다면 저장 JSON의 `dungeon.state`, `dungeon.dungeonId`, `dungeon.roomsCompleted`, `dungeon.rewardPending`이 런 호출 결과와 맞는지 확인한다.
 6. 저장 후 몇 분 뒤 다시 실행하면 최대 8시간 한도 안에서 오프라인 보상과 손상이 계산된다.
 
-저장 파일은 Unity의 `Application.persistentDataPath` 아래 `incremental_diablo_save.json`으로 만들어진다. 지상전, 던전 런 상태, 인벤토리 인스턴스는 저장 루트에 들어갔지만, 아직 실제 던전 전투 결과와 보상 드랍은 저장 루프에 연결되지 않았다.
+저장 파일은 Unity의 `Application.persistentDataPath` 아래 `incremental_diablo_save.json`으로 만들어진다. 지상전, 던전 런 상태, 인벤토리 인스턴스는 저장 루트에 들어갔다. `CombatRoom`은 런 상태를 클리어/실패로 바꿀 수 있지만, 아직 보상 드랍과 전투 결과 세부 로그는 저장 루프에 연결되지 않았다.
 
 HUD까지 보고 싶다면:
 
