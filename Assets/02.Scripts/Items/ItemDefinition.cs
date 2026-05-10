@@ -26,6 +26,30 @@ public class ItemDefinition : ScriptableObject
     public bool CanRerollAffix => ItemEconomyModel.CanRerollAffix(this);
     public ResourceAmount[] AffixRerollCost => ItemEconomyModel.GetAffixRerollCost(this);
 
+    public static ItemDefinition CreateRuntimePrototype(
+        string id,
+        string displayName,
+        ItemSlot slot,
+        ItemRarity rarity,
+        int baseTier,
+        int requiredLevel,
+        int baseMinPower,
+        int baseMaxPower)
+    {
+        ItemDefinition definition = ScriptableObject.CreateInstance<ItemDefinition>();
+        definition.hideFlags = HideFlags.DontSave;
+        definition.id = string.IsNullOrWhiteSpace(id) ? "runtime_prototype_item" : id;
+        definition.displayName = string.IsNullOrWhiteSpace(displayName) ? definition.id : displayName;
+        definition.slot = slot;
+        definition.rarity = rarity;
+        definition.baseTier = Mathf.Max(1, baseTier);
+        definition.requiredLevel = Mathf.Max(1, requiredLevel);
+        definition.baseMinPower = Mathf.Max(0, baseMinPower);
+        definition.baseMaxPower = Mathf.Max(definition.baseMinPower, baseMaxPower);
+        definition.modifiers = new StatMod[0];
+        return definition;
+    }
+
     private void OnValidate()
     {
         baseTier = Mathf.Max(1, baseTier);

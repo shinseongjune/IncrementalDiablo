@@ -1221,6 +1221,8 @@ GameObject:
   - component: {fileID: 1045172323}
   - component: {fileID: 1045172322}
   - component: {fileID: 1045172321}
+  - component: {fileID: 1045172326}
+  - component: {fileID: 1045172327}
   m_Layer: 0
   m_Name: GameSystems
   m_TagString: Untagged
@@ -1342,6 +1344,35 @@ MonoBehaviour:
     amount: 100
   - resource: 1
     amount: 25
+--- !u!114 &1045172326
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1045172320}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 821de1fdb01445b7830ded55f8c9219b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::SimpleInventory
+  capacity: 60
+  startingItems: []
+  nextItemInstanceId: 1
+--- !u!114 &1045172327
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1045172320}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c16e9c9cd2514200a5fef4fddc65f4f5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::ItemSalvageService
+  wallet: {fileID: 0}
+  inventory: {fileID: 0}
 --- !u!4 &1045172325
 Transform:
   m_ObjectHideFlags: 0
@@ -4337,6 +4368,7 @@ GameObject:
   - component: {fileID: 1962279248}
   - component: {fileID: 1962279247}
   - component: {fileID: 1962279246}
+  - component: {fileID: 1962279249}
   m_Layer: 0
   m_Name: DungeonRoot
   m_TagString: Untagged
@@ -4408,6 +4440,34 @@ MonoBehaviour:
     elapsedSeconds: 0
     rewardPending: 0
     lastResult:
+  lootDropper: {fileID: 1962279249}
+  autoFindLootDropper: 1
+  grantRewardOnExpeditionClear: 1
+--- !u!114 &1962279249
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1962279245}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d35c2be76df47bc86f0df6502079ad7, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::LootDropper
+  inventory: {fileID: 1045172326}
+  autoFindInventory: 1
+  rewardDefinitions: []
+  createPrototypeRewardWhenTableEmpty: 1
+  prototypeIdPrefix: prototype_crypt
+  prototypeTier: 1
+  prototypeLevel: 1
+  prototypeMinPower: 2
+  prototypeMaxPower: 5
+  prototypeMagicChancePercent: 25
+  prototypeRareChancePercent: 3
+  logGrantedRewards: 1
+  lastDropMessage:
 --- !u!4 &1962279248
 Transform:
   m_ObjectHideFlags: 0

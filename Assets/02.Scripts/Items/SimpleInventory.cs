@@ -47,6 +47,11 @@ public class SimpleInventory : MonoBehaviour
             return false;
         }
 
+        if (Count >= Capacity)
+        {
+            return false;
+        }
+
         item = ItemInstance.CreateFromDefinition(ConsumeNextItemInstanceId(), definition, definition.RequiredLevel);
         if (item == null || !TryAdd(item))
         {

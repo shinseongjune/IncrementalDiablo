@@ -41,8 +41,8 @@ Playable loop MVP는 다음 조건을 모두 만족하면 완료로 본다.
 | MVP-01 | 지상전이 Play Mode에서 Gold/Scrap을 생성한다. | Mostly Done |
 | MVP-02 | 던전 시작 명령이 있고, 런 상태가 Ready/Running/Cleared/Failed로 바뀐다. | Code Done |
 | MVP-03 | 던전 방 1개에서 영웅과 적의 전투가 자동 또는 간단 직접 조작으로 끝난다. | Code Done |
-| MVP-04 | 적 또는 방 클리어가 보상을 지급한다. | Missing |
-| MVP-05 | 보상 아이템이 `SimpleInventory`에 들어간다. | Foundation Done |
+| MVP-04 | 적 또는 방 클리어가 보상을 지급한다. | Code Done |
+| MVP-05 | 보상 아이템이 `SimpleInventory`에 들어간다. | Code Done |
 | MVP-06 | 장비 장착이 영웅 스탯에 반영된다. | Partial |
 | MVP-07 | 장비 분해가 인벤토리에서 아이템을 제거하고 재료를 지급한다. | Partial |
 | MVP-08 | 재료나 보상이 지상 방어 강화에 다시 쓰인다. | Partial |
@@ -83,10 +83,10 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase A - Playable Loop MVP |
-| Last meaningful movement | 2026-05-09: `CombatRoom` added; a one-room dungeon can now auto-start from `ExpeditionDirector`, resolve through tracked `Health` actors or prototype simulation, and call `CompleteRoom()`/`FailExpedition()`. |
-| Next unlock | Dungeon room clear should create a reward and push an `ItemInstance` into `SimpleInventory`. |
-| Loop coverage | Ground reward: mostly present; dungeon state: code foundation done; room combat: code done; loot-to-inventory: foundation only; equip/salvage feedback: partial; save/load: partial plus dungeon run state; HUD: partial/debug only. |
-| Known blockers | Real dungeon scene/prefab wiring, reward-to-inventory connection, and gameplay feel still need Unity Play Mode review after code foundations are connected. |
+| Last meaningful movement | 2026-05-10: `LootDropper` added; clearing the prototype one-room dungeon can grant a Normal/Magic/Rare prototype item into `SimpleInventory`, and `SampleScene` now has `SimpleInventory` plus `LootDropper` wired for Play Mode smoke testing. |
+| Next unlock | A temporary loop HUD should show dungeon state, inventory count, last item, and simple equip/salvage test actions without relying on Inspector-only feedback. |
+| Loop coverage | Ground reward: mostly present; dungeon state: code foundation done; room combat: code done; loot-to-inventory: code done with prototype fallback; equip/salvage feedback: partial; save/load: partial plus dungeon run and inventory state; HUD: partial/debug only. |
+| Known blockers | Real dungeon enemy/prefab feel, inventory HUD, item-definition registry after load, and gameplay feel still need Unity Play Mode review after code foundations are connected. |
 
 ## 4. MVP Task Queue
 
@@ -147,7 +147,7 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 
 ### P0. 던전 보상을 인벤토리에 연결
 
-상태: Next
+상태: Code Done
 
 목표:
 방 클리어나 보스 클리어가 `ItemDefinition` 기반 보상을 만들고 `SimpleInventory`에 넣는다.
@@ -165,9 +165,18 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 - `Assets/02.Scripts/Items/SimpleInventory.cs`
 - `Assets/02.Scripts/Dungeon/ExpeditionDirector.cs`
 
+2026-05-10 코드 완료 메모:
+
+- `LootDropper`가 `ItemDefinition` 배열에서 보상을 고르거나, 정의 에셋이 아직 없으면 런타임 프로토타입 `ItemDefinition`을 만들어 `ItemInstance`를 생성한다.
+- 프로토타입 fallback은 MVP 전용이다. D2식 품질 판정 순서를 축약해 Rare는 낮은 기본 확률, Magic은 중간 확률, 나머지는 Normal로 둔다.
+- `ExpeditionDirector`는 최종 방 클리어 후 `LootDropper.TryGrantClearReward()`를 호출하고, 성공하면 `rewardPending`을 해제한다. 실패하면 `rewardPending`을 유지하고 실패 이유를 `lastResult`/로그에 남긴다.
+- `SampleScene`의 `GameSystems`에는 `SimpleInventory`와 `ItemSalvageService`, `DungeonRoot`에는 `LootDropper`가 추가되어 Start Dungeon 버튼으로 보상 지급까지 헤드리스/Play Mode 확인이 가능하다.
+- 저장 후 원본 `ItemDefinition` 연결이 없는 프로토타입 아이템도 죽은 인벤토리가 되지 않도록, `ItemSalvageService`는 저장된 slot/rarity/level 스냅샷으로 최소 분해 보상을 계산할 수 있다.
+- 실제 드랍 테이블, 장비 에셋, 아이템 registry lookup, 인벤토리 HUD는 다음 작업 범위다.
+
 ### P0. 임시 루프 HUD
 
-상태: Pending
+상태: Next
 
 목표:
 Play Mode에서 지상전/던전/인벤토리 상태를 한 화면에서 확인하고 버튼으로 다음 행동을 실행한다.

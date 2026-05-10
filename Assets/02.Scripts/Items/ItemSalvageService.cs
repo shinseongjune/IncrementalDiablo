@@ -49,13 +49,9 @@ public class ItemSalvageService : MonoBehaviour
         }
 
         ItemDefinition definition = item.Definition;
-        if (definition == null)
-        {
-            Debug.LogWarning("ItemSalvageService cannot salvage an item instance without a loaded ItemDefinition.", this);
-            return false;
-        }
-
-        rewards = ItemEconomyModel.GetSalvageRewards(definition);
+        rewards = definition == null
+            ? ItemEconomyModel.GetSalvageRewards(item.Slot, item.Rarity, item.Level)
+            : ItemEconomyModel.GetSalvageRewards(definition);
 
         ResolveWallet();
         if (wallet == null)

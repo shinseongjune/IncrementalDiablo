@@ -190,6 +190,8 @@ Rare 장비 -> 더 많은 Scrap + Essence
 
 2026-05-07 implementation note: `ItemInstance` and `SimpleInventory` now cover the first runtime inventory slice. An item can be rolled from an `ItemDefinition`, receive a stable instance id, carry rarity/level/power/durability/affix-roll placeholders, and be exported through `InventorySaveData`. This is still a foundation, not the final loot loop: drop tables, item-definition lookup after loading, affix mutation, crafting UI, and inventory UI remain future work.
 
+2026-05-10 implementation note: dungeon clear rewards can now create an `ItemInstance` through `LootDropper` and place it into `SimpleInventory`. Until authored item assets/drop tables exist, `LootDropper` may create an explicit prototype runtime definition. Because saved prototype items do not reconnect to an `ItemDefinition` asset after load, `ItemSalvageService` can now fall back to the saved item snapshot's slot/rarity/level for minimum salvage rewards. This keeps duplicate/no-trade items from becoming dead inventory during the prototype phase, but real item registry lookup is still required before production balance.
+
 ### 옵션 변형
 
 입력:

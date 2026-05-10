@@ -146,7 +146,7 @@ Camera
 DungeonRoot
   ExpeditionDirector
   CombatRoom
-  LootDirector
+  LootDropper
 
 HeroSpawnPoint
 EnemySpawnPoints
@@ -155,14 +155,20 @@ Camera
 Canvas_Dungeon
 ```
 
-2026-05-09 기준 최소 방 결과 테스트:
+2026-05-10 기준 최소 방 결과 + 보상 테스트:
 
 1. 빈 오브젝트 `DungeonRoot`를 만든다.
-2. `DungeonRoot`에 `ExpeditionDirector`와 `CombatRoom`을 붙인다.
-3. 아직 영웅/적 프리팹이 없으면 `CombatRoom > Simulate When No Enemies`를 켜 둔다.
-4. Play Mode에서 `ExpeditionDirector.StartExpedition()`을 호출한다.
-5. `CombatRoom`이 시작 카운트다운 뒤 프로토타입 체력/DPS 계산으로 `CompleteRoom()` 또는 `FailExpedition()`을 호출하는지 Inspector에서 확인한다.
-6. 실제 적 프리팹을 붙인 뒤에는 `CombatRoom > Hero Health`와 `Enemy Healths`에 각 `Health` 컴포넌트를 연결해서 생존 판정 기반으로 바꾼다.
+2. `GameSystems`에 `SimpleInventory`를 붙인다.
+3. `DungeonRoot`에 `ExpeditionDirector`, `CombatRoom`, `LootDropper`를 붙인다.
+4. `LootDropper > Inventory`에 `GameSystems`의 `SimpleInventory`를 연결한다.
+5. 실제 장비 에셋이 아직 없으면 `LootDropper > Create Prototype Reward When Table Empty`를 켜 둔다.
+6. 아직 영웅/적 프리팹이 없으면 `CombatRoom > Simulate When No Enemies`를 켜 둔다.
+7. Play Mode에서 `ExpeditionDirector.StartExpedition()`을 호출한다.
+8. `CombatRoom`이 시작 카운트다운 뒤 프로토타입 체력/DPS 계산으로 `CompleteRoom()` 또는 `FailExpedition()`을 호출하는지 Inspector에서 확인한다.
+9. 클리어 시 `SimpleInventory.Count`가 1 증가하고 `ExpeditionDirector.rewardPending`이 꺼지는지 확인한다.
+10. 실제 적 프리팹을 붙인 뒤에는 `CombatRoom > Hero Health`와 `Enemy Healths`에 각 `Health` 컴포넌트를 연결해서 생존 판정 기반으로 바꾼다.
+
+이 fallback 보상은 프로토타입 전용이다. 실제 밸런스 단계에서는 `LootDropper > Reward Definitions`에 작성된 `ItemDefinition` 에셋을 넣고, 별도 드랍 테이블/품질 판정으로 교체한다.
 
 ## 4. 프리팹 목록
 
@@ -190,7 +196,7 @@ MVP 숫자 검증은 `PF_GameSystems`와 `PF_DefenseHud`만으로 시작한다.
 | `PF_DungeonEnemy_Ranged` | 위와 동일 + 원거리 공격 설정 | 원거리 적 |
 | `PF_DungeonBoss` | CharacterActor, BossAIController | 보스 |
 | `PF_CombatRoom` | CombatRoom, EnemySpawner | 방 |
-| `PF_LootChest` | LootContainer | 보상 |
+| `PF_LootChest` | LootDropper 또는 LootContainer | 보상 |
 
 ### UI 프리팹
 

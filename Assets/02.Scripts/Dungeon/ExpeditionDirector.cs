@@ -12,6 +12,11 @@ public class ExpeditionDirector : MonoBehaviour
     [SerializeField] private bool resetToReadyOnAwake = true;
     [SerializeField] private DungeonSaveData runtime = new DungeonSaveData();
 
+    [Header("Rewards")]
+    [SerializeField] private LootDropper lootDropper;
+    [SerializeField] private bool autoFindLootDropper = true;
+    [SerializeField] private bool grantRewardOnExpeditionClear = true;
+
     public event Action Changed;
 
     public DungeonRunState State => runtime == null ? DungeonRunState.Ready : runtime.state;
@@ -115,6 +120,10 @@ public class ExpeditionDirector : MonoBehaviour
             runtime.currentRoomIndex = Mathf.Max(0, runtime.totalRooms - 1);
             runtime.rewardPending = true;
             runtime.lastResult = "Expedition cleared";
+            if (grantRewardOnExpeditionClear)
+            {
+                TryGrantPendingReward();
+            }
         }
         else
         {
@@ -150,6 +159,44 @@ public class ExpeditionDirector : MonoBehaviour
     public void FailExpeditionFromButton()
     {
         FailExpedition();
+    }
+
+    public bool TryGrantPendingReward()
+    {
+        EnsureRuntime();
+
+        if (!runtime.rewardPending)
+        {
+            return false;
+        }
+
+        ResolveLootDropper();
+        if (lootDropper == null)
+        {
+            runtime.lastResult = "Reward pending: no LootDropper found";
+            Debug.LogWarning("ExpeditionDirector could not grant a reward because no LootDropper was found.", this);
+            NotifyChanged();
+            return false;
+        }
+
+        if (!lootDropper.TryGrantClearReward(out ItemInstance item))
+        {
+            runtime.lastResult = string.IsNullOrWhiteSpace(lootDropper.LastDropMessage)
+                ? "Reward pending: loot grant failed"
+                : lootDropper.LastDropMessage;
+            NotifyChanged();
+            return false;
+        }
+
+        runtime.rewardPending = false;
+        runtime.lastResult = $"Reward granted: {item.DisplayName}";
+        NotifyChanged();
+        return true;
+    }
+
+    public void GrantPendingRewardFromButton()
+    {
+        TryGrantPendingReward();
     }
 
     public DungeonSaveData CreateSaveData()
@@ -208,6 +255,14 @@ public class ExpeditionDirector : MonoBehaviour
     private void EnsureRuntime()
     {
         runtime ??= new DungeonSaveData();
+    }
+
+    private void ResolveLootDropper()
+    {
+        if (lootDropper == null && autoFindLootDropper)
+        {
+            lootDropper = FindAnyObjectByType<LootDropper>();
+        }
     }
 
     private void NotifyChanged()

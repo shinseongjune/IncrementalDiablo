@@ -13,20 +13,25 @@ public static class ItemEconomyModel
             return new ResourceAmount[0];
         }
 
-        int tier = Mathf.Max(1, item.BaseTier);
-        int scrap = tier * GetSlotScrapWeight(item.Slot) * GetRarityScrapWeight(item.Rarity);
+        return GetSalvageRewards(item.Slot, item.Rarity, item.BaseTier);
+    }
+
+    public static ResourceAmount[] GetSalvageRewards(ItemSlot slot, ItemRarity rarity, int tier)
+    {
+        int safeTier = Mathf.Max(1, tier);
+        int scrap = safeTier * GetSlotScrapWeight(slot) * GetRarityScrapWeight(rarity);
         List<ResourceAmount> rewards = new List<ResourceAmount>
         {
             new ResourceAmount(ResourceId.Scrap, Mathf.Max(1, scrap))
         };
 
-        int essence = GetEssenceReward(item.Rarity, tier);
+        int essence = GetEssenceReward(rarity, safeTier);
         if (essence > 0)
         {
             rewards.Add(new ResourceAmount(ResourceId.Essence, essence));
         }
 
-        int alterStone = GetAlterStoneReward(item.Rarity, tier);
+        int alterStone = GetAlterStoneReward(rarity, safeTier);
         if (alterStone > 0)
         {
             rewards.Add(new ResourceAmount(ResourceId.AlterStone, alterStone));

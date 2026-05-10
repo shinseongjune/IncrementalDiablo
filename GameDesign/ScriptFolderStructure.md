@@ -23,7 +23,7 @@ Dungeon code owns room-based expedition flow.
 
 Rooms should be prefab/runtime objects, not separate Unity scenes.
 
-Current implementation note: `DungeonRunState`, `ExpeditionDirector`, and `CombatRoom` exist first. `ExpeditionDirector` can start a prototype expedition, complete a room, fail the run, expose Ready/Running/Cleared/Failed state, and export/import `DungeonSaveData` through `DefenseSaveManager`. `CombatRoom` can auto-start when an expedition is running, resolve through tracked `Health` references, or fall back to prototype health/DPS simulation when enemy prefabs are not wired yet. Enemy controllers, loot drops, dungeon HUD buttons, and Unity room prefab wiring are still future work.
+Current implementation note: `DungeonRunState`, `ExpeditionDirector`, and `CombatRoom` exist first. `ExpeditionDirector` can start a prototype expedition, complete a room, fail the run, expose Ready/Running/Cleared/Failed state, export/import `DungeonSaveData` through `DefenseSaveManager`, and grant a pending clear reward through `LootDropper`. `CombatRoom` can auto-start when an expedition is running, resolve through tracked `Health` references, or fall back to prototype health/DPS simulation when enemy prefabs are not wired yet. Enemy controllers, dungeon HUD buttons, and finished Unity room prefab wiring are still future work.
 
 ## GroundDefense
 
@@ -42,10 +42,10 @@ Item code owns definitions, instances, drops, equipment effects, and simple inve
 - `ItemEconomyModel`
 - `ItemSalvageService`
 - `ItemInstance`
-- `LootDrop`
+- `LootDropper`
 - `SimpleInventory`
 
-Current implementation note: `ItemSlot`, `ItemRarity`, `ItemDefinition`, `ItemEconomyModel`, `ItemSalvageService`, `ItemInstance`, and `SimpleInventory` exist first. `EquipmentSlots` can equip definition assets and feed stat modifiers into `CharacterStats`; salvage can turn item definitions into Scrap/Essence and late Rare duplicates into small amounts of AlterStone for prototype economy tests. `SimpleInventory` can hold rolled item instances and export/import `InventorySaveData`; `DefenseSaveManager` includes that inventory slice when a `SimpleInventory` exists in the scene. Drops, actual affix mutation, crafting UI, item-definition lookup after load, and player-facing inventory UI are still future work.
+Current implementation note: `ItemSlot`, `ItemRarity`, `ItemDefinition`, `ItemEconomyModel`, `ItemSalvageService`, `ItemInstance`, `SimpleInventory`, and `LootDropper` exist first. `EquipmentSlots` can equip definition assets and feed stat modifiers into `CharacterStats`; salvage can turn item definitions into Scrap/Essence and late Rare duplicates into small amounts of AlterStone for prototype economy tests. If an item was loaded without a connected definition asset, salvage can fall back to the saved slot/rarity/level snapshot so no-trade prototype drops do not become dead inventory. `SimpleInventory` can hold rolled item instances and export/import `InventorySaveData`; `DefenseSaveManager` includes that inventory slice when a `SimpleInventory` exists in the scene. `LootDropper` can push a clear reward into `SimpleInventory`, using assigned `ItemDefinition` assets when present or an explicitly prototype-only runtime item fallback when the table is empty. Actual affix mutation, crafting UI, item-definition lookup after load, real drop tables, and player-facing inventory UI are still future work.
 
 ## Shared
 
