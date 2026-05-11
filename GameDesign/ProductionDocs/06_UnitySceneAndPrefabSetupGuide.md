@@ -170,6 +170,19 @@ Canvas_Dungeon
 
 이 fallback 보상은 프로토타입 전용이다. 실제 밸런스 단계에서는 `LootDropper > Reward Definitions`에 작성된 `ItemDefinition` 에셋을 넣고, 별도 드랍 테이블/품질 판정으로 교체한다.
 
+2026-05-11 기준 임시 루프 HUD 테스트:
+
+1. `GameSystems`에 `DungeonDebugHud`와 `InventoryDebugHud`를 붙인다.
+2. `DungeonDebugHud > Expedition`에는 `DungeonRoot`의 `ExpeditionDirector`, `Combat Room`에는 `CombatRoom`, `Loot Dropper`에는 `LootDropper`, `Inventory`에는 `GameSystems`의 `SimpleInventory`를 연결한다.
+3. `InventoryDebugHud > Inventory`에는 `SimpleInventory`, `Salvage Service`에는 `ItemSalvageService`, `Equipment Slots`에는 `Player`의 `EquipmentSlots`, `Wallet`에는 `CurrencyWallet`을 연결한다.
+4. `SampleScene`은 위 연결이 이미 들어간 상태다.
+5. Play Mode에서 왼쪽 상단 `Dungeon Loop Debug` 패널의 `Start Dungeon`을 누른다.
+6. 자동 전투가 끝나기를 기다리거나 `Force Clear`를 눌러 방 클리어와 보상 지급을 확인한다.
+7. 왼쪽 하단 `Inventory Loop Debug` 패널에서 Inventory count와 최신 아이템 이름을 확인한다.
+8. `Equip Latest`를 눌러 최신 아이템이 장착 플래그와 `EquipmentSlots`에 반영되는지 확인한다.
+9. `Salvage Latest`를 눌러 인벤토리에서 아이템이 빠지고 Scrap/Essence/AlterStone 보상이 지갑에 들어가는지 확인한다.
+10. 이 HUD는 production UI가 아니라 Play Mode smoke test용 OnGUI 도구다. 최종 UI 프리팹을 만들 때는 같은 버튼 흐름을 일반 Canvas/TMP UI로 옮긴다.
+
 ## 4. 프리팹 목록
 
 ### 지상 디펜스 프리팹

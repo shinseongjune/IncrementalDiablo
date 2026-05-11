@@ -83,9 +83,9 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase A - Playable Loop MVP |
-| Last meaningful movement | 2026-05-10: `LootDropper` added; clearing the prototype one-room dungeon can grant a Normal/Magic/Rare prototype item into `SimpleInventory`, and `SampleScene` now has `SimpleInventory` plus `LootDropper` wired for Play Mode smoke testing. |
-| Next unlock | A temporary loop HUD should show dungeon state, inventory count, last item, and simple equip/salvage test actions without relying on Inspector-only feedback. |
-| Loop coverage | Ground reward: mostly present; dungeon state: code foundation done; room combat: code done; loot-to-inventory: code done with prototype fallback; equip/salvage feedback: partial; save/load: partial plus dungeon run and inventory state; HUD: partial/debug only. |
+| Last meaningful movement | 2026-05-11: temporary Play Mode debug HUDs were added to `SampleScene`; the player can start/force-resolve a dungeon, see dungeon/inventory state, equip the latest live-definition item, and salvage the latest item without relying on Inspector-only feedback. |
+| Next unlock | Save/load smoke testing should verify that ground reward + dungeon run + inventory item state survive a Play Mode restart, and document the remaining item-definition registry gap after load. |
+| Loop coverage | Ground reward: mostly present; dungeon state: code foundation done; room combat: code done; loot-to-inventory: code done with prototype fallback; equip/salvage feedback: temporary HUD code done; save/load: partial plus dungeon run and inventory state; HUD: debug OnGUI done, production UI pending. |
 | Known blockers | Real dungeon enemy/prefab feel, inventory HUD, item-definition registry after load, and gameplay feel still need Unity Play Mode review after code foundations are connected. |
 
 ## 4. MVP Task Queue
@@ -176,7 +176,7 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 
 ### P0. 임시 루프 HUD
 
-상태: Next
+상태: Code Done
 
 목표:
 Play Mode에서 지상전/던전/인벤토리 상태를 한 화면에서 확인하고 버튼으로 다음 행동을 실행한다.
@@ -194,9 +194,18 @@ Play Mode에서 지상전/던전/인벤토리 상태를 한 화면에서 확인�
 - `Assets/02.Scripts/Items/UI/InventoryDebugHud.cs`
 - `GameDesign/ProductionDocs/06_UnitySceneAndPrefabSetupGuide.md`
 
+2026-05-11 코드 완료 메모:
+
+- `DungeonDebugHud`가 Play Mode 화면에 던전 상태, 방 진행, 보상 대기 여부, 최근 결과, 전투 방 상태, 인벤토리 수량을 표시한다.
+- `DungeonDebugHud`에서 `Start Dungeon`, `Force Clear`, `Force Fail`, `Grant Pending Reward`를 눌러 던전 루프를 Inspector 없이 확인할 수 있다.
+- `InventoryDebugHud`가 인벤토리 수량, 최근 아이템, Gold/Scrap/Essence/AlterStone을 표시한다.
+- `InventoryDebugHud`에서 최근 아이템 장착, 최근 아이템 분해, 장착 플래그 해제를 누를 수 있다.
+- `SampleScene`의 `GameSystems`에 두 HUD가 붙어 있어 빈 수동 배치 없이 Play Mode에서 바로 보인다.
+- 아직 production UI가 아니라 OnGUI 기반 임시 HUD다. 다음 P1은 저장/로드 후 인벤토리와 장착 플래그가 끊기지 않는지 검증하고, 로드 후 `ItemDefinition` 연결이 사라지는 registry 문제를 명시적으로 다루는 것이다.
+
 ### P1. 인스턴스 장착과 저장 연결
 
-상태: Pending
+상태: Next
 
 목표:
 `SimpleInventory`의 `ItemInstance`를 실제 장착 슬롯과 연결한다.
