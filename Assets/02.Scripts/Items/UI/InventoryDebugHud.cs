@@ -102,26 +102,13 @@ public class InventoryDebugHud : MonoBehaviour
             return;
         }
 
-        if (item.Definition == null)
-        {
-            lastActionMessage = "Equip failed: item has no live ItemDefinition after load.";
-            return;
-        }
-
         ResolveEquipmentSlots();
-        if (equipmentSlots == null)
+        if (!inventory.TryEquip(item.InstanceId, equipmentSlots, out string failureReason))
         {
-            lastActionMessage = "Equip failed: no EquipmentSlots found.";
+            lastActionMessage = $"Equip failed: {item.DisplayName} ({failureReason}).";
             return;
         }
 
-        if (!equipmentSlots.TryEquip(item.Definition))
-        {
-            lastActionMessage = $"Equip failed: {item.DisplayName}.";
-            return;
-        }
-
-        MarkSlotEquipped(item);
         lastActionMessage = $"Equipped {item.DisplayName}.";
     }
 
@@ -161,36 +148,10 @@ public class InventoryDebugHud : MonoBehaviour
 
     private void UnequipAll()
     {
-        IReadOnlyList<ItemInstance> items = inventory.Items;
-        for (int i = 0; i < items.Count; i++)
-        {
-            inventory.TrySetEquipped(items[i].InstanceId, false);
-        }
-
         ResolveEquipmentSlots();
-        if (equipmentSlots != null)
-        {
-            ItemSlot[] slots = (ItemSlot[])Enum.GetValues(typeof(ItemSlot));
-            for (int i = 0; i < slots.Length; i++)
-            {
-                equipmentSlots.Unequip(slots[i]);
-            }
-        }
+        inventory.UnequipAll(equipmentSlots);
 
         lastActionMessage = "Cleared equipped flags.";
-    }
-
-    private void MarkSlotEquipped(ItemInstance equippedItem)
-    {
-        IReadOnlyList<ItemInstance> items = inventory.Items;
-        for (int i = 0; i < items.Count; i++)
-        {
-            ItemInstance item = items[i];
-            if (item.Slot == equippedItem.Slot)
-            {
-                inventory.TrySetEquipped(item.InstanceId, item.InstanceId == equippedItem.InstanceId);
-            }
-        }
     }
 
     private static string FormatRewards(ResourceAmount[] rewards)

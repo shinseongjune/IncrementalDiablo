@@ -83,6 +83,27 @@ public class ItemInstance
         return item;
     }
 
+    public bool TrySetDefinition(ItemDefinition itemDefinition)
+    {
+        if (itemDefinition == null)
+        {
+            return false;
+        }
+
+        string currentDefinitionId = DefinitionId;
+        if (!string.IsNullOrWhiteSpace(currentDefinitionId) && currentDefinitionId != itemDefinition.Id)
+        {
+            return false;
+        }
+
+        definition = itemDefinition;
+        definitionId = itemDefinition.Id;
+        displayName = itemDefinition.DisplayName;
+        slot = itemDefinition.Slot;
+        rarity = itemDefinition.Rarity;
+        return true;
+    }
+
     public ItemInstanceSaveData ToSaveData()
     {
         return new ItemInstanceSaveData

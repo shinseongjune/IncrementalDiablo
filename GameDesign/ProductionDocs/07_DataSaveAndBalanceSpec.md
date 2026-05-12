@@ -167,6 +167,8 @@ equipped
 
 2026-05-08 implementation note: `GameSaveData` now includes a `dungeon` section. `ExpeditionDirector` writes `DungeonSaveData` for the current prototype run state, and `DefenseSaveManager` saves/loads it when an `ExpeditionDirector` exists in the scene. This is still run-state persistence only; combat room results, rewards, and item-definition lookup remain separate MVP tasks.
 
+2026-05-12 implementation note: `HeroSaveData.equippedItemInstanceIds` is now written from the inventory/equipment state. After `InventorySaveData` loads, `SimpleInventory` first tries to reconnect saved definition ids through its known `ItemDefinition` registry, then `DefenseSaveManager` asks it to restore equipped items into `EquipmentSlots` so their modifiers affect `CharacterStats` again. `LootDropper` registers authored reward definitions with the inventory on scene load. Runtime prototype-only items that still have no resolved definition keep their equipped flag, but cannot affect stats until a fuller item-definition registry exists.
+
 ## 5. 저장 시점
 
 저장한다:

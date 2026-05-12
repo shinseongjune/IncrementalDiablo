@@ -28,6 +28,12 @@ public class LootDropper : MonoBehaviour
 
     public string LastDropMessage => lastDropMessage;
 
+    private void Awake()
+    {
+        ResolveInventory();
+        RegisterRewardDefinitions();
+    }
+
     private void OnValidate()
     {
         rewardDefinitions ??= new ItemDefinition[0];
@@ -79,6 +85,11 @@ public class LootDropper : MonoBehaviour
 
         RewardGranted?.Invoke(item);
         return true;
+    }
+
+    private void RegisterRewardDefinitions()
+    {
+        inventory?.RegisterDefinitions(rewardDefinitions);
     }
 
     private ItemDefinition SelectRewardDefinition()

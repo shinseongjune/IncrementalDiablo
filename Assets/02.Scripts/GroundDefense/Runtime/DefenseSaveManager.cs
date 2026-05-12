@@ -9,6 +9,7 @@ public class DefenseSaveManager : MonoBehaviour
     [SerializeField] private DefenseDirector director;
     [SerializeField] private ExpeditionDirector expedition;
     [SerializeField] private SimpleInventory inventory;
+    [SerializeField] private EquipmentSlots equipmentSlots;
     [SerializeField] private string saveFileName = "incremental_diablo_save.json";
     [SerializeField] private bool loadOnStart = true;
     [SerializeField] private bool simulateOfflineOnLoad = true;
@@ -75,6 +76,7 @@ public class DefenseSaveManager : MonoBehaviour
             currencies = director.Wallet == null ? null : director.Wallet.ExportAmounts(),
             defense = director.CreateSaveData(),
             dungeon = expedition == null ? new DungeonSaveData() : expedition.CreateSaveData(),
+            hero = CreateHeroSaveData(),
             inventory = inventory == null ? new InventorySaveData() : inventory.CreateSaveData()
         };
 
@@ -129,6 +131,7 @@ public class DefenseSaveManager : MonoBehaviour
                 inventory.ApplySaveData(saveData.inventory);
             }
 
+            RestoreEquipmentState(saveData);
             ApplyOfflineProgress(saveData);
             autoSaveElapsed = 0f;
             return true;
@@ -137,6 +140,43 @@ public class DefenseSaveManager : MonoBehaviour
         {
             Debug.LogWarning($"DefenseSaveManager failed to load from {SavePath}: {exception.Message}", this);
             return false;
+        }
+    }
+
+    private HeroSaveData CreateHeroSaveData()
+    {
+        long[] equippedItemInstanceIds = inventory == null
+            ? new long[0]
+            : inventory.GetEquippedItemInstanceIds();
+
+        if (equippedItemInstanceIds.Length == 0 && equipmentSlots != null)
+        {
+            equippedItemInstanceIds = equipmentSlots.GetEquippedItemInstanceIds();
+        }
+
+        return new HeroSaveData
+        {
+            equippedItemInstanceIds = equippedItemInstanceIds
+        };
+    }
+
+    private void RestoreEquipmentState(GameSaveData saveData)
+    {
+        if (inventory == null || equipmentSlots == null)
+        {
+            return;
+        }
+
+        long[] equippedItemInstanceIds = saveData?.hero == null
+            ? null
+            : saveData.hero.equippedItemInstanceIds;
+
+        int missingDefinitionCount = inventory.RestoreEquipment(equipmentSlots, equippedItemInstanceIds, out int restoredCount);
+        if (missingDefinitionCount > 0)
+        {
+            Debug.LogWarning(
+                $"Restored {restoredCount} equipped item(s), but {missingDefinitionCount} saved equipped item(s) could not affect stats because their ItemDefinition assets were not resolved.",
+                this);
         }
     }
 
@@ -172,6 +212,20 @@ public class DefenseSaveManager : MonoBehaviour
         if (expedition == null)
         {
             expedition = FindAnyObjectByType<ExpeditionDirector>();
+        }
+
+        if (equipmentSlots == null)
+        {
+            PlayerController player = FindAnyObjectByType<PlayerController>();
+            if (player != null)
+            {
+                player.TryGetComponent(out equipmentSlots);
+            }
+        }
+
+        if (equipmentSlots == null)
+        {
+            equipmentSlots = FindAnyObjectByType<EquipmentSlots>();
         }
     }
 }

@@ -83,10 +83,10 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase A - Playable Loop MVP |
-| Last meaningful movement | 2026-05-11: temporary Play Mode debug HUDs were added to `SampleScene`; the player can start/force-resolve a dungeon, see dungeon/inventory state, equip the latest live-definition item, and salvage the latest item without relying on Inspector-only feedback. |
-| Next unlock | Save/load smoke testing should verify that ground reward + dungeon run + inventory item state survive a Play Mode restart, and document the remaining item-definition registry gap after load. |
-| Loop coverage | Ground reward: mostly present; dungeon state: code foundation done; room combat: code done; loot-to-inventory: code done with prototype fallback; equip/salvage feedback: temporary HUD code done; save/load: partial plus dungeon run and inventory state; HUD: debug OnGUI done, production UI pending. |
-| Known blockers | Real dungeon enemy/prefab feel, inventory HUD, item-definition registry after load, and gameplay feel still need Unity Play Mode review after code foundations are connected. |
+| Last meaningful movement | 2026-05-12: `ItemInstance` equipment now routes through `SimpleInventory` into `EquipmentSlots`; save data writes equipped item ids under `hero.equippedItemInstanceIds`, and load can reconnect known `ItemDefinition` ids before restoring stat slots. |
+| Next unlock | Play Mode save/load smoke testing should verify ground reward + dungeon run + inventory + equipped-item state across a restart, then record the remaining registry gap for runtime prototype-only items. |
+| Loop coverage | Ground reward: mostly present; dungeon state: code foundation done; room combat: code done; loot-to-inventory: code done with prototype fallback; equip/salvage feedback: temporary HUD code done; save/load: partial plus dungeon run, inventory, known-definition equipped ids, and prototype-item fallback warnings; HUD: debug OnGUI done, production UI pending. |
+| Known blockers | Real dungeon enemy/prefab feel, inventory HUD, authored item assets/drop tables, runtime prototype item registry after load, and gameplay feel still need Unity Play Mode review after code foundations are connected. |
 
 ## 4. MVP Task Queue
 
@@ -205,7 +205,7 @@ Play Mode에서 지상전/던전/인벤토리 상태를 한 화면에서 확인�
 
 ### P1. 인스턴스 장착과 저장 연결
 
-상태: Next
+상태: Code Done
 
 목표:
 `SimpleInventory`의 `ItemInstance`를 실제 장착 슬롯과 연결한다.
@@ -223,18 +223,25 @@ Play Mode에서 지상전/던전/인벤토리 상태를 한 화면에서 확인�
 - `Assets/02.Scripts/Items/SimpleInventory.cs`
 - `Assets/02.Scripts/Shared/GameSaveData.cs`
 
+2026-05-12 코드 완료 메모:
+
+- `EquipmentSlots`가 이제 `ItemDefinition` 직접 장착뿐 아니라 `ItemInstance` 장착도 받을 수 있고, 장착된 인스턴스 ID를 내보낼 수 있다.
+- `SimpleInventory.TryEquip(...)`가 같은 슬롯의 이전 장착 플래그를 교체하고 `EquipmentSlots`에 실제 definition/modifier를 연결한다. `knownDefinitions`와 `LootDropper` 보상 정의 등록으로 저장된 definition id를 다시 live asset으로 연결할 수 있다.
+- `DefenseSaveManager`가 저장 시 `hero.equippedItemInstanceIds`를 기록하고, 로드 후 인벤토리의 장착 상태를 `EquipmentSlots`에 복원한다.
+- 로드된 아이템에 live `ItemDefinition`이 없으면 장착 플래그는 보존하지만 스탯에는 반영하지 못한다. 이 경우 로그 경고를 남기며, 실제 해결은 item-definition registry 작업 범위다.
+
 ### P1. 저장/로드 검증 루프
 
-상태: Pending
+상태: Next
 
 목표:
 실제 Play Mode에서 지상전 + 던전 런 + 인벤토리 저장이 깨지지 않는지 확인한다.
 
 완료 기준:
 
-- JSON 저장 파일에 currencies/defense/inventory가 들어간다.
-- Play Mode 종료 후 다시 시작해 인벤토리 count가 유지된다.
-- 정의 에셋 lookup이 아직 없으면 그 한계를 보고서와 문서에 명확히 적는다.
+- JSON 저장 파일에 currencies/defense/hero.equippedItemInstanceIds/inventory가 들어간다.
+- Play Mode 종료 후 다시 시작해 인벤토리 count와 live-definition 장착 상태가 유지된다.
+- runtime prototype-only 아이템처럼 정의 에셋 lookup이 아직 안 되는 경우 그 한계를 보고서와 문서에 명확히 적는다.
 
 ## 5. 2주 목표 일정
 
