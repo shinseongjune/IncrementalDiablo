@@ -1247,6 +1247,7 @@ MonoBehaviour:
   director: {fileID: 0}
   expedition: {fileID: 0}
   inventory: {fileID: 0}
+  equipmentSlots: {fileID: 1417038735}
   saveFileName: incremental_diablo_save.json
   loadOnStart: 1
   simulateOfflineOnLoad: 1
@@ -1375,6 +1376,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SimpleInventory
   capacity: 60
   startingItems: []
+  knownDefinitions: []
   nextItemInstanceId: 1
 --- !u!114 &1045172327
 MonoBehaviour:
@@ -1406,15 +1408,17 @@ MonoBehaviour:
   combatRoom: {fileID: 1962279246}
   lootDropper: {fileID: 1962279249}
   inventory: {fileID: 1045172326}
+  saveManager: {fileID: 1045172321}
   autoFindReferences: 1
   showPanel: 1
   panelRect:
     serializedVersion: 2
     x: 16
     y: 16
-    width: 340
-    height: 228
+    width: 380
+    height: 312
   lastActionMessage: 
+  lastSaveValidationMessage:
 --- !u!114 &1045172329
 MonoBehaviour:
   m_ObjectHideFlags: 0

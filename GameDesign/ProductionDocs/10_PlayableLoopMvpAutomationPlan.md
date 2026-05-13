@@ -32,6 +32,19 @@ Daily automation은 매 실행 시작 시 이 문서를 읽고, `MVP Task Queue`
 - Unity Editor 수동 배치가 필요한 경우 정확한 GameObject/Component/Inspector 연결 순서를 남긴다.
 - Git commit/push는 하지 않는다. 변경이 검증되어 올릴 만하면 보고서에서 "사용자 확인 필요: 커밋/푸시 요청"으로 요청한다.
 
+### 2.1 Headless Unity 검증 안전 규칙
+
+2026-05-13 자동화 중 Unity 6000.4.4f1 batchmode 검증이 라이선싱/ILPP 단계에서 멈추며 `Unity.ILPP.Trigger.exe` 시스템 오류 팝업을 반복 생성했다. 재발 방지를 위해, 원인이 별도로 해결되기 전까지 daily automation은 무인 Unity batchmode 컴파일을 실행하지 않는다.
+
+기본 검증 순서는 다음으로 제한한다.
+
+- `dotnet build .\IncrementalDiablo.sln -v:minimal`
+- `git diff --check`
+- 변경 파일 범위와 씬 YAML 직렬화 필드 확인
+- 필요한 경우 사용자에게 Unity Editor Play Mode 수동 검증 절차를 정확히 요청
+
+Unity Editor 검증이 꼭 필요하면 먼저 실행 중인 `Unity.exe`, `Unity.ILPP.*`, `Bee*`, `UnityAutoQuitter.exe` 프로세스가 없는지 확인하고, 사용자가 명시적으로 허락한 짧은 검증만 수행한다. `-noUpm`을 붙인 무인 batchmode 재시도는 금지한다.
+
 ## 3. 완료 판정
 
 Playable loop MVP는 다음 조건을 모두 만족하면 완료로 본다.
@@ -83,9 +96,9 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase A - Playable Loop MVP |
-| Last meaningful movement | 2026-05-12: `ItemInstance` equipment now routes through `SimpleInventory` into `EquipmentSlots`; save data writes equipped item ids under `hero.equippedItemInstanceIds`, and load can reconnect known `ItemDefinition` ids before restoring stat slots. |
-| Next unlock | Play Mode save/load smoke testing should verify ground reward + dungeon run + inventory + equipped-item state across a restart, then record the remaining registry gap for runtime prototype-only items. |
-| Loop coverage | Ground reward: mostly present; dungeon state: code foundation done; room combat: code done; loot-to-inventory: code done with prototype fallback; equip/salvage feedback: temporary HUD code done; save/load: partial plus dungeon run, inventory, known-definition equipped ids, and prototype-item fallback warnings; HUD: debug OnGUI done, production UI pending. |
+| Last meaningful movement | 2026-05-13: `DefenseSaveManager` can now build a save snapshot without writing to disk, `GameSaveDataDiagnostics` validates currencies/defense/dungeon/inventory/equipped ids, and `DungeonDebugHud` exposes Save/Load/Validate Save buttons in `SampleScene`. |
+| Next unlock | In Play Mode, run Start Dungeon -> Force Clear -> Equip Latest -> Save -> Load -> Validate Save, then restart Play Mode once to confirm live-definition equipment still restores; runtime prototype-only items should remain documented as stat-restore limited until the item-definition registry exists. |
+| Loop coverage | Ground reward: mostly present; dungeon state: code foundation done; room combat: code done; loot-to-inventory: code done with prototype fallback; equip/salvage feedback: temporary HUD code done; save/load: partial plus snapshot validator and debug HUD controls; HUD: debug OnGUI done, production UI pending. |
 | Known blockers | Real dungeon enemy/prefab feel, inventory HUD, authored item assets/drop tables, runtime prototype item registry after load, and gameplay feel still need Unity Play Mode review after code foundations are connected. |
 
 ## 4. MVP Task Queue
@@ -232,7 +245,7 @@ Play Mode에서 지상전/던전/인벤토리 상태를 한 화면에서 확인�
 
 ### P1. 저장/로드 검증 루프
 
-상태: Next
+상태: Partial
 
 목표:
 실제 Play Mode에서 지상전 + 던전 런 + 인벤토리 저장이 깨지지 않는지 확인한다.
@@ -242,6 +255,13 @@ Play Mode에서 지상전/던전/인벤토리 상태를 한 화면에서 확인�
 - JSON 저장 파일에 currencies/defense/hero.equippedItemInstanceIds/inventory가 들어간다.
 - Play Mode 종료 후 다시 시작해 인벤토리 count와 live-definition 장착 상태가 유지된다.
 - runtime prototype-only 아이템처럼 정의 에셋 lookup이 아직 안 되는 경우 그 한계를 보고서와 문서에 명확히 적는다.
+
+2026-05-13 코드 진행 메모:
+
+- `GameSaveDataDiagnostics`가 저장 스냅샷의 currencies, defense, dungeon, inventory, hero.equippedItemInstanceIds 일관성을 검사한다.
+- `DefenseSaveManager.CreateSaveDataSnapshot()`과 `TryValidateCurrentSaveData()`로 저장 파일을 실제로 쓰기 전에 현재 루프 상태를 점검할 수 있다.
+- `DungeonDebugHud`에 Save/Load/Validate Save 버튼을 추가해 Play Mode에서 던전 보상, 인벤토리, 장착 상태를 한 자리에서 저장 검증할 수 있게 했다.
+- 아직 실제 Play Mode 재시작 검증은 남아 있다. 특히 runtime prototype-only 아이템은 인벤토리 스냅샷으로는 보존되지만, live `ItemDefinition` registry가 없으면 재시작 후 스탯 효과 복원은 제한된다.
 
 ## 5. 2주 목표 일정
 

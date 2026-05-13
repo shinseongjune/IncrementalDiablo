@@ -6,10 +6,12 @@ public class DungeonDebugHud : MonoBehaviour
     [SerializeField] private CombatRoom combatRoom;
     [SerializeField] private LootDropper lootDropper;
     [SerializeField] private SimpleInventory inventory;
+    [SerializeField] private DefenseSaveManager saveManager;
     [SerializeField] private bool autoFindReferences = true;
     [SerializeField] private bool showPanel = true;
-    [SerializeField] private Rect panelRect = new Rect(16f, 16f, 340f, 228f);
+    [SerializeField] private Rect panelRect = new Rect(16f, 16f, 380f, 312f);
     [SerializeField] private string lastActionMessage;
+    [SerializeField] private string lastSaveValidationMessage;
 
     private void Reset()
     {
@@ -19,7 +21,7 @@ public class DungeonDebugHud : MonoBehaviour
     private void OnValidate()
     {
         panelRect.width = Mathf.Max(280f, panelRect.width);
-        panelRect.height = Mathf.Max(180f, panelRect.height);
+        panelRect.height = Mathf.Max(260f, panelRect.height);
     }
 
     private void OnGUI()
@@ -94,12 +96,56 @@ public class DungeonDebugHud : MonoBehaviour
 
         GUILayout.Label(inventory == null ? "Inventory: missing" : $"Inventory: {inventory.Count}/{inventory.Capacity}");
 
+        DrawSaveControls();
+
         if (!string.IsNullOrWhiteSpace(lastActionMessage))
         {
             GUILayout.Label(lastActionMessage);
         }
 
+        if (!string.IsNullOrWhiteSpace(lastSaveValidationMessage))
+        {
+            GUILayout.Label(lastSaveValidationMessage);
+        }
+
         GUILayout.EndArea();
+    }
+
+    private void DrawSaveControls()
+    {
+        GUILayout.BeginHorizontal();
+
+        if (DrawButton("Save", saveManager != null))
+        {
+            lastActionMessage = saveManager.TrySave()
+                ? "Saved playable loop snapshot."
+                : "Save failed; check DefenseSaveManager references.";
+            lastSaveValidationMessage = string.Empty;
+        }
+
+        if (DrawButton("Load", saveManager != null))
+        {
+            lastActionMessage = saveManager.TryLoad()
+                ? "Loaded playable loop snapshot."
+                : "Load failed; save file missing or invalid.";
+            lastSaveValidationMessage = string.Empty;
+        }
+
+        if (DrawButton("Validate Save", saveManager != null))
+        {
+            bool valid = saveManager.TryValidateCurrentSaveData(out string report);
+            lastActionMessage = valid
+                ? "Save snapshot validation passed."
+                : "Save snapshot validation found blocking errors.";
+            lastSaveValidationMessage = report;
+        }
+
+        GUILayout.EndHorizontal();
+
+        if (saveManager == null)
+        {
+            GUILayout.Label("SaveManager: missing");
+        }
     }
 
     private static bool DrawButton(string label, bool enabled)
@@ -136,6 +182,11 @@ public class DungeonDebugHud : MonoBehaviour
         if (inventory == null || force)
         {
             inventory = FindAnyObjectByType<SimpleInventory>();
+        }
+
+        if (saveManager == null || force)
+        {
+            saveManager = FindAnyObjectByType<DefenseSaveManager>();
         }
     }
 }

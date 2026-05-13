@@ -60,25 +60,11 @@ public class DefenseSaveManager : MonoBehaviour
 
     public bool TrySave()
     {
-        ResolveReferences();
-
-        if (director == null)
+        if (!TryCreateSaveDataSnapshot(out GameSaveData saveData))
         {
             Debug.LogWarning("DefenseSaveManager cannot save without a DefenseDirector.", this);
             return false;
         }
-
-        GameSaveData saveData = new GameSaveData
-        {
-            version = 1,
-            savedAtUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
-            playTimeSeconds = director.Runtime.TotalElapsed,
-            currencies = director.Wallet == null ? null : director.Wallet.ExportAmounts(),
-            defense = director.CreateSaveData(),
-            dungeon = expedition == null ? new DungeonSaveData() : expedition.CreateSaveData(),
-            hero = CreateHeroSaveData(),
-            inventory = inventory == null ? new InventorySaveData() : inventory.CreateSaveData()
-        };
 
         try
         {
@@ -96,6 +82,17 @@ public class DefenseSaveManager : MonoBehaviour
             Debug.LogWarning($"DefenseSaveManager failed to save to {SavePath}: {exception.Message}", this);
             return false;
         }
+    }
+
+    public GameSaveData CreateSaveDataSnapshot()
+    {
+        return TryCreateSaveDataSnapshot(out GameSaveData saveData) ? saveData : null;
+    }
+
+    public bool TryValidateCurrentSaveData(out string report)
+    {
+        GameSaveData saveData = CreateSaveDataSnapshot();
+        return GameSaveDataDiagnostics.TryValidate(saveData, out report);
     }
 
     public bool TryLoad()
@@ -158,6 +155,31 @@ public class DefenseSaveManager : MonoBehaviour
         {
             equippedItemInstanceIds = equippedItemInstanceIds
         };
+    }
+
+    private bool TryCreateSaveDataSnapshot(out GameSaveData saveData)
+    {
+        ResolveReferences();
+        saveData = null;
+
+        if (director == null)
+        {
+            return false;
+        }
+
+        saveData = new GameSaveData
+        {
+            version = 1,
+            savedAtUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
+            playTimeSeconds = director.Runtime.TotalElapsed,
+            currencies = director.Wallet == null ? null : director.Wallet.ExportAmounts(),
+            defense = director.CreateSaveData(),
+            dungeon = expedition == null ? new DungeonSaveData() : expedition.CreateSaveData(),
+            hero = CreateHeroSaveData(),
+            inventory = inventory == null ? new InventorySaveData() : inventory.CreateSaveData()
+        };
+
+        return true;
     }
 
     private void RestoreEquipmentState(GameSaveData saveData)
