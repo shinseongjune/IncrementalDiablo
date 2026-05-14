@@ -255,6 +255,13 @@ Canvas_Dungeon
 6. Keep `DungeonDebugHud` and `InventoryDebugHud` in the scene only as smoke-test fallback. Normal Phase B testing should use `PlayableLoopHud` first.
 7. After wiring, Play Mode check: start dungeon, wait for clear, claim reward if needed, equip latest, salvage latest, save, load, and confirm the message line and button interactability guide the next action.
 
+2026-05-14 PlayableLoopHud feedback update:
+
+1. Make the `Dungeon` TMP text field tall enough for 4 lines. It now shows expedition state, elapsed time, reward state, last expedition result, room state, room timer, and prototype hero/enemy health.
+2. `Claim Reward` can stay unavailable while a run is active. If the dungeon clears and `ExpeditionDirector > Grant Reward On Expedition Clear` is enabled, the reward is granted automatically and the button is only a status/confirmation action.
+3. If pressing `Start Dungeon` shows `Room: unavailable`, the HUD found `ExpeditionDirector` but did not find `CombatRoom`. In that case keep `CombatRoom` on `DungeonRoot` or wire it directly into `PlayableLoopHud`.
+4. If the dungeon appears to be stuck in `Running`, check the `Room:` line first. `Starting` means countdown, `Running` means prototype combat is ticking, and `Cleared`/`Failed` means the room already resolved.
+
 ## 4. 프리팹 목록
 
 ### 지상 디펜스 프리팹

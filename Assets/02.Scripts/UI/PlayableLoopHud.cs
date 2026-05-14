@@ -8,6 +8,8 @@ public class PlayableLoopHud : MonoBehaviour
     [Header("References")]
     [SerializeField] private DefenseDirector defense;
     [SerializeField] private ExpeditionDirector expedition;
+    [SerializeField] private CombatRoom combatRoom;
+    [SerializeField] private LootDropper lootDropper;
     [SerializeField] private SimpleInventory inventory;
     [SerializeField] private ItemSalvageService salvageService;
     [SerializeField] private EquipmentSlots equipmentSlots;
@@ -90,9 +92,15 @@ public class PlayableLoopHud : MonoBehaviour
             return;
         }
 
-        SetMessage(expedition.StartExpedition()
-            ? "Dungeon expedition started."
-            : "Dungeon expedition is already running.");
+        if (!expedition.StartExpedition())
+        {
+            SetMessage("Dungeon expedition is already running.");
+            return;
+        }
+
+        SetMessage(combatRoom == null
+            ? "Dungeon started, but no CombatRoom is linked. Room progress cannot advance yet."
+            : "Dungeon started. Room progress is shown in the Dungeon line.");
     }
 
     public void ClaimPendingReward()
@@ -104,8 +112,16 @@ public class PlayableLoopHud : MonoBehaviour
             return;
         }
 
-        SetMessage(expedition.TryGrantPendingReward()
-            ? "Claimed dungeon reward."
+        if (expedition.RewardPending)
+        {
+            SetMessage(expedition.TryGrantPendingReward()
+                ? "Claimed dungeon reward."
+                : "Reward claim failed. Check LootDropper and inventory.");
+            return;
+        }
+
+        SetMessage(expedition.State == DungeonRunState.Cleared
+            ? "Reward was already claimed automatically. Check Latest Item."
             : "No dungeon reward is ready.");
     }
 
@@ -221,8 +237,51 @@ public class PlayableLoopHud : MonoBehaviour
             return "Dungeon: unavailable";
         }
 
-        string pending = expedition.RewardPending ? " / Reward ready" : string.Empty;
-        return $"Dungeon: {expedition.State} / Room {expedition.RoomsCompleted}/{expedition.TotalRooms}{pending}";
+        string rewardState = BuildRewardStateText();
+        string result = string.IsNullOrWhiteSpace(expedition.LastResult) ? "none" : expedition.LastResult;
+        string dungeonTextValue = $"Dungeon: {expedition.State} / Room {expedition.RoomsCompleted}/{expedition.TotalRooms} / {expedition.ElapsedSeconds:0.0}s / {rewardState}\nLast: {result}";
+
+        if (combatRoom == null)
+        {
+            return $"{dungeonTextValue}\nRoom: unavailable";
+        }
+
+        CombatRoomResult roomResult = combatRoom.LastResult;
+        string roomMessage = string.IsNullOrWhiteSpace(roomResult.message) ? "none" : roomResult.message;
+        string roomProgress = combatRoom.State == CombatRoomState.Starting
+            ? $"starting in {combatRoom.CountdownRemaining:0.0}s"
+            : $"{combatRoom.ElapsedSeconds:0.0}s";
+
+        return $"{dungeonTextValue}\nRoom: {combatRoom.State} / {roomProgress} / Hero {combatRoom.CurrentHeroHealth:0.#} / Enemy {combatRoom.CurrentEnemyHealth:0.#}\nRoom Last: {roomMessage}";
+    }
+
+    private string BuildRewardStateText()
+    {
+        if (expedition == null)
+        {
+            return "Reward unavailable";
+        }
+
+        if (expedition.RewardPending)
+        {
+            return "Reward ready";
+        }
+
+        if (expedition.State == DungeonRunState.Cleared)
+        {
+            if (!string.IsNullOrWhiteSpace(expedition.LastResult) &&
+                expedition.LastResult.StartsWith("Reward granted:", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Reward auto-claimed";
+            }
+
+            if (lootDropper != null && !string.IsNullOrWhiteSpace(lootDropper.LastDropMessage))
+            {
+                return "Reward resolved";
+            }
+        }
+
+        return "No reward pending";
     }
 
     private string BuildLatestItemText()
@@ -250,7 +309,7 @@ public class PlayableLoopHud : MonoBehaviour
     {
         ItemInstance latest = GetLatestItem();
         SetInteractable(startDungeonButton, expedition != null && !expedition.IsRunning);
-        SetInteractable(claimRewardButton, expedition != null && expedition.RewardPending);
+        SetInteractable(claimRewardButton, expedition != null && (expedition.RewardPending || expedition.State == DungeonRunState.Cleared));
         SetInteractable(equipLatestButton, latest != null && inventory != null && equipmentSlots != null);
         SetInteractable(salvageLatestButton, latest != null && salvageService != null);
         SetInteractable(saveButton, saveManager != null);
@@ -282,6 +341,16 @@ public class PlayableLoopHud : MonoBehaviour
         if (expedition == null || force)
         {
             expedition = FindAnyObjectByType<ExpeditionDirector>();
+        }
+
+        if (combatRoom == null || force)
+        {
+            combatRoom = FindAnyObjectByType<CombatRoom>();
+        }
+
+        if (lootDropper == null || force)
+        {
+            lootDropper = FindAnyObjectByType<LootDropper>();
         }
 
         if (inventory == null || force)
@@ -377,6 +446,11 @@ public class PlayableLoopHud : MonoBehaviour
             expedition.Changed += Refresh;
         }
 
+        if (combatRoom != null)
+        {
+            combatRoom.Changed += Refresh;
+        }
+
         if (inventory != null)
         {
             inventory.Changed += Refresh;
@@ -415,6 +489,11 @@ public class PlayableLoopHud : MonoBehaviour
         if (expedition != null)
         {
             expedition.Changed -= Refresh;
+        }
+
+        if (combatRoom != null)
+        {
+            combatRoom.Changed -= Refresh;
         }
 
         if (inventory != null)
