@@ -14,7 +14,8 @@
 - 기존 `Assets/02.Scripts` 구조를 유지한다.
 - 캐릭터는 `CharacterActor` 허브와 컴포넌트 조합을 유지한다.
 - 지상 디펜스는 수동 웨이브가 아니라 지속 전선으로 구현한다.
-- 지상 디펜스와 지하 던전은 시스템 폴더를 분리한다.
+- 지상 디펜스와 지하 던전은 시스템 폴더와 화면 패널을 분리하지만, 플레이어용 런타임은 하나의 살아 있는 게임 루프로 유지한다.
+- 던전 화면을 보고 있어도 지상 전선 시뮬레이션은 멈추지 않는다. 반대로 지상 화면을 보고 있어도 던전 런 상태와 보상 대기는 유지되어야 한다.
 
 ## 2. 추천 Assets 폴더 구조
 
@@ -23,9 +24,10 @@
 ```text
 Assets/
   01.Scenes/
+    SampleScene.unity 또는 Gameplay.unity
     Bootstrap.unity
-    DefensePrototype.unity
-    DungeonPrototype.unity
+    DefensePrototype.unity    # 선택: 지상 단독 테스트 샌드박스
+    DungeonPrototype.unity    # 선택: 던전 단독 테스트 샌드박스
   02.Scripts/
     Bootstrap/
     Character/
@@ -78,6 +80,53 @@ Assets/04.Prefabs
 
 ## 3. 씬 구성
 
+### 플레이어용 런타임 씬
+
+역할:
+
+- 지상 전선, 던전, 인벤토리, 저장 매니저가 동시에 살아 있는 실제 게임 플레이 공간
+- 탭, 패널, 카메라, 오브젝트 활성화로 화면만 전환
+- 어느 패널을 보고 있어도 다른 시스템의 시간/상태가 유지됨
+
+MVP/Phase B에서는 `SampleScene`을 이 결합 런타임 씬으로 사용한다. 나중에 이름을 바꾼다면 `Gameplay.unity`가 적합하다.
+
+권장 계층:
+
+```text
+GameSystems
+  CurrencyWallet
+  DefenseUpgradeModel
+  DefenseDirector
+  DefenseSaveManager
+  SimpleInventory
+  ItemSalvageService
+
+DefenseRoot
+  DefenseWall
+  TowerBattery
+  DefenderSquad
+
+DungeonRoot
+  ExpeditionDirector
+  CombatRoom
+  LootDropper
+  Hero
+  DungeonRoomContainer
+
+Canvas_Gameplay
+  Panel_PlayableLoopHud
+  Panel_Defense
+  Panel_Dungeon
+  Panel_Inventory
+```
+
+중요한 규칙:
+
+- `GameSystems`는 씬 전환 느낌을 주는 UI 탭 변경 중에도 꺼지면 안 된다.
+- `DefenseDirector`는 던전 화면을 보고 있을 때도 계속 `Update()`로 전선을 진행한다.
+- 던전 직접 조작 화면이 전체 화면을 차지하더라도 지상 전선은 숫자 시뮬레이션으로 계속 진행한다.
+- 플레이어가 둘을 "같이 본다"는 뜻은 항상 두 전투를 풀 비주얼로 동시에 보여준다는 뜻이 아니라, 한 화면의 HUD/탭에서 둘의 현재 상태와 할 일을 즉시 확인할 수 있다는 뜻이다.
+
 ### Bootstrap 씬
 
 역할:
@@ -87,7 +136,7 @@ Assets/04.Prefabs
 - 공통 매니저 생성
 - 첫 화면으로 이동
 
-MVP에서는 `SampleScene`을 임시 Bootstrap으로 사용해도 된다. 다만 최종적으로는 별도 `Bootstrap.unity`를 만든다.
+MVP에서는 `SampleScene`을 임시 Bootstrap/Gameplay 겸용으로 사용해도 된다. 별도 `Bootstrap.unity`는 나중에 메인 메뉴, 로딩, 설정, 지속 매니저가 필요해질 때 만든다.
 
 필수 오브젝트:
 
@@ -105,6 +154,8 @@ AudioManager, MVP에서는 생략 가능
 - 지상 전선 플레이
 - 지속 보상/강화 UI 테스트
 - Hold/Push와 Frontline Level 상승 테스트
+
+주의: 이 씬은 선택적인 단독 테스트 샌드박스다. 실제 플레이어용 루프는 `SampleScene`/`Gameplay` 안에서 던전과 함께 돌아야 한다.
 
 숫자 프로토타입 필수 오브젝트:
 
@@ -139,6 +190,8 @@ Camera
 - 적 AI
 - 방 클리어
 - 보상 드랍
+
+주의: 이 씬은 선택적인 단독 테스트 샌드박스다. 던전을 테스트하기 위해 지상 전선 런타임을 언로드하는 구조로 쓰지 않는다. 플레이어용 던전은 `SampleScene`/`Gameplay` 안의 `DungeonRoot` 또는 나중의 additive 시각 레이어로 붙인다.
 
 필수 오브젝트:
 
@@ -299,7 +352,7 @@ MVP 숫자 검증은 `PF_GameSystems`와 `PF_DefenseHud`만으로 시작한다.
 
 ### Step 1. 숫자 프로토타입 배치
 
-1. `SampleScene` 또는 `DefensePrototype`을 연다.
+1. 실제 플레이 루프를 만들 때는 `SampleScene`/`Gameplay`를 연다. `DefensePrototype`은 지상 단독 수치 확인이 필요할 때만 쓴다.
 2. 빈 오브젝트 `GameSystems`를 만든다.
 3. `CurrencyWallet`, `DefenseUpgradeModel`, `DefenseDirector`를 붙인다.
 4. `CurrencyWallet`에 초기 Gold/Scrap을 넣는다.
@@ -348,29 +401,51 @@ Defender Upgrade
 
 ## 7. 씬 전환 목표
 
-MVP 초기에는 씬 전환 없이 하나의 씬에서 탭만 바꿔도 된다.
+플레이어용 구조는 씬을 갈아끼우는 방식이 아니라, 하나의 살아 있는 런타임에서 탭/패널/카메라만 전환하는 방식이 기본이다.
 
 추천 첫 구현:
 
 ```text
-SampleScene 또는 DefensePrototype 하나에서
-지상 전선 수치/전투 구현
-→ 던전은 버튼 클릭 시 결과 계산
-→ 이후 DungeonPrototype 씬 분리
+SampleScene/Gameplay 하나에서
+GameSystems는 계속 켜 둔다
+→ 지상 전선은 계속 자동 진행
+→ 던전은 같은 씬의 DungeonRoot에서 시작/진행/보상 처리
+→ UI는 지상/던전/장비 탭으로 화면만 전환
 ```
 
 이유:
 
-- 첫 목표는 루프 검증이다.
-- 씬 전환과 로딩 구조를 너무 일찍 만들면 범위가 늘어난다.
+- 지상과 던전은 서로 보상과 재화를 주고받는 하나의 루프다.
+- 던전 화면으로 들어갔다고 지상 전선이 멈추면 이 게임의 방치/지속 전선 감각이 깨진다.
+- 씬 전환과 로딩 구조를 너무 일찍 만들면 저장, 매니저 생명주기, 참조 복구 범위가 불필요하게 커진다.
+
+나중에 씬을 여러 개 로드해야 한다면 다음처럼 additive presentation layer로 쓴다.
+
+```text
+Bootstrap 또는 GameplayCore 씬
+  GameSystems, SaveManager, CurrencyWallet, DefenseDirector, ExpeditionDirector 유지
+
++ DefenseView additive 씬
+  지상 전선 비주얼과 카메라
+
++ DungeonView additive 씬
+  던전 방 비주얼, 적, 카메라
+```
+
+이 경우에도 규칙은 같다.
+
+- core/system 씬은 언로드하지 않는다.
+- additive 씬은 비주얼, 배치, 카메라, UI 레이아웃을 싣는 용도다.
+- 던전 additive 씬을 로드해도 `DefenseDirector`는 계속 살아 있고, 지상 상태는 HUD로 표시된다.
+- 지상 additive 씬을 보고 있어도 `ExpeditionDirector`의 보상 대기/실패/진행 상태는 유지된다.
 
 ## 8. 완료 기준
 
 Unity 세팅 완료 기준:
 
-- `DefensePrototype` 씬에서 지속 전선이 돌아간다.
+- `SampleScene`/`Gameplay`에서 지속 전선과 던전 루프가 같은 런타임 안에 있다.
 - Frontline Level, Pressure, Wall Health, Gold/Scrap이 표시된다.
 - Hold/Push 버튼이 동작한다.
 - 강화 버튼이 실제 수치에 영향을 준다.
 - 시각 단계에서는 적이 성벽으로 계속 이동한다.
-- 던전 버튼이 최소한 결과 로그를 반환한다.
+- 던전 버튼이 최소한 결과 로그를 반환하고, 던전 화면을 보는 중에도 지상 전선이 멈추지 않는다.
