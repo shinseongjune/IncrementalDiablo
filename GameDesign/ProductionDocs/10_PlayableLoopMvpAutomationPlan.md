@@ -56,7 +56,7 @@ Playable loop MVP는 다음 조건을 모두 만족하면 완료로 본다.
 | MVP-03 | 던전 방 1개에서 영웅과 적의 전투가 자동 또는 간단 직접 조작으로 끝난다. | Code Done |
 | MVP-04 | 적 또는 방 클리어가 보상을 지급한다. | Code Done |
 | MVP-05 | 보상 아이템이 `SimpleInventory`에 들어간다. | Code Done |
-| MVP-06 | 장비 장착이 영웅 스탯에 반영된다. | Partial |
+| MVP-06 | 장비 장착이 영웅 스탯에 반영된다. | Code Done |
 | MVP-07 | 장비 분해가 인벤토리에서 아이템을 제거하고 재료를 지급한다. | Partial |
 | MVP-08 | 재료나 보상이 지상 방어 강화에 다시 쓰인다. | Partial |
 | MVP-09 | 저장/로드가 지상전, 재화, 인벤토리의 최소 상태를 유지한다. | Partial |
@@ -96,10 +96,10 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase A - Playable Loop MVP |
-| Last meaningful movement | 2026-05-13: `DefenseSaveManager` can now build a save snapshot without writing to disk, `GameSaveDataDiagnostics` validates currencies/defense/dungeon/inventory/equipped ids, and `DungeonDebugHud` exposes Save/Load/Validate Save buttons in `SampleScene`. |
-| Next unlock | In Play Mode, run Start Dungeon -> Force Clear -> Equip Latest -> Save -> Load -> Validate Save, then restart Play Mode once to confirm live-definition equipment still restores; runtime prototype-only items should remain documented as stat-restore limited until the item-definition registry exists. |
-| Loop coverage | Ground reward: mostly present; dungeon state: code foundation done; room combat: code done; loot-to-inventory: code done with prototype fallback; equip/salvage feedback: temporary HUD code done; save/load: partial plus snapshot validator and debug HUD controls; HUD: debug OnGUI done, production UI pending. |
-| Known blockers | Real dungeon enemy/prefab feel, inventory HUD, authored item assets/drop tables, runtime prototype item registry after load, and gameplay feel still need Unity Play Mode review after code foundations are connected. |
+| Last meaningful movement | 2026-05-14: equipped `ItemInstance` objects now apply definition modifiers, saved affix-roll modifiers, and a prototype rolled-power modifier by slot; runtime prototype equipment can restore debug-quality stat effects after save/load without a live definition asset. |
+| Next unlock | In Play Mode, run Start Dungeon -> Force Clear -> Equip Latest -> Save -> Load -> Validate Save, then restart Play Mode once to confirm both authored-definition equipment and prototype snapshot-power equipment restore visibly. |
+| Loop coverage | Ground reward: mostly present; dungeon state: code foundation done; room combat: code done; loot-to-inventory: code done with prototype fallback; equip/salvage feedback: temporary HUD code done; save/load: partial plus snapshot validator, debug HUD controls, and prototype equipment stat restore; HUD: debug OnGUI done, production UI pending. |
+| Known blockers | Real dungeon enemy/prefab feel, inventory HUD, authored item assets/drop tables, production item-definition registry, and gameplay feel still need Unity Play Mode review after code foundations are connected. |
 
 ## 4. MVP Task Queue
 
@@ -261,7 +261,13 @@ Play Mode에서 지상전/던전/인벤토리 상태를 한 화면에서 확인�
 - `GameSaveDataDiagnostics`가 저장 스냅샷의 currencies, defense, dungeon, inventory, hero.equippedItemInstanceIds 일관성을 검사한다.
 - `DefenseSaveManager.CreateSaveDataSnapshot()`과 `TryValidateCurrentSaveData()`로 저장 파일을 실제로 쓰기 전에 현재 루프 상태를 점검할 수 있다.
 - `DungeonDebugHud`에 Save/Load/Validate Save 버튼을 추가해 Play Mode에서 던전 보상, 인벤토리, 장착 상태를 한 자리에서 저장 검증할 수 있게 했다.
-- 아직 실제 Play Mode 재시작 검증은 남아 있다. 특히 runtime prototype-only 아이템은 인벤토리 스냅샷으로는 보존되지만, live `ItemDefinition` registry가 없으면 재시작 후 스탯 효과 복원은 제한된다.
+- 아직 실제 Play Mode 재시작 검증은 남아 있다. runtime prototype-only 아이템은 이제 saved slot/rarity/rolledPower 기반의 prototype power modifier로 장착 스탯을 복원하지만, production item registry와 실제 드롭 테이블은 여전히 별도 작업이다.
+
+2026-05-14 code progress note:
+
+- `ItemInstance` now contributes live definition modifiers, saved affix-roll modifiers, and a small prototype rolled-power modifier by slot.
+- `EquipmentSlots` and `SimpleInventory.RestoreEquipment(...)` can re-equip saved runtime prototype items even when their live `ItemDefinition` is not resolved, so the save/load loop no longer drops all equipment stat effects for prototype rewards.
+- Actual Play Mode restart verification is still required, and the rolled-power mapping is a prototype bridge until authored item assets, real drop tables, and a production item registry exist.
 
 ## 5. 2주 목표 일정
 

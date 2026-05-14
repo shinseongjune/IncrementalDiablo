@@ -7,10 +7,11 @@ public class InventoryDebugHud : MonoBehaviour
     [SerializeField] private SimpleInventory inventory;
     [SerializeField] private ItemSalvageService salvageService;
     [SerializeField] private EquipmentSlots equipmentSlots;
+    [SerializeField] private CharacterStats characterStats;
     [SerializeField] private CurrencyWallet wallet;
     [SerializeField] private bool autoFindReferences = true;
     [SerializeField] private bool showPanel = true;
-    [SerializeField] private Rect panelRect = new Rect(16f, 252f, 380f, 236f);
+    [SerializeField] private Rect panelRect = new Rect(412f, 16f, 400f, 292f);
     [SerializeField] private string lastActionMessage;
 
     private void Reset()
@@ -51,6 +52,7 @@ public class InventoryDebugHud : MonoBehaviour
         ItemInstance latest = GetLatestItem();
         GUILayout.Label($"Inventory: {inventory.Count}/{inventory.Capacity}");
         GUILayout.Label(wallet == null ? "Wallet: missing" : wallet.FormatAll());
+        DrawHeroStats();
 
         if (latest == null)
         {
@@ -164,6 +166,19 @@ public class InventoryDebugHud : MonoBehaviour
         return string.Join(", ", Array.ConvertAll(rewards, reward => reward.ToString()));
     }
 
+    private void DrawHeroStats()
+    {
+        ResolveCharacterStats();
+        if (characterStats == null)
+        {
+            GUILayout.Label("Hero Stats: missing");
+            return;
+        }
+
+        GUILayout.Label(
+            $"Hero Stats: ATK {characterStats.GetValue(StatId.AttackDamage):0.#} / HP {characterStats.GetValue(StatId.MaxHealth):0.#} / APS {characterStats.GetValue(StatId.AttackSpeed):0.##} / CD {characterStats.GetValue(StatId.AttackCooldown):0.##}s");
+    }
+
     private static bool DrawButton(string label, bool enabled)
     {
         bool previousEnabled = GUI.enabled;
@@ -199,6 +214,11 @@ public class InventoryDebugHud : MonoBehaviour
         {
             ResolveEquipmentSlots();
         }
+
+        if (characterStats == null || force)
+        {
+            ResolveCharacterStats();
+        }
     }
 
     private void ResolveEquipmentSlots()
@@ -226,5 +246,28 @@ public class InventoryDebugHud : MonoBehaviour
         }
 
         equipmentSlots = slots.Length == 0 ? null : slots[0];
+    }
+
+    private void ResolveCharacterStats()
+    {
+        if (characterStats != null)
+        {
+            return;
+        }
+
+        if (equipmentSlots != null && equipmentSlots.TryGetComponent(out CharacterStats equipmentStats))
+        {
+            characterStats = equipmentStats;
+            return;
+        }
+
+        PlayerController player = FindAnyObjectByType<PlayerController>();
+        if (player != null && player.TryGetComponent(out CharacterStats playerStats))
+        {
+            characterStats = playerStats;
+            return;
+        }
+
+        characterStats = FindAnyObjectByType<CharacterStats>();
     }
 }

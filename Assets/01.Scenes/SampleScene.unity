@@ -1434,15 +1434,16 @@ MonoBehaviour:
   inventory: {fileID: 1045172326}
   salvageService: {fileID: 1045172327}
   equipmentSlots: {fileID: 1417038735}
+  characterStats: {fileID: 1417038740}
   wallet: {fileID: 1045172324}
   autoFindReferences: 1
   showPanel: 1
   panelRect:
     serializedVersion: 2
-    x: 16
-    y: 252
-    width: 380
-    height: 236
+    x: 412
+    y: 16
+    width: 400
+    height: 292
   lastActionMessage: 
 --- !u!1 &1052282950
 GameObject:

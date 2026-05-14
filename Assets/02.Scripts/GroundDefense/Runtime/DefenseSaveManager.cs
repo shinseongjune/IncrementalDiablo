@@ -193,11 +193,11 @@ public class DefenseSaveManager : MonoBehaviour
             ? null
             : saveData.hero.equippedItemInstanceIds;
 
-        int missingDefinitionCount = inventory.RestoreEquipment(equipmentSlots, equippedItemInstanceIds, out int restoredCount);
-        if (missingDefinitionCount > 0)
+        int snapshotDefinitionCount = inventory.RestoreEquipment(equipmentSlots, equippedItemInstanceIds, out int restoredCount);
+        if (snapshotDefinitionCount > 0)
         {
-            Debug.LogWarning(
-                $"Restored {restoredCount} equipped item(s), but {missingDefinitionCount} saved equipped item(s) could not affect stats because their ItemDefinition assets were not resolved.",
+            Debug.Log(
+                $"Restored {restoredCount} equipped item(s); {snapshotDefinitionCount} used saved prototype power because their ItemDefinition assets were not resolved.",
                 this);
         }
     }

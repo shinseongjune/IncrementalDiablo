@@ -264,7 +264,7 @@ public static class GameSaveDataDiagnostics
 
         if (prototypeItemCount > 0)
         {
-            warnings.Add($"{prototypeItemCount} runtime prototype item(s) can persist, but need a real ItemDefinition registry before they can restore stat effects after restart");
+            warnings.Add($"{prototypeItemCount} runtime prototype item(s) will restore from saved slot/rarity/power; replace this with authored ItemDefinition registry before production balance");
         }
 
         ValidateHeroEquipment(hero, itemsById, errors, warnings);

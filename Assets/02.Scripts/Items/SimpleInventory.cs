@@ -196,12 +196,6 @@ public class SimpleInventory : MonoBehaviour
             return false;
         }
 
-        if (item.Definition == null)
-        {
-            failureReason = "item has no live ItemDefinition after load";
-            return false;
-        }
-
         if (equipmentSlots == null)
         {
             failureReason = "EquipmentSlots is missing";
@@ -210,7 +204,7 @@ public class SimpleInventory : MonoBehaviour
 
         if (!equipmentSlots.TryEquip(item))
         {
-            failureReason = "EquipmentSlots rejected the item";
+            failureReason = "EquipmentSlots rejected the item snapshot";
             return false;
         }
 
@@ -264,7 +258,7 @@ public class SimpleInventory : MonoBehaviour
         equipmentSlots.UnequipAll();
 
         List<ItemSlot> restoredSlots = new List<ItemSlot>(3);
-        int missingDefinitionCount = 0;
+        int snapshotDefinitionCount = 0;
         for (int i = 0; i < candidates.Count; i++)
         {
             ItemInstance item = candidates[i];
@@ -273,24 +267,21 @@ public class SimpleInventory : MonoBehaviour
                 continue;
             }
 
-            if (item.Definition == null)
-            {
-                item.SetEquipped(true);
-                restoredSlots.Add(item.Slot);
-                missingDefinitionCount++;
-                continue;
-            }
-
             if (equipmentSlots.TryEquip(item))
             {
                 MarkOnlyEquippedInSlot(item);
                 restoredSlots.Add(item.Slot);
                 restoredCount++;
+
+                if (item.Definition == null)
+                {
+                    snapshotDefinitionCount++;
+                }
             }
         }
 
         Changed?.Invoke();
-        return missingDefinitionCount;
+        return snapshotDefinitionCount;
     }
 
     public InventorySaveData CreateSaveData()

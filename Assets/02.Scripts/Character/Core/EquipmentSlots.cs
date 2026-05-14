@@ -67,7 +67,7 @@ public class EquipmentSlots : MonoBehaviour
 
     public bool TryEquip(ItemInstance item)
     {
-        if (item == null || item.Definition == null)
+        if (item == null)
         {
             return false;
         }
@@ -104,14 +104,19 @@ public class EquipmentSlots : MonoBehaviour
             return;
         }
 
-        AppendItemModifiers(weapon, statId, results);
-        AppendItemModifiers(armor, statId, results);
-        AppendItemModifiers(ring, statId, results);
+        AppendEquipmentModifiers(weapon, weaponItem, statId, results);
+        AppendEquipmentModifiers(armor, armorItem, statId, results);
+        AppendEquipmentModifiers(ring, ringItem, statId, results);
     }
 
     private void SetEquipped(ItemSlot slot, ItemDefinition item, ItemInstance itemInstance)
     {
         if (item != null && item.Slot != slot)
+        {
+            return;
+        }
+
+        if (itemInstance != null && itemInstance.Slot != slot)
         {
             return;
         }
@@ -180,7 +185,18 @@ public class EquipmentSlots : MonoBehaviour
         }
     }
 
-    private static void AppendItemModifiers(ItemDefinition item, StatId statId, List<StatMod> results)
+    private static void AppendEquipmentModifiers(ItemDefinition definition, ItemInstance itemInstance, StatId statId, List<StatMod> results)
+    {
+        if (itemInstance != null)
+        {
+            itemInstance.AppendModifiers(statId, results);
+            return;
+        }
+
+        AppendDefinitionModifiers(definition, statId, results);
+    }
+
+    private static void AppendDefinitionModifiers(ItemDefinition item, StatId statId, List<StatMod> results)
     {
         if (item == null)
         {

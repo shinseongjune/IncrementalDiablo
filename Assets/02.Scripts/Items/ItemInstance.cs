@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
@@ -145,6 +146,114 @@ public class ItemInstance
     public void SetEquipped(bool value)
     {
         equipped = value;
+    }
+
+    public void AppendModifiers(StatId statId, List<StatMod> results)
+    {
+        if (results == null)
+        {
+            return;
+        }
+
+        AppendDefinitionModifiers(statId, results);
+        AppendAffixModifiers(statId, results);
+        AppendRolledPowerModifier(statId, results);
+    }
+
+    private void AppendDefinitionModifiers(StatId statId, List<StatMod> results)
+    {
+        if (definition == null || definition.Modifiers == null)
+        {
+            return;
+        }
+
+        StatMod[] modifiers = definition.Modifiers;
+        for (int i = 0; i < modifiers.Length; i++)
+        {
+            StatMod modifier = modifiers[i];
+            if (modifier != null && modifier.AppliesTo(statId))
+            {
+                results.Add(modifier);
+            }
+        }
+    }
+
+    private void AppendAffixModifiers(StatId statId, List<StatMod> results)
+    {
+        ItemAffixRoll[] rolls = AffixRolls;
+        for (int i = 0; i < rolls.Length; i++)
+        {
+            StatMod modifier = rolls[i]?.Modifier;
+            if (modifier != null && modifier.AppliesTo(statId))
+            {
+                results.Add(modifier);
+            }
+        }
+    }
+
+    private void AppendRolledPowerModifier(StatId statId, List<StatMod> results)
+    {
+        if (!TryCreateRolledPowerModifier(statId, out StatMod modifier))
+        {
+            return;
+        }
+
+        results.Add(modifier);
+    }
+
+    private bool TryCreateRolledPowerModifier(StatId statId, out StatMod modifier)
+    {
+        modifier = null;
+
+        int power = RolledPower;
+        if (power <= 0)
+        {
+            return false;
+        }
+
+        float scaledPower = power * GetRarityPowerMultiplier(Rarity);
+        switch (Slot)
+        {
+            case ItemSlot.Weapon:
+                if (statId != StatId.AttackDamage)
+                {
+                    return false;
+                }
+
+                modifier = new StatMod(statId, StatMod.StatModType.Flat, Mathf.Ceil(scaledPower));
+                return true;
+            case ItemSlot.Armor:
+                if (statId != StatId.MaxHealth)
+                {
+                    return false;
+                }
+
+                modifier = new StatMod(statId, StatMod.StatModType.Flat, Mathf.Ceil(scaledPower * 4f));
+                return true;
+            case ItemSlot.Ring:
+                if (statId != StatId.AttackSpeed)
+                {
+                    return false;
+                }
+
+                modifier = new StatMod(statId, StatMod.StatModType.PercentAdd, Mathf.Ceil(scaledPower * 1.5f));
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static float GetRarityPowerMultiplier(ItemRarity itemRarity)
+    {
+        switch (itemRarity)
+        {
+            case ItemRarity.Magic:
+                return 1.2f;
+            case ItemRarity.Rare:
+                return 1.5f;
+            default:
+                return 1f;
+        }
     }
 }
 
