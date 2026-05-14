@@ -96,9 +96,9 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase A - Playable Loop MVP |
-| Last meaningful movement | 2026-05-14: equipped `ItemInstance` objects now restore debug-quality stat effects after save/load, and `DefenseSaveManager` can validate the persisted JSON save file separately from the live runtime snapshot. |
-| Next unlock | In Play Mode, run Start Dungeon -> Force Clear -> Equip Latest -> Save -> Validate Saved File -> Load -> Validate Snapshot, then restart Play Mode once to confirm both authored-definition equipment and prototype snapshot-power equipment restore visibly. |
-| Loop coverage | Ground reward: mostly present; dungeon state: code foundation done; room combat: code done; loot-to-inventory: code done with prototype fallback; equip/salvage feedback: temporary HUD code done; save/load: partial plus snapshot validator, saved-file validator, debug HUD controls, and prototype equipment stat restore; HUD: debug OnGUI done, production UI pending. |
+| Last meaningful movement | 2026-05-14: `DungeonDebugHud` now has a one-button loop smoke test that runs dungeon clear -> reward -> equip -> save -> saved-file validation -> load -> restored-equipment validation. |
+| Next unlock | In Play Mode, click `Run Loop Smoke Test`, then restart Play Mode once and run `Validate Saved File` / `Load` / `Validate Snapshot` to confirm the disk save survives a full session restart. |
+| Loop coverage | Ground reward: mostly present; dungeon state: code foundation done; room combat: code done; loot-to-inventory: code done with prototype fallback; equip/salvage feedback: temporary HUD code done; save/load: partial plus snapshot validator, saved-file validator, debug HUD controls, prototype equipment stat restore, and one-button smoke test; HUD: debug OnGUI done, production UI pending. |
 | Known blockers | Real dungeon enemy/prefab feel, inventory HUD, authored item assets/drop tables, production item-definition registry, and gameplay feel still need Unity Play Mode review after code foundations are connected. |
 
 ## 4. MVP Task Queue
@@ -275,6 +275,12 @@ Play Mode에서 지상전/던전/인벤토리 상태를 한 화면에서 확인�
 - `DefenseSaveManager.TryLoad()` now refuses structurally invalid save files instead of applying a broken snapshot to the live scene.
 - `DungeonDebugHud` now separates `Validate Snapshot` from `Validate Saved File`, so Play Mode can confirm both the in-memory loop state and the persisted disk state without opening the JSON manually.
 - The P1 task remains `Partial` until Play Mode restart verification proves the saved file reloads visibly after a full session restart.
+
+2026-05-14 smoke-test path progress note:
+
+- `DungeonLoopSmokeTest` now exercises the current debug-quality playable loop from the existing `DungeonDebugHud`: start/clear dungeon, grant loot, equip the latest item, save, validate the saved JSON, clear live equipped flags, load, and confirm the saved equipped item is restored into `EquipmentSlots`.
+- This does not replace full Unity restart verification. It reduces the normal Play Mode check to one button plus a separate restart pass and makes failed links report a specific blocker.
+- The P1 task remains `Partial` until the user or a later manual Unity run confirms the persisted file survives stopping and restarting Play Mode.
 
 ## 5. 2주 목표 일정
 

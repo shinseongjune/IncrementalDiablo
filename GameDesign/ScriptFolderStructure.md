@@ -17,13 +17,14 @@ Dungeon code owns room-based expedition flow.
 - `DungeonRunState`
 - `ExpeditionDirector`
 - `CombatRoom`
+- `DungeonLoopSmokeTest`
 - `EnemySpawner`
 - `RoomExit`
 - room clear conditions
 
 Rooms should be prefab/runtime objects, not separate Unity scenes.
 
-Current implementation note: `DungeonRunState`, `ExpeditionDirector`, `CombatRoom`, and `DungeonDebugHud` exist first. `ExpeditionDirector` can start a prototype expedition, complete a room, fail the run, expose Ready/Running/Cleared/Failed state, export/import `DungeonSaveData` through `DefenseSaveManager`, and grant a pending clear reward through `LootDropper`. `CombatRoom` can auto-start when an expedition is running, resolve through tracked `Health` references, or fall back to prototype health/DPS simulation when enemy prefabs are not wired yet. `DungeonDebugHud` is an OnGUI Play Mode smoke-test surface for dungeon state, force clear/fail, pending reward grant, and inventory count. Enemy controllers and finished Unity room prefab wiring are still future work.
+Current implementation note: `DungeonRunState`, `ExpeditionDirector`, `CombatRoom`, `DungeonLoopSmokeTest`, and `DungeonDebugHud` exist first. `ExpeditionDirector` can start a prototype expedition, complete a room, fail the run, expose Ready/Running/Cleared/Failed state, export/import `DungeonSaveData` through `DefenseSaveManager`, and grant a pending clear reward through `LootDropper`. `CombatRoom` can auto-start when an expedition is running, resolve through tracked `Health` references, or fall back to prototype health/DPS simulation when enemy prefabs are not wired yet. `DungeonDebugHud` is an OnGUI Play Mode smoke-test surface for dungeon state, force clear/fail, pending reward grant, inventory count, save/load validation, and a one-button loop smoke test. Enemy controllers and finished Unity room prefab wiring are still future work.
 
 ## GroundDefense
 

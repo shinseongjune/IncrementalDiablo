@@ -9,9 +9,10 @@ public class DungeonDebugHud : MonoBehaviour
     [SerializeField] private DefenseSaveManager saveManager;
     [SerializeField] private bool autoFindReferences = true;
     [SerializeField] private bool showPanel = true;
-    [SerializeField] private Rect panelRect = new Rect(16f, 16f, 380f, 344f);
+    [SerializeField] private Rect panelRect = new Rect(16f, 16f, 400f, 420f);
     [SerializeField] private string lastActionMessage;
     [SerializeField] private string lastSaveValidationMessage;
+    [SerializeField] private string lastSmokeTestMessage;
 
     private void Reset()
     {
@@ -21,7 +22,7 @@ public class DungeonDebugHud : MonoBehaviour
     private void OnValidate()
     {
         panelRect.width = Mathf.Max(280f, panelRect.width);
-        panelRect.height = Mathf.Max(300f, panelRect.height);
+        panelRect.height = Mathf.Max(360f, panelRect.height);
     }
 
     private void OnGUI()
@@ -97,6 +98,7 @@ public class DungeonDebugHud : MonoBehaviour
         GUILayout.Label(inventory == null ? "Inventory: missing" : $"Inventory: {inventory.Count}/{inventory.Capacity}");
 
         DrawSaveControls();
+        DrawSmokeTestControls();
 
         if (!string.IsNullOrWhiteSpace(lastActionMessage))
         {
@@ -106,6 +108,11 @@ public class DungeonDebugHud : MonoBehaviour
         if (!string.IsNullOrWhiteSpace(lastSaveValidationMessage))
         {
             GUILayout.Label(lastSaveValidationMessage);
+        }
+
+        if (!string.IsNullOrWhiteSpace(lastSmokeTestMessage))
+        {
+            GUILayout.Label(lastSmokeTestMessage);
         }
 
         GUILayout.EndArea();
@@ -162,6 +169,20 @@ public class DungeonDebugHud : MonoBehaviour
         if (saveManager == null)
         {
             GUILayout.Label("SaveManager: missing");
+        }
+    }
+
+    private void DrawSmokeTestControls()
+    {
+        bool canRunSmokeTest = expedition != null && inventory != null && saveManager != null;
+        if (DrawButton("Run Loop Smoke Test", canRunSmokeTest))
+        {
+            bool passed = DungeonLoopSmokeTest.TryRun(out string report);
+            lastActionMessage = passed
+                ? "Playable loop smoke test passed."
+                : "Playable loop smoke test blocked.";
+            lastSaveValidationMessage = string.Empty;
+            lastSmokeTestMessage = report;
         }
     }
 
