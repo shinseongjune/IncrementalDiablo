@@ -96,9 +96,9 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase A - Playable Loop MVP |
-| Last meaningful movement | 2026-05-14: equipped `ItemInstance` objects now apply definition modifiers, saved affix-roll modifiers, and a prototype rolled-power modifier by slot; runtime prototype equipment can restore debug-quality stat effects after save/load without a live definition asset. |
-| Next unlock | In Play Mode, run Start Dungeon -> Force Clear -> Equip Latest -> Save -> Load -> Validate Save, then restart Play Mode once to confirm both authored-definition equipment and prototype snapshot-power equipment restore visibly. |
-| Loop coverage | Ground reward: mostly present; dungeon state: code foundation done; room combat: code done; loot-to-inventory: code done with prototype fallback; equip/salvage feedback: temporary HUD code done; save/load: partial plus snapshot validator, debug HUD controls, and prototype equipment stat restore; HUD: debug OnGUI done, production UI pending. |
+| Last meaningful movement | 2026-05-14: equipped `ItemInstance` objects now restore debug-quality stat effects after save/load, and `DefenseSaveManager` can validate the persisted JSON save file separately from the live runtime snapshot. |
+| Next unlock | In Play Mode, run Start Dungeon -> Force Clear -> Equip Latest -> Save -> Validate Saved File -> Load -> Validate Snapshot, then restart Play Mode once to confirm both authored-definition equipment and prototype snapshot-power equipment restore visibly. |
+| Loop coverage | Ground reward: mostly present; dungeon state: code foundation done; room combat: code done; loot-to-inventory: code done with prototype fallback; equip/salvage feedback: temporary HUD code done; save/load: partial plus snapshot validator, saved-file validator, debug HUD controls, and prototype equipment stat restore; HUD: debug OnGUI done, production UI pending. |
 | Known blockers | Real dungeon enemy/prefab feel, inventory HUD, authored item assets/drop tables, production item-definition registry, and gameplay feel still need Unity Play Mode review after code foundations are connected. |
 
 ## 4. MVP Task Queue
@@ -268,6 +268,13 @@ Play Mode에서 지상전/던전/인벤토리 상태를 한 화면에서 확인�
 - `ItemInstance` now contributes live definition modifiers, saved affix-roll modifiers, and a small prototype rolled-power modifier by slot.
 - `EquipmentSlots` and `SimpleInventory.RestoreEquipment(...)` can re-equip saved runtime prototype items even when their live `ItemDefinition` is not resolved, so the save/load loop no longer drops all equipment stat effects for prototype rewards.
 - Actual Play Mode restart verification is still required, and the rolled-power mapping is a prototype bridge until authored item assets, real drop tables, and a production item registry exist.
+
+2026-05-14 saved-file validation progress note:
+
+- `DefenseSaveManager.TryValidateSavedFile(...)` now reads the JSON file from `Application.persistentDataPath`, parses it, and runs the same structural diagnostics used by the live snapshot validator.
+- `DefenseSaveManager.TryLoad()` now refuses structurally invalid save files instead of applying a broken snapshot to the live scene.
+- `DungeonDebugHud` now separates `Validate Snapshot` from `Validate Saved File`, so Play Mode can confirm both the in-memory loop state and the persisted disk state without opening the JSON manually.
+- The P1 task remains `Partial` until Play Mode restart verification proves the saved file reloads visibly after a full session restart.
 
 ## 5. 2주 목표 일정
 

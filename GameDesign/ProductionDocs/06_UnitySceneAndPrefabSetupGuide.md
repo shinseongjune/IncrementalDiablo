@@ -183,6 +183,15 @@ Canvas_Dungeon
 9. `Salvage Latest`를 눌러 인벤토리에서 아이템이 빠지고 Scrap/Essence/AlterStone 보상이 지갑에 들어가는지 확인한다.
 10. 이 HUD는 production UI가 아니라 Play Mode smoke test용 OnGUI 도구다. 최종 UI 프리팹을 만들 때는 같은 버튼 흐름을 일반 Canvas/TMP UI로 옮긴다.
 
+2026-05-14 save/load smoke test update:
+
+1. In Play Mode, use `Dungeon Loop Debug` -> `Start Dungeon`, then wait for a clear or press `Force Clear`.
+2. Use `Inventory Loop Debug` -> `Equip Latest`, then confirm `Hero Stats` changes.
+3. Use `Dungeon Loop Debug` -> `Save`, then `Validate Saved File`. This checks the JSON written under `Application.persistentDataPath`.
+4. Use `Dungeon Loop Debug` -> `Load`, then `Validate Snapshot`. This checks the live runtime state after loading.
+5. Restart Play Mode and repeat `Validate Snapshot` to confirm the persisted inventory count, equipped item ids, and prototype snapshot-power stat bridge survive a full session restart.
+6. This is still a debug HUD smoke test. It does not replace the later production inventory UI or authored item-definition registry.
+
 ## 4. 프리팹 목록
 
 ### 지상 디펜스 프리팹

@@ -9,7 +9,7 @@ public class DungeonDebugHud : MonoBehaviour
     [SerializeField] private DefenseSaveManager saveManager;
     [SerializeField] private bool autoFindReferences = true;
     [SerializeField] private bool showPanel = true;
-    [SerializeField] private Rect panelRect = new Rect(16f, 16f, 380f, 312f);
+    [SerializeField] private Rect panelRect = new Rect(16f, 16f, 380f, 344f);
     [SerializeField] private string lastActionMessage;
     [SerializeField] private string lastSaveValidationMessage;
 
@@ -21,7 +21,7 @@ public class DungeonDebugHud : MonoBehaviour
     private void OnValidate()
     {
         panelRect.width = Mathf.Max(280f, panelRect.width);
-        panelRect.height = Mathf.Max(260f, panelRect.height);
+        panelRect.height = Mathf.Max(300f, panelRect.height);
     }
 
     private void OnGUI()
@@ -131,12 +131,29 @@ public class DungeonDebugHud : MonoBehaviour
             lastSaveValidationMessage = string.Empty;
         }
 
-        if (DrawButton("Validate Save", saveManager != null))
+        if (DrawButton("Validate Snapshot", saveManager != null))
         {
             bool valid = saveManager.TryValidateCurrentSaveData(out string report);
             lastActionMessage = valid
                 ? "Save snapshot validation passed."
                 : "Save snapshot validation found blocking errors.";
+            lastSaveValidationMessage = report;
+        }
+
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+
+        GUILayout.Label(saveManager == null
+            ? "Saved File: missing manager"
+            : $"Saved File: {(saveManager.HasSaveFile ? "found" : "missing")}");
+
+        if (DrawButton("Validate Saved File", saveManager != null))
+        {
+            bool valid = saveManager.TryValidateSavedFile(out string report);
+            lastActionMessage = valid
+                ? "Saved JSON validation passed."
+                : "Saved JSON validation found blocking errors.";
             lastSaveValidationMessage = report;
         }
 

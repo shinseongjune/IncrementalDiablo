@@ -1416,7 +1416,7 @@ MonoBehaviour:
     x: 16
     y: 16
     width: 380
-    height: 312
+    height: 344
   lastActionMessage: 
   lastSaveValidationMessage:
 --- !u!114 &1045172329

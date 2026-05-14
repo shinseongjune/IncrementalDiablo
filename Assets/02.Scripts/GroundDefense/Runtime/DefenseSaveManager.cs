@@ -19,6 +19,7 @@ public class DefenseSaveManager : MonoBehaviour
     private float autoSaveElapsed;
 
     public string SavePath => Path.Combine(Application.persistentDataPath, saveFileName);
+    public bool HasSaveFile => File.Exists(SavePath);
 
     private void Start()
     {
@@ -95,23 +96,40 @@ public class DefenseSaveManager : MonoBehaviour
         return GameSaveDataDiagnostics.TryValidate(saveData, out report);
     }
 
+    public bool TryValidateSavedFile(out string report)
+    {
+        if (!TryReadSaveFile(out GameSaveData saveData, out string failureReason))
+        {
+            report = failureReason;
+            return false;
+        }
+
+        return GameSaveDataDiagnostics.TryValidate(saveData, out report);
+    }
+
     public bool TryLoad()
     {
         ResolveReferences();
 
-        if (director == null || !File.Exists(SavePath))
+        if (director == null || !HasSaveFile)
         {
+            return false;
+        }
+
+        if (!TryReadSaveFile(out GameSaveData saveData, out string failureReason))
+        {
+            Debug.LogWarning(failureReason, this);
+            return false;
+        }
+
+        if (!GameSaveDataDiagnostics.TryValidate(saveData, out string validationReport))
+        {
+            Debug.LogWarning($"DefenseSaveManager refused an invalid save file: {validationReport}", this);
             return false;
         }
 
         try
         {
-            GameSaveData saveData = JsonUtility.FromJson<GameSaveData>(File.ReadAllText(SavePath));
-            if (saveData == null)
-            {
-                return false;
-            }
-
             if (director.Wallet != null && saveData.currencies != null)
             {
                 director.Wallet.ImportAmounts(saveData.currencies);
@@ -136,6 +154,42 @@ public class DefenseSaveManager : MonoBehaviour
         catch (Exception exception)
         {
             Debug.LogWarning($"DefenseSaveManager failed to load from {SavePath}: {exception.Message}", this);
+            return false;
+        }
+    }
+
+    private bool TryReadSaveFile(out GameSaveData saveData, out string failureReason)
+    {
+        saveData = null;
+        failureReason = string.Empty;
+
+        if (!HasSaveFile)
+        {
+            failureReason = $"Save file missing at {SavePath}.";
+            return false;
+        }
+
+        try
+        {
+            string json = File.ReadAllText(SavePath);
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                failureReason = $"Save file is empty at {SavePath}.";
+                return false;
+            }
+
+            saveData = JsonUtility.FromJson<GameSaveData>(json);
+            if (saveData == null)
+            {
+                failureReason = $"Save file could not be parsed at {SavePath}.";
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception exception)
+        {
+            failureReason = $"Save file read failed at {SavePath}: {exception.Message}";
             return false;
         }
     }

@@ -171,6 +171,8 @@ equipped
 
 2026-05-14 implementation note: equipped `ItemInstance` objects now contribute definition modifiers, saved affix-roll modifiers, and a small prototype rolled-power modifier by slot. This lets runtime prototype-only equipment restore a debug-quality stat effect from saved slot/rarity/rolledPower even when its live `ItemDefinition` asset is not available after restart. This is a prototype bridge, not the final production item registry or drop-balance model.
 
+2026-05-14 saved-file validation note: `DefenseSaveManager` can now validate the persisted JSON save file separately from the current runtime snapshot, and `TryLoad()` refuses structurally invalid save files before applying them to the live scene. The debug dungeon HUD exposes both checks as `Validate Snapshot` and `Validate Saved File`, which makes the MVP save/load smoke test cover the actual disk file before requiring a full Play Mode restart.
+
 ## 5. 저장 시점
 
 저장한다:
