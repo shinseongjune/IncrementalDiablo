@@ -33,6 +33,14 @@ Ground defense code owns the continuous frontline, defense upgrades, local save 
 - `GroundDefense/Runtime/`: frontline state, Hold/Push simulation, upgrades, and defense save manager.
 - `GroundDefense/UI/`: HUD components for frontline status and defense actions.
 
+## UI
+
+Shared UI code owns player-facing screens that cross ground defense, dungeon, item, and save systems.
+
+- `PlayableLoopHud`
+
+Current implementation note: `PlayableLoopHud` is the first Canvas/TMP/Button bridge away from OnGUI debug panels. It can show frontline status, resources, dungeon state, latest item, hero stats, and a message line, then call button-safe methods for start dungeon, claim reward, equip latest, salvage latest, save, and load. It is not wired into `SampleScene` yet; the debug OnGUI HUDs remain the current smoke-test fallback.
+
 ## Items
 
 Item code owns definitions, instances, drops, equipment effects, and simple inventory.

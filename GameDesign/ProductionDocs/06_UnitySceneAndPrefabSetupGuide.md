@@ -192,6 +192,16 @@ Canvas_Dungeon
 5. Restart Play Mode and repeat `Validate Snapshot` to confirm the persisted inventory count, equipped item ids, and prototype snapshot-power stat bridge survive a full session restart.
 6. This is still a debug HUD smoke test. It does not replace the later production inventory UI or authored item-definition registry.
 
+2026-05-14 Phase B minimal player HUD bridge:
+
+1. Create a normal Canvas panel named `Canvas_PlayableLoop`.
+2. Add a child object named `Panel_PlayableLoopHud` and attach `PlayableLoopHud`.
+3. Add TMP text fields for `Summary`, `Resources`, `Dungeon`, `Latest Item`, `Hero Stats`, and `Message`, then assign them to the matching `PlayableLoopHud` label slots.
+4. Add buttons for `Start Dungeon`, `Claim Reward`, `Equip Latest`, `Salvage Latest`, `Save`, and `Load`, then assign them to the matching button slots.
+5. Let `Auto Find References` stay enabled for the first pass. If a scene has multiple heroes or inventories later, wire `DefenseDirector`, `ExpeditionDirector`, `SimpleInventory`, `ItemSalvageService`, `EquipmentSlots`, `CharacterStats`, `CurrencyWallet`, and `DefenseSaveManager` explicitly.
+6. Keep `DungeonDebugHud` and `InventoryDebugHud` in the scene only as smoke-test fallback. Normal Phase B testing should use `PlayableLoopHud` first.
+7. After wiring, Play Mode check: start dungeon, wait for clear, claim reward if needed, equip latest, salvage latest, save, load, and confirm the message line and button interactability guide the next action.
+
 ## 4. 프리팹 목록
 
 ### 지상 디펜스 프리팹

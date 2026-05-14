@@ -51,16 +51,16 @@ Playable loop MVP는 다음 조건을 모두 만족하면 완료로 본다.
 
 | ID | 완료 조건 | 현재 상태 |
 | --- | --- | --- |
-| MVP-01 | 지상전이 Play Mode에서 Gold/Scrap을 생성한다. | Mostly Done |
-| MVP-02 | 던전 시작 명령이 있고, 런 상태가 Ready/Running/Cleared/Failed로 바뀐다. | Code Done |
-| MVP-03 | 던전 방 1개에서 영웅과 적의 전투가 자동 또는 간단 직접 조작으로 끝난다. | Code Done |
-| MVP-04 | 적 또는 방 클리어가 보상을 지급한다. | Code Done |
-| MVP-05 | 보상 아이템이 `SimpleInventory`에 들어간다. | Code Done |
-| MVP-06 | 장비 장착이 영웅 스탯에 반영된다. | Code Done |
-| MVP-07 | 장비 분해가 인벤토리에서 아이템을 제거하고 재료를 지급한다. | Partial |
-| MVP-08 | 재료나 보상이 지상 방어 강화에 다시 쓰인다. | Partial |
-| MVP-09 | 저장/로드가 지상전, 재화, 인벤토리의 최소 상태를 유지한다. | Partial |
-| MVP-10 | 한 화면 또는 임시 HUD에서 현재 루프 상태를 확인할 수 있다. | Partial |
+| MVP-01 | 지상전이 Play Mode에서 Gold/Scrap을 생성한다. | Done |
+| MVP-02 | 던전 시작 명령이 있고, 런 상태가 Ready/Running/Cleared/Failed로 바뀐다. | Done |
+| MVP-03 | 던전 방 1개에서 영웅과 적의 전투가 자동 또는 간단 직접 조작으로 끝난다. | Done (debug) |
+| MVP-04 | 적 또는 방 클리어가 보상을 지급한다. | Done |
+| MVP-05 | 보상 아이템이 `SimpleInventory`에 들어간다. | Done |
+| MVP-06 | 장비 장착이 영웅 스탯에 반영된다. | Done |
+| MVP-07 | 장비 분해가 인벤토리에서 아이템을 제거하고 재료를 지급한다. | Done (debug) |
+| MVP-08 | 재료나 보상이 지상 방어 강화에 다시 쓰인다. | Done (debug) |
+| MVP-09 | 저장/로드가 지상전, 재화, 인벤토리의 최소 상태를 유지한다. | Done |
+| MVP-10 | 한 화면 또는 임시 HUD에서 현재 루프 상태를 확인할 수 있다. | Done (debug) |
 
 ## Post-MVP Phase Runway
 
@@ -68,8 +68,8 @@ This document must not stop at the first MVP. When the current phase is complete
 
 | Phase | Entry condition | Exit condition | Default next work |
 | --- | --- | --- | --- |
-| Phase A - Playable Loop MVP | Current phase. Ground/inventory foundations exist, but dungeon loop is not visible yet. | MVP-01 through MVP-10 are `Done`; Play Mode can show ground reward -> dungeon -> loot -> equip/salvage -> save/load at debug quality. | Finish P0/P1 tasks below. |
-| Phase B - 30-Minute Retention Slice | Phase A is done. The loop exists but may be shallow. | A new player can play about 30 minutes with at least three meaningful upgrade decisions, one failure/recovery moment, and no dev-console-only step. | Replace debug HUD with minimal player HUD, tune early pacing, repeat dungeon attempts, clarify failure/reward feedback. |
+| Phase A - Playable Loop MVP | Completed 2026-05-14 after Play Mode smoke-test confirmation. | MVP-01 through MVP-10 are `Done`; Play Mode can show ground reward -> dungeon -> loot -> equip/salvage -> save/load at debug quality. | Closed unless a regression appears. |
+| Phase B - 30-Minute Retention Slice | Current phase. The debug loop exists, but the experience is shallow and still tool-like. | A new player can play about 30 minutes with at least three meaningful upgrade decisions, one failure/recovery moment, and no dev-console-only step. | Replace debug HUD with minimal player HUD, tune early pacing, repeat dungeon attempts, clarify failure/reward feedback. |
 | Phase C - Long-Horizon Systems Foundation | Phase B is done. The first session works, but long-term scaling is not proven. | Formula-driven dungeon tiers, ground scaling, item rarity/material sinks, and save migration hooks exist without hand-authored content ladders. | Add generated tiers, item/drop pacing tables, material sinks, balance validation scripts, and extensible save schemas. |
 | Phase D - Early Access Readiness Slice | Phase C is done. Systems scale, but the game is not yet release-shaped. | A 2-4 hour repeatable slice is playable with stable UI, recoverable failure, basic settings, readable onboarding, QA checklist, and no known progression blocker. | Add usability polish, error handling, content breadth, performance checks, settings, and release-scope triage. |
 
@@ -95,11 +95,11 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 
 | Field | Current value |
 | --- | --- |
-| Current phase | Phase A - Playable Loop MVP |
-| Last meaningful movement | 2026-05-14: `DungeonDebugHud` now has a one-button loop smoke test that runs dungeon clear -> reward -> equip -> save -> saved-file validation -> load -> restored-equipment validation. |
-| Next unlock | In Play Mode, click `Run Loop Smoke Test`, then restart Play Mode once and run `Validate Saved File` / `Load` / `Validate Snapshot` to confirm the disk save survives a full session restart. |
-| Loop coverage | Ground reward: mostly present; dungeon state: code foundation done; room combat: code done; loot-to-inventory: code done with prototype fallback; equip/salvage feedback: temporary HUD code done; save/load: partial plus snapshot validator, saved-file validator, debug HUD controls, prototype equipment stat restore, and one-button smoke test; HUD: debug OnGUI done, production UI pending. |
-| Known blockers | Real dungeon enemy/prefab feel, inventory HUD, authored item assets/drop tables, production item-definition registry, and gameplay feel still need Unity Play Mode review after code foundations are connected. |
+| Current phase | Phase B - 30-Minute Retention Slice |
+| Last meaningful movement | 2026-05-14: user confirmed the one-button Play Mode save/load smoke test works; `b5bc121` published it; `PlayableLoopHud` code started the minimal player-HUD bridge. |
+| Next unlock | Wire `PlayableLoopHud` into a Canvas/TMP layout in `SampleScene`, then run a 10-20 minute pass without relying on the OnGUI debug panels for the normal loop. |
+| Loop coverage | Phase A debug loop is confirmed: ground reward, dungeon run, room result, loot, inventory, equip/salvage, save/load, and debug HUD are connected. Phase B now needs player-facing UI, repeat-run pacing, clearer failure/reward feedback, and early-session decisions. |
+| Known blockers | `PlayableLoopHud` still needs Unity Canvas wiring and visual layout review; real dungeon enemy/prefab feel, authored item assets/drop tables, production item-definition registry, and longer pacing remain open. |
 
 ## 4. MVP Task Queue
 
@@ -245,7 +245,7 @@ Play Mode에서 지상전/던전/인벤토리 상태를 한 화면에서 확인�
 
 ### P1. 저장/로드 검증 루프
 
-상태: Partial
+상태: Done
 
 목표:
 실제 Play Mode에서 지상전 + 던전 런 + 인벤토리 저장이 깨지지 않는지 확인한다.
@@ -274,13 +274,58 @@ Play Mode에서 지상전/던전/인벤토리 상태를 한 화면에서 확인�
 - `DefenseSaveManager.TryValidateSavedFile(...)` now reads the JSON file from `Application.persistentDataPath`, parses it, and runs the same structural diagnostics used by the live snapshot validator.
 - `DefenseSaveManager.TryLoad()` now refuses structurally invalid save files instead of applying a broken snapshot to the live scene.
 - `DungeonDebugHud` now separates `Validate Snapshot` from `Validate Saved File`, so Play Mode can confirm both the in-memory loop state and the persisted disk state without opening the JSON manually.
-- The P1 task remains `Partial` until Play Mode restart verification proves the saved file reloads visibly after a full session restart.
+- User Play Mode confirmation on 2026-05-14 closed this P1 task at debug quality.
 
 2026-05-14 smoke-test path progress note:
 
 - `DungeonLoopSmokeTest` now exercises the current debug-quality playable loop from the existing `DungeonDebugHud`: start/clear dungeon, grant loot, equip the latest item, save, validate the saved JSON, clear live equipped flags, load, and confirm the saved equipped item is restored into `EquipmentSlots`.
 - This does not replace full Unity restart verification. It reduces the normal Play Mode check to one button plus a separate restart pass and makes failed links report a specific blocker.
-- The P1 task remains `Partial` until the user or a later manual Unity run confirms the persisted file survives stopping and restarting Play Mode.
+- User Play Mode confirmation on 2026-05-14 proved the smoke-test path works at debug quality. Do not keep selecting this task unless a save/load regression appears.
+
+2026-05-14 publication note:
+
+- Published the one-button smoke-test path as `b5bc121 Add one-button playable loop smoke test`.
+- The automation target moved from Phase A to Phase B to avoid repeating save-file validation helper work.
+
+## 4.1 Phase B Task Queue
+
+### P0. 최소 플레이어 HUD 브리지
+
+상태: Code Started
+
+목표:
+OnGUI 디버그 패널에 의존하지 않고, Canvas/TMP/Button 기반의 최소 플레이어 HUD에서 핵심 루프 상태와 행동을 다룬다.
+
+완료 기준:
+
+- `PlayableLoopHud`가 지상 전선, 재화, 던전 상태, 최신 아이템, 영웅 스탯, 최근 메시지를 표시한다.
+- 버튼으로 던전 시작, 보상 수령, 최신 아이템 장착/분해, 저장/로드를 실행할 수 있다.
+- Unity 씬 연결 순서가 문서화되어 다음 수동 씬 작업자가 바로 배치할 수 있다.
+- OnGUI 디버그 HUD는 검증/비상용으로 남기되, 정상 루프 설명은 `PlayableLoopHud` 중심으로 이동한다.
+
+추천 파일:
+
+- `Assets/02.Scripts/UI/PlayableLoopHud.cs`
+- `GameDesign/ProductionDocs/06_UnitySceneAndPrefabSetupGuide.md`
+- `GameDesign/ProductionDocs/09_BaseScriptUsageGuide.md`
+
+2026-05-14 진행 메모:
+
+- `PlayableLoopHud` 코드가 추가되어 Canvas/TMP/Button에 붙일 수 있는 player-facing HUD 브리지를 시작했다.
+- 아직 `SampleScene` Canvas 배치는 하지 않았다. 다음 확인은 Unity Editor에서 TMP 라벨과 버튼을 연결하는 것이다.
+
+### P0. 첫 10-20분 루프 패스
+
+상태: Next
+
+목표:
+Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루프"로 바꾼다.
+
+완료 기준:
+
+- 신규 플레이어가 디버그 버튼 없이 지상전 보상, 던전 1회, 장착/분해, 저장/로드를 이해할 수 있다.
+- 최소 3개의 의미 있는 결정이 있다: 지상 강화, 던전 재도전, 아이템 장착/분해.
+- 실패 또는 막힘이 발생했을 때 다음 행동이 화면에 드러난다.
 
 ## 5. 2주 목표 일정
 

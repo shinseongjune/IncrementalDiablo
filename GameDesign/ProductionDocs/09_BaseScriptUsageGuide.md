@@ -25,6 +25,8 @@
 
 2026-05-14 implementation scope: equipped `ItemInstance` objects now apply live definition modifiers, saved affix-roll modifiers, and a prototype rolled-power modifier by slot. This means a runtime prototype reward can still give a small Weapon/Armor/Ring stat effect after save/load even if the live `ItemDefinition` was not resolved. Authored item assets and a real item-definition registry are still required before production balance.
 
+2026-05-14 Phase B scope: `PlayableLoopHud` adds the first Canvas/TMP/Button bridge for the full loop. It shows frontline status, resources, dungeon state, latest item, hero stats, and a message line, then exposes player-facing button methods for start dungeon, claim reward, equip latest, salvage latest, save, and load. This is the first step away from OnGUI debug panels, but it still needs Unity Canvas wiring and layout review.
+
 목표는 다음 한 문장이 Unity Play 모드에서 돌아가는 것이다.
 
 ```text
@@ -36,7 +38,7 @@
 - 실제 적 오브젝트가 달려오는 시각 전투
 - 실제 적 오브젝트가 있는 던전 방/보스/아이템 드랍
 - 실제 드랍 테이블과 장비 에셋
-- 인벤토리 UI와 장비 드래그 장착
+- 완성형 인벤토리 UI와 장비 드래그 장착
 - 복잡한 제작, 옵션, 장비 장착 UI
 
 삭제한 것:
@@ -73,6 +75,7 @@
 | `StatMod` | `Assets/02.Scripts/Character/Stats/StatMod.cs` | 특정 스탯에 Flat, PercentAdd, PercentMult 보정을 준다. Percent 값은 10 = 10%로 입력한다. | `ItemDefinition`의 Modifiers 배열에서 사용한다. | 퍼센트 입력 방식이 이해되는지 |
 | `EquipmentSlots` | `Assets/02.Scripts/Character/Core/EquipmentSlots.cs` | Weapon/Armor/Ring에 장비 정의 또는 live `ItemInstance`를 장착하고 `CharacterStats`로 보정을 전달한다. | 영웅 오브젝트의 `CharacterActor`와 함께 붙어 있다. 슬롯에 `ItemDefinition` 에셋을 직접 넣거나 `SimpleInventory.TryEquip(...)`으로 인스턴스를 장착하면 스탯이 바뀐다. | 장비 장착 후 공격력/체력/이동 속도 체감이 맞는지, 저장/로드 후 장착이 복원되는지 |
 | `DefenseHud` | `Assets/02.Scripts/GroundDefense/UI/DefenseHud.cs` | TMP 텍스트와 버튼을 연결해서 현재 상태와 강화 버튼을 보여준다 | Canvas 안의 HUD 오브젝트에 붙이고 Text/Button 슬롯을 연결한다. | 화면에 보이는 문구가 충분히 직관적인지 |
+| `PlayableLoopHud` | `Assets/02.Scripts/UI/PlayableLoopHud.cs` | Phase B용 최소 플레이어 HUD. 지상/던전/아이템/저장 상태를 한 패널에서 보여주고 핵심 버튼을 실행한다. | Canvas 안의 오브젝트에 붙이고 TMP 텍스트 6개와 Button 6개를 연결한다. 첫 패스는 `Auto Find References`를 켜 둔다. | 디버그 도구처럼 보이지 않는지, 다음 행동이 버튼 상태와 메시지로 충분히 드러나는지 |
 
 아이템 경제 테스트 시 `ItemDefinition.SalvageRewards`는 분해 보상 미리보기이고, `ItemDefinition.AffixRerollCost`는 Rare 장비 옵션 변형 비용 미리보기다. Normal/Magic은 변형 비용을 반환하지 않는다. Rare도 낮은 `baseTier`에서는 `AlterStone` 분해 보상이 없으므로, 초반 장비가 너무 빨리 재굴림 루프로 들어가지 않는지 확인해야 한다.
 
@@ -103,7 +106,7 @@ Scrap 25
 6. `LootDropper`와 `SimpleInventory`가 있다면 던전 클리어 후 저장 JSON의 `inventory.itemInstances`가 1개 이상 늘어났는지 확인한다.
 7. 저장 후 몇 분 뒤 다시 실행하면 최대 8시간 한도 안에서 오프라인 보상과 손상이 계산된다.
 
-저장 파일은 Unity의 `Application.persistentDataPath` 아래 `incremental_diablo_save.json`으로 만들어진다. 지상전, 던전 런 상태, 인벤토리 인스턴스는 저장 루트에 들어갔다. `CombatRoom`은 런 상태를 클리어/실패로 바꾸고, `ExpeditionDirector`는 클리어 보상을 `LootDropper`를 통해 인벤토리에 넣을 수 있다. 전투 결과 세부 로그, 실제 장비 정의 lookup, 인벤토리 HUD는 아직 별도 작업이다.
+저장 파일은 Unity의 `Application.persistentDataPath` 아래 `incremental_diablo_save.json`으로 만들어진다. 지상전, 던전 런 상태, 인벤토리 인스턴스는 저장 루트에 들어갔다. `CombatRoom`은 런 상태를 클리어/실패로 바꾸고, `ExpeditionDirector`는 클리어 보상을 `LootDropper`를 통해 인벤토리에 넣을 수 있다. 전투 결과 세부 로그, 실제 장비 정의 lookup, 완성형 인벤토리 UI는 아직 별도 작업이다.
 
 HUD까지 보고 싶다면:
 
@@ -112,6 +115,14 @@ HUD까지 보고 싶다면:
 3. Button을 Start, Repair, Mode Toggle, Wall Upgrade, Tower Upgrade, Defender Upgrade 용도로 만든다.
 4. Canvas 안의 빈 오브젝트에 `DefenseHud`를 붙인다.
 5. `DefenseHud` 슬롯에 위 Text/Button을 연결한다.
+
+Phase B의 전체 루프 HUD를 보고 싶다면:
+
+1. Canvas 안에 `Panel_PlayableLoopHud` 오브젝트를 만든다.
+2. `PlayableLoopHud`를 붙인다.
+3. TMP Text 6개를 `Summary`, `Resources`, `Dungeon`, `Latest Item`, `Hero Stats`, `Message` 슬롯에 연결한다.
+4. Button 6개를 `Start Dungeon`, `Claim Reward`, `Equip Latest`, `Salvage Latest`, `Save`, `Load` 슬롯에 연결한다.
+5. 첫 연결에서는 `Auto Find References`를 켜 둔다. 나중에 여러 영웅/인벤토리가 생기면 참조를 직접 연결한다.
 
 ## 4. 현재 규칙의 의미
 
@@ -150,11 +161,10 @@ Push는 위험하지만 다음 단계로 미는 선택처럼 느껴지는가?
 
 ## 6. 다음 구현 후보
 
-이 기본 뼈대가 괜찮으면 다음 순서는 둘 중 하나가 좋다.
+Phase A의 디버그 품질 루프는 확인됐다. 다음 순서는 Phase B를 기준으로 잡는다.
 
-1. `DefenseEnemy`, `TowerBattery`, `DefenseWall`을 추가해서 실제 적이 성벽으로 계속 움직이는 시각 프로토타입으로 확장한다.
-2. 저장 데이터를 `GameSaveData`의 hero/inventory 영역까지 확장해서 던전 보상과 장비 인스턴스를 유지한다.
+1. `PlayableLoopHud`를 `SampleScene` Canvas에 배치해서 정상 테스트 흐름을 OnGUI 디버그 패널 밖으로 옮긴다.
+2. 첫 10-20분 플레이 패스를 잡아 지상 강화, 던전 재도전, 장착/분해가 각각 의미 있는 선택인지 확인한다.
+3. 실패/막힘 메시지를 정리해 플레이어가 "왜 실패했는지"와 "무엇을 누르면 되는지"를 바로 알게 한다.
 
-지금은 일부러 시스템을 작게 유지했다. 먼저 숫자로 전선 압박, Hold/Push, 단계 상승 속도를 확인하고, 그 다음 화면과 저장을 붙이는 편이 피드백하기 쉽다.
-
-장비 기반은 아직 더 작다. 지금 가능한 것은 `ItemDefinition` 에셋을 만들어 영웅의 Weapon/Armor/Ring 슬롯에 직접 넣고, `CharacterStats.GetValue(...)` 결과가 바뀌는지 확인하는 수준이다. 분해는 `ItemDefinition` 기준의 보상 계산과 지갑 지급만 가능하다. 드롭, 인벤토리, 장비 인스턴스 저장, 제작, 희귀도별 옵션 개수는 아직 구현하지 않았다.
+아직 하지 말 것은 그대로 유지한다. 수십 개의 수동 아이템 테이블, 고급 드래그 인벤토리, 복잡한 제작, 실제 장기 밸런스는 Phase B의 최소 흐름이 보인 뒤에 확장한다.
