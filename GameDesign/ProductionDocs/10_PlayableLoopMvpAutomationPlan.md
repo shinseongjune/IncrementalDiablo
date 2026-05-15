@@ -96,10 +96,10 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase B - 30-Minute Retention Slice |
-| Last meaningful movement | 2026-05-15: `PlayableLoopHud` gained ground-defense actions, next-action hints, pressure/progress/upgrade summary, and setup docs so the normal HUD can cover defense upgrade -> dungeon -> equip/salvage decisions. |
-| Next unlock | Wire the new `PlayableLoopHud` ground buttons and optional `Action Hint` text into the active Canvas layout, then run a 10-20 minute pass without relying on the OnGUI debug panels for the normal loop. |
-| Loop coverage | Phase A debug loop is confirmed. Phase B player HUD now has code coverage for ground reward, defense start/repair/mode/upgrades, dungeon run/reward, inventory equip/salvage, save/load, and next-action feedback. Scene wiring and visual review remain. |
-| Known blockers | Active `Gameplay`/scene layout is still local/unpublished and needs Unity Editor visual review; real dungeon enemy/prefab feel, authored item assets/drop tables, production item-definition registry, and longer pacing remain open. |
+| Last meaningful movement | 2026-05-15: `PlayableLoopHud` was wired into the active `Gameplay` scene, the user confirmed the normal loop works from that HUD, and the scene split/HUD/save changes were published. |
+| Next unlock | Run a fresh-save 10-20 minute pass using only the normal player HUD, then record whether at least three meaningful decisions and one clear failure/recovery moment actually appear. |
+| Loop coverage | Phase A debug loop is confirmed. Phase B player HUD is now wired in-scene and covers ground reward, defense start/repair/mode/upgrades, dungeon run/reward, inventory equip/salvage, save/load, and next-action feedback without requiring the normal loop to use OnGUI debug panels. |
+| Known blockers | Early-session pacing evidence is still missing; real dungeon enemy/prefab feel, authored item assets/drop tables, production item-definition registry, and longer pacing remain open. |
 
 ## 4. MVP Task Queue
 
@@ -291,7 +291,7 @@ Play Mode에서 지상전/던전/인벤토리 상태를 한 화면에서 확인�
 
 ### P0. 최소 플레이어 HUD 브리지
 
-상태: Code Started
+상태: Done
 
 목표:
 OnGUI 디버그 패널에 의존하지 않고, Canvas/TMP/Button 기반의 최소 플레이어 HUD에서 핵심 루프 상태와 행동을 다룬다.
@@ -320,7 +320,7 @@ OnGUI 디버그 패널에 의존하지 않고, Canvas/TMP/Button 기반의 최�
 - `PlayableLoopHud`에 지상 방어 버튼 메서드와 슬롯을 추가했다: `Start Defense`, `Repair Wall`, `Toggle Hold/Push`, `Upgrade Wall`, `Upgrade Tower`, `Upgrade Defenders`.
 - 요약 라벨에 pressure/progress/upgrade levels를 추가했고, 다음 행동 힌트가 repair, upgrade, dungeon reward, equip, salvage, missing-reference blocker를 안내한다.
 - `06_UnitySceneAndPrefabSetupGuide.md`와 `09_BaseScriptUsageGuide.md`의 연결 절차를 6개 버튼 기준에서 12개 버튼 + 선택적 `Action Hint` 기준으로 갱신했다.
-- 남은 작업은 Unity Editor에서 실제 Canvas 버튼 슬롯을 추가/연결하고 10-20분 플레이 패스로 디버그 HUD 없이 흐름이 읽히는지 확인하는 것이다.
+- 2026-05-15 사용자 Play Mode 확인으로 `Gameplay` 씬의 HUD 연결이 완료됐고, 일반 루프가 OnGUI 디버그 패널 없이 동작하는 것을 확인했다. 이 브리지 작업은 더 이상 반복 선택하지 않는다.
 
 ### P0. 첫 10-20분 루프 패스
 
@@ -364,4 +364,4 @@ MVP 전까지 다음은 보류한다.
 
 ## 7. Discovered
 
-아직 없음.
+- 2026-05-15 첫 10분 플레이 패스에서 던전 재도전 버그를 발견했다. 1회 클리어 뒤 다시 `Start Dungeon`을 누르면 `ExpeditionDirector`는 새 런을 `Running`으로 시작했지만, `CombatRoom`은 이전 0번 방의 `Cleared` 상태를 보고 같은 방 재시작을 막아서 경과 시간만 증가했다. 이 재시도 차단 로직은 제거했고, 후속 Play Mode 확인에서는 두 번째 던전도 즉시 `Starting -> Running -> Cleared`로 다시 흘러야 한다.

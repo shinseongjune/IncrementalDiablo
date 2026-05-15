@@ -289,12 +289,6 @@ public class CombatRoom : MonoBehaviour
             return;
         }
 
-        if (activeRoomIndex == expedition.CurrentRoomIndex &&
-            (state == CombatRoomState.Cleared || state == CombatRoomState.Failed))
-        {
-            return;
-        }
-
         BeginRoom();
     }
 
