@@ -25,7 +25,11 @@
 
 2026-05-14 implementation scope: equipped `ItemInstance` objects now apply live definition modifiers, saved affix-roll modifiers, and a prototype rolled-power modifier by slot. This means a runtime prototype reward can still give a small Weapon/Armor/Ring stat effect after save/load even if the live `ItemDefinition` was not resolved. Authored item assets and a real item-definition registry are still required before production balance.
 
-2026-05-14 Phase B scope: `PlayableLoopHud` adds the first Canvas/TMP/Button bridge for the full loop. It shows frontline status, resources, dungeon state, latest item, hero stats, and a message line, then exposes player-facing button methods for start dungeon, claim reward, equip latest, salvage latest, save, and load. This is the first step away from OnGUI debug panels, but it still needs Unity Canvas wiring and layout review.
+2026-05-14 Phase B scope: `PlayableLoopHud` adds the first Canvas/TMP/Button bridge for the full loop. It shows frontline status, resources, dungeon state, latest item, hero stats, a message line, and an optional action-hint line, then exposes player-facing button methods for ground defense, dungeon, item, save, and load actions. This is the first step away from OnGUI debug panels, but it still needs Unity Canvas wiring and layout review.
+
+2026-05-15 Phase B scope update: `PlayableLoopHud` now includes ground-defense buttons for start, repair, Hold/Push toggle, and Wall/Tower/Defender upgrades. The single normal HUD can now cover the first Phase B decision set: improve defense, run/retry dungeon, then equip or salvage the reward.
+
+2026-05-15 save/load clarification: manual `Load` now restores the saved snapshot exactly. Startup auto-load still applies offline progress after loading. The prototype still uses one shared save file, so the 15-second auto-save can overwrite a prior manual snapshot before a later manual load.
 
 목표는 다음 한 문장이 Unity Play 모드에서 돌아가는 것이다.
 
@@ -64,7 +68,7 @@
 | `CombatRoom` | `Assets/02.Scripts/Dungeon/CombatRoom.cs` | 던전 방 시작 카운트다운, 적/영웅 생존 판정, 프로토타입 전투 계산, 클리어/실패 결과 전달을 맡는다. | `ExpeditionDirector`와 같은 오브젝트나 `DungeonRoot` 자식에 붙인다. `Expedition`을 비워도 자동 탐색한다. 적 프리팹이 없으면 `Simulate When No Enemies`를 켜서 계산형 방 결과를 테스트한다. | 클리어/실패 시간이 너무 빠르거나 느린지, 실패가 납득 가능한지 |
 | `LootDropper` | `Assets/02.Scripts/Items/LootDropper.cs` | 던전 클리어 보상을 `SimpleInventory`에 넣는다. 정의 에셋이 없으면 프로토타입 런타임 아이템을 만든다. | `DungeonRoot`에 붙이고 `Inventory`에는 `GameSystems`의 `SimpleInventory`를 연결한다. 실제 장비 에셋이 생기면 `Reward Definitions`에 넣는다. | Normal/Magic/Rare 지급 속도가 너무 후하거나 짠지, prototype fallback이 실제 밸런스처럼 오해되지 않는지 |
 | `GameSaveData` | `Assets/02.Scripts/Shared/GameSaveData.cs` | 저장 파일의 루트 데이터와 지상 방어, 던전, 영웅, 인벤토리 저장 데이터를 정의한다. | 직접 붙이지 않는다. `DefenseSaveManager`가 JSON으로 읽고 쓴다. | 저장해야 할 값이 빠졌는지 |
-| `DefenseSaveManager` | `Assets/02.Scripts/GroundDefense/Runtime/DefenseSaveManager.cs` | Gold/Scrap/Frontline Level/강화/성벽/던전 런/인벤토리 상태를 로컬 JSON으로 저장하고, 재접속 시 최대 8시간 오프라인 진행을 계산한다. | `GameSystems` 오브젝트에 붙인다. `DefenseDirector`, `ExpeditionDirector`, `SimpleInventory`는 비워도 자동 탐색한다. | 오프라인 보상이 너무 후하거나, 돌파 정지와 던전 런 저장이 너무 가혹한지 |
+| `DefenseSaveManager` | `Assets/02.Scripts/GroundDefense/Runtime/DefenseSaveManager.cs` | Gold/Scrap/Frontline Level/강화/성벽/던전 런/인벤토리 상태를 로컬 JSON으로 저장한다. 수동 `Load`는 정확한 스냅샷 복원이고, 시작 시 자동 로드만 최대 8시간 오프라인 진행을 덧붙인다. | `GameSystems` 오브젝트에 붙인다. `DefenseDirector`, `ExpeditionDirector`, `SimpleInventory`는 비워도 자동 탐색한다. | 오프라인 보상이 너무 후하거나, 자동 저장이 수동 테스트 스냅샷을 덮어쓰는 타이밍이 혼동을 주는지 |
 | `ItemSlot` | `Assets/02.Scripts/Items/ItemSlot.cs` | Weapon, Armor, Ring 같은 MVP 장비 부위를 정의한다. | 직접 붙이지 않는다. `ItemDefinition`과 `EquipmentSlots`가 사용한다. | MVP 부위가 너무 많거나 적은지 |
 | `ItemRarity` | `Assets/02.Scripts/Items/ItemRarity.cs` | Normal, Magic, Rare 등급만 우선 정의한다. | 직접 붙이지 않는다. `ItemDefinition`이 사용한다. | 초반 등급 구분이 충분한지 |
 | `ItemDefinition` | `Assets/02.Scripts/Items/ItemDefinition.cs` | 장비 에셋의 ID, 이름, 슬롯, 등급, 요구 레벨, 파워 범위, 스탯 보정을 정의한다. | Project 창에서 `Create > Incremental Diablo > Items > Item Definition`으로 만든 뒤 스탯 보정을 입력한다. | 장비 한 개가 주는 스탯 체감이 과하거나 약한지 |
@@ -75,7 +79,7 @@
 | `StatMod` | `Assets/02.Scripts/Character/Stats/StatMod.cs` | 특정 스탯에 Flat, PercentAdd, PercentMult 보정을 준다. Percent 값은 10 = 10%로 입력한다. | `ItemDefinition`의 Modifiers 배열에서 사용한다. | 퍼센트 입력 방식이 이해되는지 |
 | `EquipmentSlots` | `Assets/02.Scripts/Character/Core/EquipmentSlots.cs` | Weapon/Armor/Ring에 장비 정의 또는 live `ItemInstance`를 장착하고 `CharacterStats`로 보정을 전달한다. | 영웅 오브젝트의 `CharacterActor`와 함께 붙어 있다. 슬롯에 `ItemDefinition` 에셋을 직접 넣거나 `SimpleInventory.TryEquip(...)`으로 인스턴스를 장착하면 스탯이 바뀐다. | 장비 장착 후 공격력/체력/이동 속도 체감이 맞는지, 저장/로드 후 장착이 복원되는지 |
 | `DefenseHud` | `Assets/02.Scripts/GroundDefense/UI/DefenseHud.cs` | TMP 텍스트와 버튼을 연결해서 현재 상태와 강화 버튼을 보여준다 | Canvas 안의 HUD 오브젝트에 붙이고 Text/Button 슬롯을 연결한다. | 화면에 보이는 문구가 충분히 직관적인지 |
-| `PlayableLoopHud` | `Assets/02.Scripts/UI/PlayableLoopHud.cs` | Phase B용 최소 플레이어 HUD. 지상/던전/아이템/저장 상태를 한 패널에서 보여주고 핵심 버튼을 실행한다. | Canvas 안의 오브젝트에 붙이고 TMP 텍스트 6개와 Button 6개를 연결한다. 첫 패스는 `Auto Find References`를 켜 둔다. | 디버그 도구처럼 보이지 않는지, 다음 행동이 버튼 상태와 메시지로 충분히 드러나는지 |
+| `PlayableLoopHud` | `Assets/02.Scripts/UI/PlayableLoopHud.cs` | Phase B용 최소 플레이어 HUD. 지상/던전/아이템/저장 상태를 한 패널에서 보여주고 핵심 버튼을 실행한다. | Canvas 안의 오브젝트에 붙이고 TMP 텍스트 6-7개와 Button 12개를 연결한다. 첫 패스는 `Auto Find References`를 켜 둔다. | 디버그 도구처럼 보이지 않는지, 다음 행동이 버튼 상태와 메시지로 충분히 드러나는지 |
 
 아이템 경제 테스트 시 `ItemDefinition.SalvageRewards`는 분해 보상 미리보기이고, `ItemDefinition.AffixRerollCost`는 Rare 장비 옵션 변형 비용 미리보기다. Normal/Magic은 변형 비용을 반환하지 않는다. Rare도 낮은 `baseTier`에서는 `AlterStone` 분해 보상이 없으므로, 초반 장비가 너무 빨리 재굴림 루프로 들어가지 않는지 확인해야 한다.
 
@@ -120,9 +124,10 @@ Phase B의 전체 루프 HUD를 보고 싶다면:
 
 1. Canvas 안에 `Panel_PlayableLoopHud` 오브젝트를 만든다.
 2. `PlayableLoopHud`를 붙인다.
-3. TMP Text 6개를 `Summary`, `Resources`, `Dungeon`, `Latest Item`, `Hero Stats`, `Message` 슬롯에 연결한다.
-4. Button 6개를 `Start Dungeon`, `Claim Reward`, `Equip Latest`, `Salvage Latest`, `Save`, `Load` 슬롯에 연결한다.
-5. 첫 연결에서는 `Auto Find References`를 켜 둔다. 나중에 여러 영웅/인벤토리가 생기면 참조를 직접 연결한다.
+3. TMP Text 6-7개를 `Summary`, `Resources`, `Dungeon`, `Latest Item`, `Hero Stats`, `Message`, 선택 사항인 `Action Hint` 슬롯에 연결한다.
+4. Ground Button 6개를 `Start Defense`, `Repair Wall`, `Toggle Hold/Push`, `Upgrade Wall`, `Upgrade Tower`, `Upgrade Defenders` 슬롯에 연결한다.
+5. Dungeon/Item/Save Button 6개를 `Start Dungeon`, `Claim Reward`, `Equip Latest`, `Salvage Latest`, `Save`, `Load` 슬롯에 연결한다.
+6. 첫 연결에서는 `Auto Find References`를 켜 둔다. 나중에 여러 영웅/인벤토리가 생기면 참조를 직접 연결한다.
 
 ## 4. 현재 규칙의 의미
 

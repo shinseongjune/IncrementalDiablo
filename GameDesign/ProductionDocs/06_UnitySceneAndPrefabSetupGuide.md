@@ -241,19 +241,21 @@ Canvas_Dungeon
 1. In Play Mode, use `Dungeon Loop Debug` -> `Start Dungeon`, then wait for a clear or press `Force Clear`.
 2. Use `Inventory Loop Debug` -> `Equip Latest`, then confirm `Hero Stats` changes.
 3. Use `Dungeon Loop Debug` -> `Save`, then `Validate Saved File`. This checks the JSON written under `Application.persistentDataPath`.
-4. Use `Dungeon Loop Debug` -> `Load`, then `Validate Snapshot`. This checks the live runtime state after loading.
+4. Use `Dungeon Loop Debug` -> `Load`, then `Validate Snapshot`. Manual `Load` restores the saved snapshot exactly; offline catch-up is only applied when the game loads on startup.
 5. Restart Play Mode and repeat `Validate Snapshot` to confirm the persisted inventory count, equipped item ids, and prototype snapshot-power stat bridge survive a full session restart.
-6. This is still a debug HUD smoke test. It does not replace the later production inventory UI or authored item-definition registry.
+6. If you are testing rollback behavior, press `Load` before the next auto-save tick. The current prototype still uses one shared save file, so the 15-second auto-save can overwrite the earlier manual snapshot.
+7. This is still a debug HUD smoke test. It does not replace the later production inventory UI or authored item-definition registry.
 
 2026-05-14 Phase B minimal player HUD bridge:
 
 1. Create a normal Canvas panel named `Canvas_PlayableLoop`.
 2. Add a child object named `Panel_PlayableLoopHud` and attach `PlayableLoopHud`.
-3. Add TMP text fields for `Summary`, `Resources`, `Dungeon`, `Latest Item`, `Hero Stats`, and `Message`, then assign them to the matching `PlayableLoopHud` label slots.
-4. Add buttons for `Start Dungeon`, `Claim Reward`, `Equip Latest`, `Salvage Latest`, `Save`, and `Load`, then assign them to the matching button slots.
-5. Let `Auto Find References` stay enabled for the first pass. If a scene has multiple heroes or inventories later, wire `DefenseDirector`, `ExpeditionDirector`, `SimpleInventory`, `ItemSalvageService`, `EquipmentSlots`, `CharacterStats`, `CurrencyWallet`, and `DefenseSaveManager` explicitly.
-6. Keep `DungeonDebugHud` and `InventoryDebugHud` in the scene only as smoke-test fallback. Normal Phase B testing should use `PlayableLoopHud` first.
-7. After wiring, Play Mode check: start dungeon, wait for clear, claim reward if needed, equip latest, salvage latest, save, load, and confirm the message line and button interactability guide the next action.
+3. Add TMP text fields for `Summary`, `Resources`, `Dungeon`, `Latest Item`, `Hero Stats`, `Message`, and optionally `Action Hint`, then assign them to the matching `PlayableLoopHud` label slots. If `Action Hint` is not assigned, the next-action hint is appended to `Message`.
+4. Add ground buttons for `Start Defense`, `Repair Wall`, `Toggle Hold/Push`, `Upgrade Wall`, `Upgrade Tower`, and `Upgrade Defenders`, then assign them to the matching button slots.
+5. Add dungeon/item/save buttons for `Start Dungeon`, `Claim Reward`, `Equip Latest`, `Salvage Latest`, `Save`, and `Load`, then assign them to the matching button slots.
+6. Let `Auto Find References` stay enabled for the first pass. If a scene has multiple heroes or inventories later, wire `DefenseDirector`, `ExpeditionDirector`, `SimpleInventory`, `ItemSalvageService`, `EquipmentSlots`, `CharacterStats`, `CurrencyWallet`, and `DefenseSaveManager` explicitly.
+7. Keep `DungeonDebugHud` and `InventoryDebugHud` in the scene only as smoke-test fallback. Normal Phase B testing should use `PlayableLoopHud` first.
+8. After wiring, Play Mode check: start/repair/toggle the frontline, buy one defense upgrade, start dungeon, wait for clear, claim reward if needed, equip latest or salvage it, save, load, and confirm the message/action-hint lines and button interactability guide the next action.
 
 2026-05-14 PlayableLoopHud feedback update:
 
@@ -261,6 +263,13 @@ Canvas_Dungeon
 2. `Claim Reward` can stay unavailable while a run is active. If the dungeon clears and `ExpeditionDirector > Grant Reward On Expedition Clear` is enabled, the reward is granted automatically and the button is only a status/confirmation action.
 3. If pressing `Start Dungeon` shows `Room: unavailable`, the HUD found `ExpeditionDirector` but did not find `CombatRoom`. In that case keep `CombatRoom` on `DungeonRoot` or wire it directly into `PlayableLoopHud`.
 4. If the dungeon appears to be stuck in `Running`, check the `Room:` line first. `Starting` means countdown, `Running` means prototype combat is ticking, and `Cleared`/`Failed` means the room already resolved.
+
+2026-05-15 PlayableLoopHud ground-action update:
+
+1. `PlayableLoopHud` now exposes ground-defense controls for `Start Defense`, `Repair Wall`, `Toggle Hold/Push`, `Upgrade Wall`, `Upgrade Tower`, and `Upgrade Defenders`.
+2. The summary label now includes pressure, progress, and Wall/Tower/Defender levels so the player can see why a ground upgrade matters before entering another dungeon.
+3. Add an optional `Action Hint` TMP text field if the layout has room. The HUD writes the next recommended action there, including repair, upgrade, dungeon reward, equip, salvage, and missing-reference blockers.
+4. Phase B layout should now treat `PlayableLoopHud` as the normal combined loop panel. `DefenseHud`, `DungeonDebugHud`, and `InventoryDebugHud` should remain fallback/debug surfaces only.
 
 ## 4. 프리팹 목록
 

@@ -25,8 +25,15 @@ public class PlayableLoopHud : MonoBehaviour
     [SerializeField] private TMP_Text latestItemText;
     [SerializeField] private TMP_Text heroStatsText;
     [SerializeField] private TMP_Text messageText;
+    [SerializeField] private TMP_Text actionHintText;
 
     [Header("Buttons")]
+    [SerializeField] private Button startDefenseButton;
+    [SerializeField] private Button repairWallButton;
+    [SerializeField] private Button toggleFrontlineModeButton;
+    [SerializeField] private Button upgradeWallButton;
+    [SerializeField] private Button upgradeTowerButton;
+    [SerializeField] private Button upgradeDefenderButton;
     [SerializeField] private Button startDungeonButton;
     [SerializeField] private Button claimRewardButton;
     [SerializeField] private Button equipLatestButton;
@@ -101,6 +108,95 @@ public class PlayableLoopHud : MonoBehaviour
         SetMessage(combatRoom == null
             ? "Dungeon started, but no CombatRoom is linked. Room progress cannot advance yet."
             : "Dungeon started. Room progress is shown in the Dungeon line.");
+    }
+
+    public void StartDefense()
+    {
+        ResolveReferences();
+        if (defense == null)
+        {
+            SetMessage("Frontline is not available.");
+            return;
+        }
+
+        DefenseRuntimeState runtime = defense.Runtime;
+        if (runtime.IsRunning)
+        {
+            SetMessage($"Frontline is already running in {runtime.Mode} mode.");
+            return;
+        }
+
+        if (runtime.WallHealth <= 0f)
+        {
+            SetMessage("Repair the wall before restarting the frontline.");
+            return;
+        }
+
+        defense.StartDefense();
+        SetMessage($"Frontline started in {defense.Runtime.Mode} mode.");
+    }
+
+    public void RepairWall()
+    {
+        ResolveReferences();
+        if (!TryGetDefenseUpgradeContext(out DefenseUpgradeModel upgrades, out CurrencyWallet defenseWallet, out string failureReason))
+        {
+            SetMessage($"Repair failed: {failureReason}.");
+            return;
+        }
+
+        DefenseRuntimeState runtime = defense.Runtime;
+        float missingHealth = Mathf.Max(0f, runtime.WallMaxHealth - runtime.WallHealth);
+        if (missingHealth <= 0f)
+        {
+            SetMessage("Wall is already fully repaired.");
+            return;
+        }
+
+        ResourceAmount[] cost = upgrades.GetRepairCost(missingHealth);
+        if (!defenseWallet.CanSpend(cost))
+        {
+            SetMessage($"Repair needs {FormatRewards(cost)}.");
+            return;
+        }
+
+        SetMessage(defense.TryRepairWall()
+            ? "Wall repaired. Restart or push the frontline."
+            : "Repair failed.");
+    }
+
+    public void ToggleFrontlineMode()
+    {
+        ResolveReferences();
+        if (defense == null)
+        {
+            SetMessage("Frontline is not available.");
+            return;
+        }
+
+        if (defense.Runtime.State == DefenseState.Breached)
+        {
+            SetMessage("Repair the wall before changing frontline mode.");
+            return;
+        }
+
+        defense.ToggleMode();
+        SetMessage($"Frontline mode changed to {defense.Runtime.Mode}.");
+    }
+
+    public void UpgradeWall()
+    {
+        TryUpgradeDefense("Wall", upgrades => upgrades.GetWallUpgradeCost(), () => defense.TryUpgradeWall());
+    }
+
+    public void UpgradeTower()
+    {
+        TryUpgradeDefense("Tower", upgrades => upgrades.GetTowerUpgradeCost(), () => defense.TryUpgradeTower());
+    }
+
+    public void UpgradeDefenders()
+    {
+        TryUpgradeDefense("Defenders", upgrades => upgrades.GetDefenderUpgradeCost(), () => defense.TryUpgradeDefender());
     }
 
     public void ClaimPendingReward()
@@ -215,7 +311,9 @@ public class PlayableLoopHud : MonoBehaviour
         SetText(dungeonText, BuildDungeonText());
         SetText(latestItemText, BuildLatestItemText());
         SetText(heroStatsText, BuildHeroStatsText());
-        SetText(messageText, lastMessage);
+        string actionHint = BuildActionHintText();
+        SetText(messageText, actionHintText == null ? BuildMessageText(actionHint) : lastMessage);
+        SetText(actionHintText, actionHint);
         RefreshButtons();
     }
 
@@ -227,7 +325,13 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         DefenseRuntimeState runtime = defense.Runtime;
-        return $"Frontline Lv.{runtime.FrontlineLevel} / {runtime.State} / {runtime.Mode} / Wall {Mathf.CeilToInt(runtime.WallHealth)}/{Mathf.CeilToInt(runtime.WallMaxHealth)}";
+        string pressureText = $"{Mathf.CeilToInt(runtime.EnemyPressure)}/{Mathf.CeilToInt(runtime.EnemyPressureCapacity)}";
+        string progressText = $"{Mathf.RoundToInt(runtime.FrontlineProgressPercent * 100f)}%";
+        string upgradeText = defense.Upgrades == null
+            ? "Upgrades unavailable"
+            : $"Wall Lv.{defense.Upgrades.WallLevel} / Tower Lv.{defense.Upgrades.TowerLevel} / Defenders Lv.{defense.Upgrades.DefenderLevel}";
+
+        return $"Frontline Lv.{runtime.FrontlineLevel} / {runtime.State} / {runtime.Mode} / Wall {Mathf.CeilToInt(runtime.WallHealth)}/{Mathf.CeilToInt(runtime.WallMaxHealth)}\nPressure {pressureText} / Progress {progressText}\n{upgradeText}";
     }
 
     private string BuildDungeonText()
@@ -292,7 +396,8 @@ public class PlayableLoopHud : MonoBehaviour
             return inventory == null ? "Inventory: unavailable" : $"Inventory: {inventory.Count}/{inventory.Capacity} / Latest: none";
         }
 
-        return $"Inventory: {inventory.Count}/{inventory.Capacity} / Latest: {item.DisplayName} / {item.Rarity} {item.Slot} Power {item.RolledPower}";
+        string equippedText = item.Equipped ? " / Equipped" : string.Empty;
+        return $"Inventory: {inventory.Count}/{inventory.Capacity} / Latest: {item.DisplayName} / {item.Rarity} {item.Slot} Power {item.RolledPower}{equippedText}";
     }
 
     private string BuildHeroStatsText()
@@ -305,15 +410,180 @@ public class PlayableLoopHud : MonoBehaviour
         return $"Hero: ATK {characterStats.GetValue(StatId.AttackDamage):0.#} / HP {characterStats.GetValue(StatId.MaxHealth):0.#} / APS {characterStats.GetValue(StatId.AttackSpeed):0.##}";
     }
 
+    private string BuildActionHintText()
+    {
+        if (defense == null)
+        {
+            return "Next: connect DefenseDirector so frontline rewards and upgrades are visible.";
+        }
+
+        DefenseRuntimeState runtime = defense.Runtime;
+        if (runtime.State == DefenseState.Breached || runtime.WallHealth <= 0f)
+        {
+            return CanRepairWall()
+                ? "Next: repair the wall, then restart the frontline."
+                : "Next: earn enough Gold for wall repair or lower early pressure in tuning.";
+        }
+
+        if (!runtime.IsRunning)
+        {
+            return "Next: start the frontline so Gold and Scrap keep feeding the loop.";
+        }
+
+        if (expedition == null)
+        {
+            return "Next: connect ExpeditionDirector so dungeon attempts are available.";
+        }
+
+        if (expedition.IsRunning)
+        {
+            return "Next: wait for the room result; failure should explain what to improve.";
+        }
+
+        if (expedition.RewardPending)
+        {
+            return "Next: claim the dungeon reward.";
+        }
+
+        ItemInstance latest = GetLatestItem();
+        if (latest != null && !latest.Equipped)
+        {
+            return "Next: equip the latest item or salvage it into upgrade materials.";
+        }
+
+        if (CanBuyAnyDefenseUpgrade())
+        {
+            return "Next: buy a defense upgrade, then run another dungeon for gear.";
+        }
+
+        if (latest != null)
+        {
+            return "Next: keep the equipped item, salvage spares, or start another dungeon.";
+        }
+
+        return "Next: start a dungeon, then use its reward to choose equip or salvage.";
+    }
+
+    private string BuildMessageText(string actionHint)
+    {
+        if (string.IsNullOrWhiteSpace(actionHint))
+        {
+            return lastMessage;
+        }
+
+        if (string.IsNullOrWhiteSpace(lastMessage) || lastMessage == "Ready")
+        {
+            return actionHint;
+        }
+
+        return $"{lastMessage}\n{actionHint}";
+    }
+
     private void RefreshButtons()
     {
         ItemInstance latest = GetLatestItem();
+        DefenseRuntimeState runtime = defense == null ? null : defense.Runtime;
+        DefenseUpgradeModel upgrades = defense == null ? null : defense.Upgrades;
+        CurrencyWallet defenseWallet = GetDefenseWallet();
+        bool canUseDefense = defense != null && runtime != null;
+        bool canUseUpgrades = canUseDefense && upgrades != null && defenseWallet != null;
+
+        SetInteractable(startDefenseButton, canUseDefense && !runtime.IsRunning && runtime.WallHealth > 0f);
+        SetInteractable(repairWallButton, CanRepairWall());
+        SetInteractable(toggleFrontlineModeButton, canUseDefense && runtime.State != DefenseState.Breached);
+        SetInteractable(upgradeWallButton, canUseUpgrades && defenseWallet.CanSpend(upgrades.GetWallUpgradeCost()));
+        SetInteractable(upgradeTowerButton, canUseUpgrades && defenseWallet.CanSpend(upgrades.GetTowerUpgradeCost()));
+        SetInteractable(upgradeDefenderButton, canUseUpgrades && defenseWallet.CanSpend(upgrades.GetDefenderUpgradeCost()));
         SetInteractable(startDungeonButton, expedition != null && !expedition.IsRunning);
         SetInteractable(claimRewardButton, expedition != null && (expedition.RewardPending || expedition.State == DungeonRunState.Cleared));
         SetInteractable(equipLatestButton, latest != null && inventory != null && equipmentSlots != null);
         SetInteractable(salvageLatestButton, latest != null && salvageService != null);
         SetInteractable(saveButton, saveManager != null);
         SetInteractable(loadButton, saveManager != null && saveManager.HasSaveFile);
+    }
+
+    private void TryUpgradeDefense(string label, Func<DefenseUpgradeModel, ResourceAmount[]> costSelector, Func<bool> upgradeAction)
+    {
+        ResolveReferences();
+        if (!TryGetDefenseUpgradeContext(out DefenseUpgradeModel upgrades, out CurrencyWallet defenseWallet, out string failureReason))
+        {
+            SetMessage($"{label} upgrade failed: {failureReason}.");
+            return;
+        }
+
+        ResourceAmount[] cost = costSelector(upgrades);
+        if (!defenseWallet.CanSpend(cost))
+        {
+            SetMessage($"{label} upgrade needs {FormatRewards(cost)}.");
+            return;
+        }
+
+        SetMessage(upgradeAction()
+            ? $"{label} upgraded."
+            : $"{label} upgrade failed.");
+    }
+
+    private bool TryGetDefenseUpgradeContext(out DefenseUpgradeModel upgrades, out CurrencyWallet defenseWallet, out string failureReason)
+    {
+        upgrades = null;
+        defenseWallet = null;
+        failureReason = string.Empty;
+
+        if (defense == null)
+        {
+            failureReason = "frontline is not available";
+            return false;
+        }
+
+        upgrades = defense.Upgrades;
+        if (upgrades == null)
+        {
+            failureReason = "DefenseUpgradeModel is not available";
+            return false;
+        }
+
+        defenseWallet = GetDefenseWallet();
+        if (defenseWallet == null)
+        {
+            failureReason = "CurrencyWallet is not available";
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool CanBuyAnyDefenseUpgrade()
+    {
+        if (!TryGetDefenseUpgradeContext(out DefenseUpgradeModel upgrades, out CurrencyWallet defenseWallet, out _))
+        {
+            return false;
+        }
+
+        return defenseWallet.CanSpend(upgrades.GetWallUpgradeCost()) ||
+               defenseWallet.CanSpend(upgrades.GetTowerUpgradeCost()) ||
+               defenseWallet.CanSpend(upgrades.GetDefenderUpgradeCost());
+    }
+
+    private bool CanRepairWall()
+    {
+        if (!TryGetDefenseUpgradeContext(out DefenseUpgradeModel upgrades, out CurrencyWallet defenseWallet, out _))
+        {
+            return false;
+        }
+
+        DefenseRuntimeState runtime = defense.Runtime;
+        float missingHealth = Mathf.Max(0f, runtime.WallMaxHealth - runtime.WallHealth);
+        return missingHealth > 0f && defenseWallet.CanSpend(upgrades.GetRepairCost(missingHealth));
+    }
+
+    private CurrencyWallet GetDefenseWallet()
+    {
+        if (defense != null && defense.Wallet != null)
+        {
+            return defense.Wallet;
+        }
+
+        return wallet;
     }
 
     private ItemInstance GetLatestItem()
@@ -404,6 +674,12 @@ public class PlayableLoopHud : MonoBehaviour
             return;
         }
 
+        AddListener(startDefenseButton, StartDefense);
+        AddListener(repairWallButton, RepairWall);
+        AddListener(toggleFrontlineModeButton, ToggleFrontlineMode);
+        AddListener(upgradeWallButton, UpgradeWall);
+        AddListener(upgradeTowerButton, UpgradeTower);
+        AddListener(upgradeDefenderButton, UpgradeDefenders);
         AddListener(startDungeonButton, StartDungeon);
         AddListener(claimRewardButton, ClaimPendingReward);
         AddListener(equipLatestButton, EquipLatest);
@@ -420,6 +696,12 @@ public class PlayableLoopHud : MonoBehaviour
             return;
         }
 
+        RemoveListener(startDefenseButton, StartDefense);
+        RemoveListener(repairWallButton, RepairWall);
+        RemoveListener(toggleFrontlineModeButton, ToggleFrontlineMode);
+        RemoveListener(upgradeWallButton, UpgradeWall);
+        RemoveListener(upgradeTowerButton, UpgradeTower);
+        RemoveListener(upgradeDefenderButton, UpgradeDefenders);
         RemoveListener(startDungeonButton, StartDungeon);
         RemoveListener(claimRewardButton, ClaimPendingReward);
         RemoveListener(equipLatestButton, EquipLatest);

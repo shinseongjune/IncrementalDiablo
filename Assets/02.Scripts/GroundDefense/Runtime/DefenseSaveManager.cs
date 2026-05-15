@@ -27,7 +27,7 @@ public class DefenseSaveManager : MonoBehaviour
 
         if (loadOnStart)
         {
-            TryLoad();
+            TryLoadAndSimulateOfflineProgress();
         }
     }
 
@@ -109,6 +109,16 @@ public class DefenseSaveManager : MonoBehaviour
 
     public bool TryLoad()
     {
+        return TryLoadInternal(applyOfflineProgress: false);
+    }
+
+    public bool TryLoadAndSimulateOfflineProgress()
+    {
+        return TryLoadInternal(applyOfflineProgress: true);
+    }
+
+    private bool TryLoadInternal(bool applyOfflineProgress)
+    {
         ResolveReferences();
 
         if (director == null || !HasSaveFile)
@@ -147,7 +157,11 @@ public class DefenseSaveManager : MonoBehaviour
             }
 
             RestoreEquipmentState(saveData);
-            ApplyOfflineProgress(saveData);
+            if (applyOfflineProgress)
+            {
+                ApplyOfflineProgress(saveData);
+            }
+
             autoSaveElapsed = 0f;
             return true;
         }
