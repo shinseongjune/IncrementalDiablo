@@ -1,7 +1,7 @@
 # Playable Loop MVP Automation Plan
 
 작성일: 2026-05-07
-문서 목적: daily automation이 실제 플레이 루프 MVP를 향해 매일 가장 앞의 연결부를 구현하도록 고정하는 작업 큐
+문서 목적: daily automation이 실제 플레이 루프 MVP를 닫은 뒤에도 디버그 보조 작업에 머물지 않고, 플레이어가 보는 실제 게임 제작으로 계속 전진하도록 고정하는 작업 큐
 
 ## 1. MVP 목표
 
@@ -22,7 +22,7 @@ Ground defense earns Gold/Scrap
 
 ## 2. 자동화 운영 규칙
 
-Daily automation은 매 실행 시작 시 이 문서를 읽고, `MVP Task Queue`에서 가장 앞에 있는 미완료/막힌 항목을 우선 선택한다.
+Daily automation은 매 실행 시작 시 이 문서를 읽고, **현재 phase의 task queue**에서 가장 앞에 있는 미완료/막힌 항목을 우선 선택한다.
 
 자동화는 작업 후 이 문서를 개선해야 한다.
 
@@ -31,6 +31,7 @@ Daily automation은 매 실행 시작 시 이 문서를 읽고, `MVP Task Queue`
 - 구현 중 범위가 커지면 작은 다음 작업으로 쪼갠다.
 - Unity Editor 수동 배치가 필요한 경우 정확한 GameObject/Component/Inspector 연결 순서를 남긴다.
 - Git commit/push는 하지 않는다. 변경이 검증되어 올릴 만하면 보고서에서 "사용자 확인 필요: 커밋/푸시 요청"으로 요청한다.
+- 한 phase의 최소 검증이 끝났으면 디버그 HUD, smoke test, 진단 helper만 더 늘리는 작업을 기본 선택지로 삼지 않는다. 다음 phase의 **플레이어 가시 작업**으로 바로 넘어간다.
 
 ### 2.1 Headless Unity 검증 안전 규칙
 
@@ -70,8 +71,9 @@ This document must not stop at the first MVP. When the current phase is complete
 | --- | --- | --- | --- |
 | Phase A - Playable Loop MVP | Completed 2026-05-14 after Play Mode smoke-test confirmation. | MVP-01 through MVP-10 are `Done`; Play Mode can show ground reward -> dungeon -> loot -> equip/salvage -> save/load at debug quality. | Closed unless a regression appears. |
 | Phase B - 30-Minute Retention Slice | Current phase. The debug loop exists, but the experience is shallow and still tool-like. | A new player can play about 30 minutes with at least three meaningful upgrade decisions, one failure/recovery moment, and no dev-console-only step. | Replace debug HUD with minimal player HUD, tune early pacing, repeat dungeon attempts, clarify failure/reward feedback. |
-| Phase C - Long-Horizon Systems Foundation | Phase B is done. The first session works, but long-term scaling is not proven. | Formula-driven dungeon tiers, ground scaling, item rarity/material sinks, and save migration hooks exist without hand-authored content ladders. | Add generated tiers, item/drop pacing tables, material sinks, balance validation scripts, and extensible save schemas. |
-| Phase D - Early Access Readiness Slice | Phase C is done. Systems scale, but the game is not yet release-shaped. | A 2-4 hour repeatable slice is playable with stable UI, recoverable failure, basic settings, readable onboarding, QA checklist, and no known progression blocker. | Add usability polish, error handling, content breadth, performance checks, settings, and release-scope triage. |
+| Phase C - First Real Game Slice | Phase B is done. The first session reads correctly, but too much of the loop is still hidden simulation or prototype fallback. | One player-facing runtime slice contains a visible ground-defense lane, one direct-control dungeon room with at least one real enemy prefab, and authored item assets/definitions feeding the reward loop without relying on debug-only surfaces for the normal path. | Replace hidden simulations and runtime-only fallbacks with scene/prefab-driven gameplay, direct-control combat, authored item assets, and player-visible presentation. |
+| Phase D - Long-Horizon Systems Foundation | Phase C is done. The project now reads as a game, but long-term scaling is not proven. | Formula-driven dungeon tiers, ground scaling, item rarity/material sinks, and save migration hooks exist without hand-authored content ladders. | Add generated tiers, item/drop pacing tables, material sinks, balance validation scripts, and extensible save schemas. |
+| Phase E - Early Access Readiness Slice | Phase D is done. Systems scale, but the game is not yet release-shaped. | A 2-4 hour repeatable slice is playable with stable UI, recoverable failure, basic settings, readable onboarding, QA checklist, and no known progression blocker. | Add usability polish, error handling, content breadth, performance checks, settings, and release-scope triage. |
 
 ## Phase Promotion Rule
 
@@ -79,6 +81,16 @@ This document must not stop at the first MVP. When the current phase is complete
 - If the next phase is too broad, split the first risky item into one P0 task that can be completed in one automation run.
 - If all listed phases are done or stale, add a `Next Production Phase Proposal` section with 2-3 options, a recommendation, and user-confirmation needs. Do not spend the run on filler cleanup.
 - If a phase cannot be advanced because it requires Unity Editor/manual gameplay judgment, document the exact manual check and choose the next safe code/docs task that still moves the playable loop.
+
+## Visible Game Production Rule
+
+Phase B를 닫은 뒤부터는 "검증 가능한 간이 게임"을 더 오래 다듬는 것이 기본값이 아니다.
+
+- smoke test, debug HUD, 진단 helper는 회귀를 막거나 다음 실제 구현을 열어줄 때만 추가한다.
+- 한 번의 실행이 보조 작업만 했다면, 다음 실행은 실제 회귀/빌드 차단이 없는 한 **플레이어가 눈으로 보고 조작하는 변화**를 만들어야 한다.
+- Phase C의 기본 질문은 "무엇을 더 측정할까?"가 아니라 "지금 어떤 placeholder를 실제 게임 요소로 바꿀까?"다.
+- 우선 교체 대상은 숨은 전투 시뮬레이션, 런타임 임시 아이템, 보이지 않는 전선 표현이다.
+- 첫 실제 게임 제작 우선순위는 직접 조작 던전 방, 실제 적 프리팹/AI, authored item assets/definitions, 지상 전선 시각화다.
 
 ## No-Stagnation Rules
 
@@ -97,7 +109,7 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | --- | --- |
 | Current phase | Phase B - 30-Minute Retention Slice |
 | Last meaningful movement | 2026-05-16: breached frontline rewards were changed from 0% to a reduced 25% recovery income so a player who spends down before a breach can still earn repair Gold instead of softlocking the run. |
-| Next unlock | Run a fresh-save 10-20 minute pass using only the normal player HUD, then confirm that at least three meaningful decisions and one clear breach/recovery moment actually read well on-screen. |
+| Next unlock | Run a fresh-save 10-20 minute pass using only the normal player HUD. If it passes, promote to Phase C in the same update and mark the first real-game task below as `Next` instead of selecting more debug polish. |
 | Loop coverage | Phase A debug loop is confirmed. Phase B player HUD is now wired in-scene and covers ground reward, defense start/repair/mode/upgrades, dungeon run/reward, inventory equip/salvage, save/load, and next-action feedback without requiring the normal loop to use OnGUI debug panels. |
 | Known blockers | Early-session pacing readability still needs manual evidence; real dungeon enemy/prefab feel, authored item assets/drop tables, production item-definition registry, and longer pacing remain open. |
 
@@ -334,6 +346,51 @@ Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루�
 - 신규 플레이어가 디버그 버튼 없이 지상전 보상, 던전 1회, 장착/분해, 저장/로드를 이해할 수 있다.
 - 최소 3개의 의미 있는 결정이 있다: 지상 강화, 던전 재도전, 아이템 장착/분해.
 - 실패 또는 막힘이 발생했을 때 다음 행동이 화면에 드러난다.
+
+## 4.2 Phase C Task Queue
+
+### P0. 첫 실제 던전 방 만들기
+
+상태: Planned - Phase B 종료 시 `Next`로 승격
+
+목표:
+프로토타입 계산 전투에 기대지 않고, 플레이어가 직접 클릭 조작으로 들어가 싸우는 던전 방 1개를 만든다.
+
+완료 기준:
+
+- `Gameplay` 런타임 안에서 영웅이 지면 클릭 이동과 적 클릭 공격을 수행한다.
+- 최소 1종의 실제 적 프리팹이 존재하고, 적이 영웅을 추적/공격한다.
+- 일반 플레이 경로는 숨은 `CombatRoom` 시뮬레이션만으로 끝나지 않고, 보이는 적 사망으로 방 클리어가 난다.
+- 클리어/실패 결과가 기존 보상/귀환 루프와 연결된다.
+- 필요한 씬/프리팹 수동 작업이 있으면 정확한 연결 절차를 문서화한다.
+
+### P0. 지상 전선 시각 프로토타입
+
+상태: Planned
+
+목표:
+숫자 압박 모델만 보이던 지상 전선을, 적이 성벽으로 밀려오고 방어가 자동으로 대응하는 장면으로 바꾼다.
+
+완료 기준:
+
+- 적이 화면에서 지속적으로 전진한다.
+- 포탑 또는 병력이 자동으로 적을 공격한다.
+- 압박 증가와 성벽 손상이 숫자뿐 아니라 장면에서도 읽힌다.
+- 기존 `DefenseDirector` 수치 루프와 시각 오브젝트가 분리되지 않고 함께 움직인다.
+
+### P1. 첫 authored item 세트
+
+상태: Planned
+
+목표:
+런타임 임시 아이템 fallback에만 기대지 않고, 실제 `ItemDefinition` 에셋 몇 개가 던전 보상으로 떨어지기 시작한다.
+
+완료 기준:
+
+- 무기/방어구/장신구에서 최소 1개씩 실제 아이템 정의 에셋이 있다.
+- 일반 플레이 경로에서 보상은 authored definition을 우선 사용한다.
+- save/load 후에도 definition 재연결 경로가 분명하다.
+- prototype fallback은 비상 경로로만 남고, 일반 플레이 설명은 authored item 기준으로 바뀐다.
 
 ## 5. 2주 목표 일정
 
