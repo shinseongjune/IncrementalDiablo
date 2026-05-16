@@ -148,7 +148,7 @@ WallHealth <= 0
 결과:
 
 - 전선 상태가 `Breached`가 된다.
-- 지속 보상이 멈추거나 크게 줄어든다.
+- 지속 보상은 크게 줄지만 0이 되지는 않는다. 수리비가 없는 상태에서도 복구를 기다릴 수 있어야 한다.
 - 성벽 수리가 필요하다.
 - Frontline Level은 유지한다.
 - 플레이어는 수리/강화 후 다시 Hold 또는 Push를 선택한다.
@@ -168,6 +168,15 @@ Push 중에는 위험을 감수하므로 보상 배율을 조금 높일 수 있�
 if mode == Push:
     reward *= pushRewardMultiplier
 ```
+
+돌파 후에는 진행은 멈추지만 최소 복구 수입은 남긴다.
+
+```text
+if state == Breached:
+    reward *= breachedRewardMultiplier
+```
+
+`breachedRewardMultiplier`는 초기 프로토타입에서 25%를 사용한다. 실패를 의미 있게 만들되, Gold를 모두 쓴 플레이어가 수리비를 다시 벌 방법까지 잃어버리는 소프트락은 허용하지 않는다.
 
 ## 11. 오프라인 진행
 

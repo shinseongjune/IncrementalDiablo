@@ -96,10 +96,10 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase B - 30-Minute Retention Slice |
-| Last meaningful movement | 2026-05-15: `PlayableLoopHud` was wired into the active `Gameplay` scene, the user confirmed the normal loop works from that HUD, and the scene split/HUD/save changes were published. |
-| Next unlock | Run a fresh-save 10-20 minute pass using only the normal player HUD, then record whether at least three meaningful decisions and one clear failure/recovery moment actually appear. |
+| Last meaningful movement | 2026-05-16: breached frontline rewards were changed from 0% to a reduced 25% recovery income so a player who spends down before a breach can still earn repair Gold instead of softlocking the run. |
+| Next unlock | Run a fresh-save 10-20 minute pass using only the normal player HUD, then confirm that at least three meaningful decisions and one clear breach/recovery moment actually read well on-screen. |
 | Loop coverage | Phase A debug loop is confirmed. Phase B player HUD is now wired in-scene and covers ground reward, defense start/repair/mode/upgrades, dungeon run/reward, inventory equip/salvage, save/load, and next-action feedback without requiring the normal loop to use OnGUI debug panels. |
-| Known blockers | Early-session pacing evidence is still missing; real dungeon enemy/prefab feel, authored item assets/drop tables, production item-definition registry, and longer pacing remain open. |
+| Known blockers | Early-session pacing readability still needs manual evidence; real dungeon enemy/prefab feel, authored item assets/drop tables, production item-definition registry, and longer pacing remain open. |
 
 ## 4. MVP Task Queue
 
@@ -365,3 +365,4 @@ MVP 전까지 다음은 보류한다.
 ## 7. Discovered
 
 - 2026-05-15 첫 10분 플레이 패스에서 던전 재도전 버그를 발견했다. 1회 클리어 뒤 다시 `Start Dungeon`을 누르면 `ExpeditionDirector`는 새 런을 `Running`으로 시작했지만, `CombatRoom`은 이전 0번 방의 `Cleared` 상태를 보고 같은 방 재시작을 막아서 경과 시간만 증가했다. 이 재시도 차단 로직은 제거했고, 후속 Play Mode 확인에서는 두 번째 던전도 즉시 `Starting -> Running -> Cleared`로 다시 흘러야 한다.
+- 2026-05-16 QA 게이트에서 전선 돌파 후 보상이 0%라면 Gold를 모두 쓴 플레이어가 수리비를 다시 벌지 못해 진행이 잠길 수 있는 소프트락을 발견했다. 초기 프로토타입은 돌파 중 보상을 25%로 낮추되 0으로 만들지 않도록 수정했고, 후속 10-20분 패스에서는 돌파 후 수리 회복이 화면에서 명확히 읽히는지 함께 확인해야 한다.

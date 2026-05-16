@@ -32,7 +32,7 @@ public class DefenseDirector : MonoBehaviour
     [SerializeField] private float baseScrapPerMinute = 4f;
     [SerializeField] private float rewardGrowthPerLevel = 1.08f;
     [SerializeField] private float pushRewardMultiplier = 1.15f;
-    [SerializeField] private float breachedRewardMultiplier = 0f;
+    [SerializeField] private float breachedRewardMultiplier = 0.25f;
 
     [SerializeField] private DefenseRuntimeState runtime = new DefenseRuntimeState();
 

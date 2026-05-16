@@ -422,7 +422,7 @@ public class PlayableLoopHud : MonoBehaviour
         {
             return CanRepairWall()
                 ? "Next: repair the wall, then restart the frontline."
-                : "Next: earn enough Gold for wall repair or lower early pressure in tuning.";
+                : "Next: frontline income is reduced while breached; wait for repair Gold, then recover the wall.";
         }
 
         if (!runtime.IsRunning)

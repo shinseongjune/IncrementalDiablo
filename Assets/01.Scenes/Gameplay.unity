@@ -3353,7 +3353,7 @@ MonoBehaviour:
   baseScrapPerMinute: 4
   rewardGrowthPerLevel: 1.08
   pushRewardMultiplier: 1.15
-  breachedRewardMultiplier: 0
+  breachedRewardMultiplier: 0.25
   runtime:
     state: 0
     mode: 1
