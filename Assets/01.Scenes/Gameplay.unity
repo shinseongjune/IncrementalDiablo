@@ -166,7 +166,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -305,7 +305,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
   m_Navigation:
     m_Mode: 3
@@ -1769,6 +1769,7 @@ GameObject:
   - component: {fileID: 502600254}
   - component: {fileID: 502600253}
   - component: {fileID: 502600252}
+  - component: {fileID: 502600255}
   - component: {fileID: 502600251}
   - component: {fileID: 502600250}
   - component: {fileID: 502600249}
@@ -1868,6 +1869,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f47c23b9e280a7842ad2e78721132a4a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Health
+--- !u!114 &502600255
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 502600246}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d52a60575a84659a142f238d5b28964, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyAIController
+  target: {fileID: 0}
+  autoFindPlayer: 1
+  chaseRefreshInterval: 0.15
+  retargetInterval: 0.5
 --- !u!114 &502600253
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3078,6 +3095,7 @@ MonoBehaviour:
   salvageService: {fileID: 1045172327}
   equipmentSlots: {fileID: 1417038735}
   characterStats: {fileID: 1417038740}
+  heroHealth: {fileID: 1417038739}
   wallet: {fileID: 1045172324}
   saveManager: {fileID: 1045172321}
   autoFindReferences: 1
@@ -5671,8 +5689,12 @@ MonoBehaviour:
   autoFindExpedition: 1
   startWhenExpeditionRuns: 1
   startCountdownSeconds: 1.5
-  heroHealth: {fileID: 0}
-  enemyHealths: []
+  heroHealth: {fileID: 1417038739}
+  enemyHealths:
+  - {fileID: 502600252}
+  autoFindTrackedCombatants: 1
+  refillTrackedCombatantsOnBegin: 1
+  manageTrackedEnemyActivity: 1
   simulateWhenNoEnemies: 1
   prototypeHeroHealth: 60
   prototypeHeroDps: 12

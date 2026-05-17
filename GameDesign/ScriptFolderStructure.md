@@ -24,7 +24,7 @@ Dungeon code owns room-based expedition flow.
 
 Rooms should be prefab/runtime objects, not separate Unity scenes.
 
-Current implementation note: `DungeonRunState`, `ExpeditionDirector`, `CombatRoom`, `DungeonLoopSmokeTest`, and `DungeonDebugHud` exist first. `ExpeditionDirector` can start a prototype expedition, complete a room, fail the run, expose Ready/Running/Cleared/Failed state, export/import `DungeonSaveData` through `DefenseSaveManager`, and grant a pending clear reward through `LootDropper`. `CombatRoom` can auto-start when an expedition is running, resolve through tracked `Health` references, or fall back to prototype health/DPS simulation when enemy prefabs are not wired yet. `DungeonDebugHud` is an OnGUI Play Mode smoke-test surface for dungeon state, force clear/fail, pending reward grant, inventory count, save/load validation, and a one-button loop smoke test. Enemy controllers and finished Unity room prefab wiring are still future work.
+Current implementation note: `DungeonRunState`, `ExpeditionDirector`, `CombatRoom`, `DungeonLoopSmokeTest`, and `DungeonDebugHud` exist first. `ExpeditionDirector` can start a prototype expedition, complete a room, fail the run, expose Ready/Running/Cleared/Failed state, export/import `DungeonSaveData` through `DefenseSaveManager`, and grant a pending clear reward through `LootDropper`. `CombatRoom` can auto-start when an expedition is running, auto-discover the current player plus `CharacterTeam.Enemy` actors, bind tracked enemies to the room lifecycle, resolve through tracked `Health` references, or fall back to prototype health/DPS simulation when scene actors are not wired yet. `DungeonDebugHud` is an OnGUI Play Mode smoke-test surface for dungeon state, force clear/fail, pending reward grant, inventory count, save/load validation, and a one-button loop smoke test. `EnemyAIController` now exists for simple chase/attack behavior; prefab/spawner-driven room setup is still future work.
 
 ## GroundDefense
 
@@ -39,7 +39,7 @@ Shared UI code owns player-facing screens that cross ground defense, dungeon, it
 
 - `PlayableLoopHud`
 
-Current implementation note: `PlayableLoopHud` is the first Canvas/TMP/Button bridge away from OnGUI debug panels. It can show frontline status, resources, dungeon state, latest item, hero stats, and a message line, then call button-safe methods for start dungeon, claim reward, equip latest, salvage latest, save, and load. It is not wired into `SampleScene` yet; the debug OnGUI HUDs remain the current smoke-test fallback.
+Current implementation note: `PlayableLoopHud` is the first Canvas/TMP/Button bridge away from OnGUI debug panels. It can show frontline status, resources, dungeon state, latest item, current/max hero HP, a message line, and an action hint, then call button-safe methods for ground defense, dungeon, item, save, and load actions. It is wired into `Gameplay` as the normal combined-loop HUD; the debug OnGUI HUDs remain smoke-test fallbacks only.
 
 ## Items
 

@@ -200,15 +200,20 @@ MVP 보상:
 | CharacterStats | 계산 스탯 |
 | PlayerController | 직접 조작 |
 
+현재 구현:
+
+| 컴포넌트 | 역할 |
+| --- | --- |
+| EnemyAIController | 적 AI |
+| ExpeditionDirector | 방 진행 관리 |
+| CombatRoom | 방 단위 전투 |
+| LootDropper | 보상 생성 |
+
 추가 예정:
 
 | 컴포넌트 | 역할 |
 | --- | --- |
 | AutoCombatController | 자동 원정/자동 전투 |
-| EnemyAIController | 적 AI |
-| ExpeditionDirector | 방 진행 관리 |
-| CombatRoom | 방 단위 전투 |
-| LootDropper | 보상 생성 |
 
 ## 11. Unity 구현 순서
 

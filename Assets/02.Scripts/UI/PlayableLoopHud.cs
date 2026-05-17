@@ -14,6 +14,7 @@ public class PlayableLoopHud : MonoBehaviour
     [SerializeField] private ItemSalvageService salvageService;
     [SerializeField] private EquipmentSlots equipmentSlots;
     [SerializeField] private CharacterStats characterStats;
+    [SerializeField] private Health heroHealth;
     [SerializeField] private CurrencyWallet wallet;
     [SerializeField] private DefenseSaveManager saveManager;
     [SerializeField] private bool autoFindReferences = true;
@@ -407,7 +408,10 @@ public class PlayableLoopHud : MonoBehaviour
             return "Hero Stats: unavailable";
         }
 
-        return $"Hero: ATK {characterStats.GetValue(StatId.AttackDamage):0.#} / HP {characterStats.GetValue(StatId.MaxHealth):0.#} / APS {characterStats.GetValue(StatId.AttackSpeed):0.##}";
+        string healthText = heroHealth == null
+            ? $"{characterStats.GetValue(StatId.MaxHealth):0.#}"
+            : $"{heroHealth.Current:0.#}/{heroHealth.Max:0.#}";
+        return $"Hero: ATK {characterStats.GetValue(StatId.AttackDamage):0.#} / HP {healthText} / APS {characterStats.GetValue(StatId.AttackSpeed):0.##}";
     }
 
     private string BuildActionHintText()
@@ -437,7 +441,9 @@ public class PlayableLoopHud : MonoBehaviour
 
         if (expedition.IsRunning)
         {
-            return "Next: wait for the room result; failure should explain what to improve.";
+            return combatRoom != null && combatRoom.UsesTrackedCombatants
+                ? "Next: click enemies to fight through the room; one click issues one order."
+                : "Next: wait for the room result; failure should explain what to improve.";
         }
 
         if (expedition.RewardPending)
@@ -654,6 +660,13 @@ public class PlayableLoopHud : MonoBehaviour
                 ? FindAnyObjectByType<CharacterStats>()
                 : equipmentSlots.GetComponent<CharacterStats>();
         }
+
+        if (heroHealth == null || force)
+        {
+            heroHealth = equipmentSlots == null
+                ? FindPlayerHealth()
+                : equipmentSlots.GetComponent<Health>();
+        }
     }
 
     private static EquipmentSlots FindEquipmentSlots()
@@ -665,6 +678,12 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         return FindAnyObjectByType<EquipmentSlots>();
+    }
+
+    private static Health FindPlayerHealth()
+    {
+        PlayerController player = FindAnyObjectByType<PlayerController>();
+        return player == null ? null : player.GetComponent<Health>();
     }
 
     private void WireButtons()
@@ -731,6 +750,7 @@ public class PlayableLoopHud : MonoBehaviour
         if (combatRoom != null)
         {
             combatRoom.Changed += Refresh;
+            combatRoom.Resolved += HandleRoomResolved;
         }
 
         if (inventory != null)
@@ -776,6 +796,7 @@ public class PlayableLoopHud : MonoBehaviour
         if (combatRoom != null)
         {
             combatRoom.Changed -= Refresh;
+            combatRoom.Resolved -= HandleRoomResolved;
         }
 
         if (inventory != null)
@@ -805,6 +826,23 @@ public class PlayableLoopHud : MonoBehaviour
     {
         lastMessage = message;
         Refresh();
+    }
+
+    private void HandleRoomResolved(CombatRoomResult result)
+    {
+        if (result.resolution == CombatRoomResolution.Cleared)
+        {
+            string rewardText = expedition != null && expedition.State == DungeonRunState.Cleared
+                ? "Dungeon cleared."
+                : "Room cleared.";
+            SetMessage(rewardText);
+            return;
+        }
+
+        if (result.resolution == CombatRoomResolution.Failed)
+        {
+            SetMessage("Room failed. Prepare, then try again.");
+        }
     }
 
     private static string FormatRewards(ResourceAmount[] rewards)

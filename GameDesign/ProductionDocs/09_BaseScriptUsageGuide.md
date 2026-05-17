@@ -31,6 +31,8 @@
 
 2026-05-15 save/load clarification: manual `Load` now restores the saved snapshot exactly. Startup auto-load still applies offline progress after loading. The prototype still uses one shared save file, so the 15-second auto-save can overwrite a prior manual snapshot before a later manual load.
 
+2026-05-17 Phase C bridge: `EnemyAIController` now gives the scene enemy a real chase/attack loop, and `CombatRoom` can auto-discover the current player plus `CharacterTeam.Enemy` actors before falling back to hidden prototype simulation. The first pass still did not read like a real room because the enemy was globally active and attacks had almost no feedback; the follow-up fix now gates tracked enemies to the room lifecycle and exposes current HP plus explicit clear/fail messaging in `PlayableLoopHud`. Explicit prefab/spawner wiring and combat-feel tuning remain future work.
+
 목표는 다음 한 문장이 Unity Play 모드에서 돌아가는 것이다.
 
 ```text
@@ -65,7 +67,8 @@
 | `DefenseDirector` | `Assets/02.Scripts/GroundDefense/Runtime/DefenseDirector.cs` | 지속 압박 생성, 보상 지급, 단계 상승, 돌파 판정을 관리 | `GameSystems` 오브젝트에 붙이고 `Wallet`, `Upgrades`를 연결한다. 비워도 같은 오브젝트에서 자동 탐색한다. | Hold/Push 위험도, 보상 속도, 단계 상승 속도가 맞는지 |
 | `DungeonRunState` | `Assets/02.Scripts/Dungeon/DungeonRunState.cs` | Ready, Running, Cleared, Failed 던전 런 상태를 정의한다. | 직접 붙이지 않는다. `ExpeditionDirector`와 `DungeonSaveData`가 사용한다. | 상태명이 던전 HUD에 보여도 이해되는지 |
 | `ExpeditionDirector` | `Assets/02.Scripts/Dungeon/ExpeditionDirector.cs` | 프로토타입 던전 런을 시작/완료/실패시키고 저장 데이터를 만든다. | `GameSystems`나 `DungeonRoot`에 붙인다. 임시 테스트는 Inspector/디버그 버튼에서 `StartExpedition()`, `CompleteRoom()`, `FailExpedition()`을 호출한다. | 시작, 클리어, 실패 흐름이 플레이어가 기대하는 던전 흐름과 맞는지 |
-| `CombatRoom` | `Assets/02.Scripts/Dungeon/CombatRoom.cs` | 던전 방 시작 카운트다운, 적/영웅 생존 판정, 프로토타입 전투 계산, 클리어/실패 결과 전달을 맡는다. | `ExpeditionDirector`와 같은 오브젝트나 `DungeonRoot` 자식에 붙인다. `Expedition`을 비워도 자동 탐색한다. 적 프리팹이 없으면 `Simulate When No Enemies`를 켜서 계산형 방 결과를 테스트한다. | 클리어/실패 시간이 너무 빠르거나 느린지, 실패가 납득 가능한지 |
+| `CombatRoom` | `Assets/02.Scripts/Dungeon/CombatRoom.cs` | 던전 방 시작 카운트다운, 적/영웅 생존 판정, 추적 전투원 자동 탐색, 전투원 활성 수명주기, 프로토타입 전투 계산, 클리어/실패 결과 전달을 맡는다. | `ExpeditionDirector`와 같은 오브젝트나 `DungeonRoot` 자식에 붙인다. `Expedition`을 비워도 자동 탐색한다. 첫 패스는 `Auto Find Tracked Combatants`와 `Manage Tracked Enemy Activity`를 켜서 Player/Enemy를 찾고 적을 방 시작/해소에 묶는다. 적 프리팹이 없으면 `Simulate When No Enemies`를 켜서 계산형 방 결과를 테스트한다. | 클리어/실패 시간이 너무 빠르거나 느린지, 실패가 납득 가능한지 |
+| `EnemyAIController` | `Assets/02.Scripts/Character/Controllers/EnemyAIController.cs` | 근접 적이 플레이어를 추적하고 사거리 안에서 공격한다. | `CharacterActor`가 붙은 적 오브젝트에 붙인다. 첫 패스는 `Auto Find Player`를 켜 둔다. | 적이 너무 수동적이거나, 추적/공격이 클릭 조작을 읽기 어렵게 만드는지 |
 | `LootDropper` | `Assets/02.Scripts/Items/LootDropper.cs` | 던전 클리어 보상을 `SimpleInventory`에 넣는다. 정의 에셋이 없으면 프로토타입 런타임 아이템을 만든다. | `DungeonRoot`에 붙이고 `Inventory`에는 `GameSystems`의 `SimpleInventory`를 연결한다. 실제 장비 에셋이 생기면 `Reward Definitions`에 넣는다. | Normal/Magic/Rare 지급 속도가 너무 후하거나 짠지, prototype fallback이 실제 밸런스처럼 오해되지 않는지 |
 | `GameSaveData` | `Assets/02.Scripts/Shared/GameSaveData.cs` | 저장 파일의 루트 데이터와 지상 방어, 던전, 영웅, 인벤토리 저장 데이터를 정의한다. | 직접 붙이지 않는다. `DefenseSaveManager`가 JSON으로 읽고 쓴다. | 저장해야 할 값이 빠졌는지 |
 | `DefenseSaveManager` | `Assets/02.Scripts/GroundDefense/Runtime/DefenseSaveManager.cs` | Gold/Scrap/Frontline Level/강화/성벽/던전 런/인벤토리 상태를 로컬 JSON으로 저장한다. 수동 `Load`는 정확한 스냅샷 복원이고, 시작 시 자동 로드만 최대 8시간 오프라인 진행을 덧붙인다. | `GameSystems` 오브젝트에 붙인다. `DefenseDirector`, `ExpeditionDirector`, `SimpleInventory`는 비워도 자동 탐색한다. | 오프라인 보상이 너무 후하거나, 자동 저장이 수동 테스트 스냅샷을 덮어쓰는 타이밍이 혼동을 주는지 |
@@ -79,7 +82,7 @@
 | `StatMod` | `Assets/02.Scripts/Character/Stats/StatMod.cs` | 특정 스탯에 Flat, PercentAdd, PercentMult 보정을 준다. Percent 값은 10 = 10%로 입력한다. | `ItemDefinition`의 Modifiers 배열에서 사용한다. | 퍼센트 입력 방식이 이해되는지 |
 | `EquipmentSlots` | `Assets/02.Scripts/Character/Core/EquipmentSlots.cs` | Weapon/Armor/Ring에 장비 정의 또는 live `ItemInstance`를 장착하고 `CharacterStats`로 보정을 전달한다. | 영웅 오브젝트의 `CharacterActor`와 함께 붙어 있다. 슬롯에 `ItemDefinition` 에셋을 직접 넣거나 `SimpleInventory.TryEquip(...)`으로 인스턴스를 장착하면 스탯이 바뀐다. | 장비 장착 후 공격력/체력/이동 속도 체감이 맞는지, 저장/로드 후 장착이 복원되는지 |
 | `DefenseHud` | `Assets/02.Scripts/GroundDefense/UI/DefenseHud.cs` | TMP 텍스트와 버튼을 연결해서 현재 상태와 강화 버튼을 보여준다 | Canvas 안의 HUD 오브젝트에 붙이고 Text/Button 슬롯을 연결한다. | 화면에 보이는 문구가 충분히 직관적인지 |
-| `PlayableLoopHud` | `Assets/02.Scripts/UI/PlayableLoopHud.cs` | Phase B용 최소 플레이어 HUD. 지상/던전/아이템/저장 상태를 한 패널에서 보여주고 핵심 버튼을 실행한다. | Canvas 안의 오브젝트에 붙이고 TMP 텍스트 6-7개와 Button 12개를 연결한다. 첫 패스는 `Auto Find References`를 켜 둔다. | 디버그 도구처럼 보이지 않는지, 다음 행동이 버튼 상태와 메시지로 충분히 드러나는지 |
+| `PlayableLoopHud` | `Assets/02.Scripts/UI/PlayableLoopHud.cs` | 최소 플레이어 HUD. 지상/던전/아이템/저장 상태를 한 패널에서 보여주고 핵심 버튼을 실행한다. | Canvas 안의 오브젝트에 붙이고 TMP 텍스트 6-7개와 Button 12개를 연결한다. 첫 패스는 `Auto Find References`를 켜 둔다. | 디버그 도구처럼 보이지 않는지, 다음 행동과 전투 결과가 버튼 상태/현재 HP/메시지로 충분히 드러나는지 |
 
 아이템 경제 테스트 시 `ItemDefinition.SalvageRewards`는 분해 보상 미리보기이고, `ItemDefinition.AffixRerollCost`는 Rare 장비 옵션 변형 비용 미리보기다. Normal/Magic은 변형 비용을 반환하지 않는다. Rare도 낮은 `baseTier`에서는 `AlterStone` 분해 보상이 없으므로, 초반 장비가 너무 빨리 재굴림 루프로 들어가지 않는지 확인해야 한다.
 
@@ -110,7 +113,7 @@ Scrap 25
 6. `LootDropper`와 `SimpleInventory`가 있다면 던전 클리어 후 저장 JSON의 `inventory.itemInstances`가 1개 이상 늘어났는지 확인한다.
 7. 저장 후 몇 분 뒤 다시 실행하면 최대 8시간 한도 안에서 오프라인 보상과 손상이 계산된다.
 
-저장 파일은 Unity의 `Application.persistentDataPath` 아래 `incremental_diablo_save.json`으로 만들어진다. 지상전, 던전 런 상태, 인벤토리 인스턴스는 저장 루트에 들어갔다. `CombatRoom`은 런 상태를 클리어/실패로 바꾸고, `ExpeditionDirector`는 클리어 보상을 `LootDropper`를 통해 인벤토리에 넣을 수 있다. 전투 결과 세부 로그, 실제 장비 정의 lookup, 완성형 인벤토리 UI는 아직 별도 작업이다.
+저장 파일은 Unity의 `Application.persistentDataPath` 아래 `incremental_diablo_save.json`으로 만들어진다. 지상전, 던전 런 상태, 인벤토리 인스턴스는 저장 루트에 들어갔다. `CombatRoom`은 런 상태를 클리어/실패로 바꾸고, `ExpeditionDirector`는 클리어 보상을 `LootDropper`를 통해 인벤토리에 넣을 수 있다. `EnemyAIController`가 붙은 적이 있으면 첫 방은 계산형 시뮬레이션 대신 실제 클릭 전투 경로를 탈 수 있다. 전투 결과 세부 로그, 실제 장비 정의 lookup, 완성형 인벤토리 UI는 아직 별도 작업이다.
 
 HUD까지 보고 싶다면:
 

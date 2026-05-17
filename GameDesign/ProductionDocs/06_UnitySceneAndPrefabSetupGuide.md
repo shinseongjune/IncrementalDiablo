@@ -219,7 +219,7 @@ Canvas_Dungeon
 7. Play Mode에서 `ExpeditionDirector.StartExpedition()`을 호출한다.
 8. `CombatRoom`이 시작 카운트다운 뒤 프로토타입 체력/DPS 계산으로 `CompleteRoom()` 또는 `FailExpedition()`을 호출하는지 Inspector에서 확인한다.
 9. 클리어 시 `SimpleInventory.Count`가 1 증가하고 `ExpeditionDirector.rewardPending`이 꺼지는지 확인한다.
-10. 실제 적 프리팹을 붙인 뒤에는 `CombatRoom > Hero Health`와 `Enemy Healths`에 각 `Health` 컴포넌트를 연결해서 생존 판정 기반으로 바꾼다.
+10. 실제 적 프리팹을 붙인 뒤에는 첫 패스에서 `CombatRoom > Auto Find Tracked Combatants`가 `PlayerController`와 `CharacterTeam.Enemy`를 자동으로 찾는다. 방/영웅이 여러 개가 되면 `Hero Health`와 `Enemy Healths`를 명시적으로 연결해서 생존 판정 대상을 고정한다.
 
 이 fallback 보상은 프로토타입 전용이다. 실제 밸런스 단계에서는 `LootDropper > Reward Definitions`에 작성된 `ItemDefinition` 에셋을 넣고, 별도 드랍 테이블/품질 판정으로 교체한다.
 
@@ -270,6 +270,14 @@ Canvas_Dungeon
 2. The summary label now includes pressure, progress, and Wall/Tower/Defender levels so the player can see why a ground upgrade matters before entering another dungeon.
 3. Add an optional `Action Hint` TMP text field if the layout has room. The HUD writes the next recommended action there, including repair, upgrade, dungeon reward, equip, salvage, and missing-reference blockers.
 4. Phase B layout should now treat `PlayableLoopHud` as the normal combined loop panel. `DefenseHud`, `DungeonDebugHud`, and `InventoryDebugHud` should remain fallback/debug surfaces only.
+
+2026-05-17 first real dungeon-room bridge:
+
+1. `Gameplay`의 `Enemy`에는 `EnemyAIController`를 붙여 실제 플레이어를 추적/공격하게 한다.
+2. `CombatRoom`은 첫 패스에서 플레이어와 `CharacterTeam.Enemy`를 자동 탐색하고, 새 런이 시작될 때 추적 중인 전투원을 다시 채워 반복 테스트가 가능하게 한다.
+3. `Manage Tracked Enemy Activity`를 켜면 적은 방 시작 전에는 비활성, 전투 중에는 활성, 방 해소 뒤에는 다시 비활성으로 바뀐다. 그래야 적이 전역 씬 몹처럼 떠돌지 않고 던전 방 소속으로 읽힌다.
+4. `PlayableLoopHud`는 추적 전투원을 발견하면 `wait` 대신 적을 클릭해 싸우라는 힌트, 현재 HP, 그리고 clear/fail 메시지를 보여 준다.
+5. 여러 방/여러 영웅 구조로 확장할 때는 자동 탐색 대신 명시적 참조 또는 스포너 기반 연결로 바꾼다.
 
 ## 4. 프리팹 목록
 

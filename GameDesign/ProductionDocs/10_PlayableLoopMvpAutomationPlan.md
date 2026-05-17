@@ -70,8 +70,8 @@ This document must not stop at the first MVP. When the current phase is complete
 | Phase | Entry condition | Exit condition | Default next work |
 | --- | --- | --- | --- |
 | Phase A - Playable Loop MVP | Completed 2026-05-14 after Play Mode smoke-test confirmation. | MVP-01 through MVP-10 are `Done`; Play Mode can show ground reward -> dungeon -> loot -> equip/salvage -> save/load at debug quality. | Closed unless a regression appears. |
-| Phase B - 30-Minute Retention Slice | Current phase. The debug loop exists, but the experience is shallow and still tool-like. | A new player can play about 30 minutes with at least three meaningful upgrade decisions, one failure/recovery moment, and no dev-console-only step. | Replace debug HUD with minimal player HUD, tune early pacing, repeat dungeon attempts, clarify failure/reward feedback. |
-| Phase C - First Real Game Slice | Phase B is done. The first session reads correctly, but too much of the loop is still hidden simulation or prototype fallback. | One player-facing runtime slice contains a visible ground-defense lane, one direct-control dungeon room with at least one real enemy prefab, and authored item assets/definitions feeding the reward loop without relying on debug-only surfaces for the normal path. | Replace hidden simulations and runtime-only fallbacks with scene/prefab-driven gameplay, direct-control combat, authored item assets, and player-visible presentation. |
+| Phase B - 30-Minute Retention Slice | Completed 2026-05-17 after user confirmation that the normal player HUD slice was already done. | A new player can play about 30 minutes with at least three meaningful upgrade decisions, one failure/recovery moment, and no dev-console-only step. | Closed unless a regression appears. |
+| Phase C - First Real Game Slice | Current phase. The first session reads correctly, but too much of the loop is still hidden simulation or prototype fallback. | One player-facing runtime slice contains a visible ground-defense lane, one direct-control dungeon room with at least one real enemy prefab, and authored item assets/definitions feeding the reward loop without relying on debug-only surfaces for the normal path. | Replace hidden simulations and runtime-only fallbacks with scene/prefab-driven gameplay, direct-control combat, authored item assets, and player-visible presentation. |
 | Phase D - Long-Horizon Systems Foundation | Phase C is done. The project now reads as a game, but long-term scaling is not proven. | Formula-driven dungeon tiers, ground scaling, item rarity/material sinks, and save migration hooks exist without hand-authored content ladders. | Add generated tiers, item/drop pacing tables, material sinks, balance validation scripts, and extensible save schemas. |
 | Phase E - Early Access Readiness Slice | Phase D is done. Systems scale, but the game is not yet release-shaped. | A 2-4 hour repeatable slice is playable with stable UI, recoverable failure, basic settings, readable onboarding, QA checklist, and no known progression blocker. | Add usability polish, error handling, content breadth, performance checks, settings, and release-scope triage. |
 
@@ -107,11 +107,11 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 
 | Field | Current value |
 | --- | --- |
-| Current phase | Phase B - 30-Minute Retention Slice |
-| Last meaningful movement | 2026-05-16: breached frontline rewards were changed from 0% to a reduced 25% recovery income so a player who spends down before a breach can still earn repair Gold instead of softlocking the run. |
-| Next unlock | Run a fresh-save 10-20 minute pass using only the normal player HUD. If it passes, promote to Phase C in the same update and mark the first real-game task below as `Next` instead of selecting more debug polish. |
-| Loop coverage | Phase A debug loop is confirmed. Phase B player HUD is now wired in-scene and covers ground reward, defense start/repair/mode/upgrades, dungeon run/reward, inventory equip/salvage, save/load, and next-action feedback without requiring the normal loop to use OnGUI debug panels. |
-| Known blockers | Early-session pacing readability still needs manual evidence; real dungeon enemy/prefab feel, authored item assets/drop tables, production item-definition registry, and longer pacing remain open. |
+| Current phase | Phase C - First Real Game Slice |
+| Last meaningful movement | 2026-05-17: Phase B was closed by user confirmation, then the first dungeon encounter was corrected so enemies belong to a room lifecycle instead of free-roaming forever: hidden until room start, active during combat, explicit cleared/failed feedback on resolution. |
+| Next unlock | Turn the current encounter bridge into the first actual room slice: visible room bounds/presentation plus one enemy prefab path that feels like a dungeon encounter rather than a loose scene actor. |
+| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C has begun with one direct-control encounter path, but visible ground-defense action, authored item assets, and a room that reads spatially as a room are still open. |
+| Known blockers | The new direct-control encounter still needs Play Mode feel validation; authored item assets/drop tables, production item-definition registry, visible ground-defense action, and longer pacing remain open. |
 
 ## 4. MVP Task Queue
 
@@ -336,7 +336,7 @@ OnGUI 디버그 패널에 의존하지 않고, Canvas/TMP/Button 기반의 최�
 
 ### P0. 첫 10-20분 루프 패스
 
-상태: Next
+상태: Done
 
 목표:
 Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루프"로 바꾼다.
@@ -351,7 +351,7 @@ Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루�
 
 ### P0. 첫 실제 던전 방 만들기
 
-상태: Planned - Phase B 종료 시 `Next`로 승격
+상태: Next
 
 목표:
 프로토타입 계산 전투에 기대지 않고, 플레이어가 직접 클릭 조작으로 들어가 싸우는 던전 방 1개를 만든다.
@@ -363,6 +363,14 @@ Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루�
 - 일반 플레이 경로는 숨은 `CombatRoom` 시뮬레이션만으로 끝나지 않고, 보이는 적 사망으로 방 클리어가 난다.
 - 클리어/실패 결과가 기존 보상/귀환 루프와 연결된다.
 - 필요한 씬/프리팹 수동 작업이 있으면 정확한 연결 절차를 문서화한다.
+
+2026-05-17 진척 메모:
+
+- `Gameplay`의 기존 `Player`/`Enemy` 오브젝트를 첫 실제 방의 전투원으로 연결했다.
+- `EnemyAIController`가 적의 플레이어 추적/근접 공격을 맡고, `CombatRoom`은 첫 패스에서 Player/Enemy를 자동 탐색해 계산형 전투보다 실제 `Health` 기반 전투를 우선한다.
+- 사용자의 피드백대로 이 상태만으로는 "방"도 "클리어"도 아니었다. 적이 장면에 상시 존재하며 공격 피드백도 약했기 때문이다.
+- 후속 수정으로 적은 방 시작 전에는 비활성, 전투 중에만 활성, 해소 뒤에는 다시 비활성으로 바뀌고, HUD는 현재 HP와 `Room/Dungeon cleared` 메시지를 보여 준다.
+- 아직 실제 방 경계/프리팹/배치가 없으므로 이 항목은 `Next` 상태를 유지한다.
 
 ### P0. 지상 전선 시각 프로토타입
 
@@ -423,3 +431,4 @@ MVP 전까지 다음은 보류한다.
 
 - 2026-05-15 첫 10분 플레이 패스에서 던전 재도전 버그를 발견했다. 1회 클리어 뒤 다시 `Start Dungeon`을 누르면 `ExpeditionDirector`는 새 런을 `Running`으로 시작했지만, `CombatRoom`은 이전 0번 방의 `Cleared` 상태를 보고 같은 방 재시작을 막아서 경과 시간만 증가했다. 이 재시도 차단 로직은 제거했고, 후속 Play Mode 확인에서는 두 번째 던전도 즉시 `Starting -> Running -> Cleared`로 다시 흘러야 한다.
 - 2026-05-16 QA 게이트에서 전선 돌파 후 보상이 0%라면 Gold를 모두 쓴 플레이어가 수리비를 다시 벌지 못해 진행이 잠길 수 있는 소프트락을 발견했다. 초기 프로토타입은 돌파 중 보상을 25%로 낮추되 0으로 만들지 않도록 수정했고, 후속 10-20분 패스에서는 돌파 후 수리 회복이 화면에서 명확히 읽히는지 함께 확인해야 한다.
+- 2026-05-17 QA 게이트에서 `Gameplay` 씬 안에 `Player`와 `Enemy`가 이미 있었지만 `CombatRoom`이 둘을 추적하지 않아 일반 플레이 경로가 계속 숨은 계산 전투로만 흘러가는 간극을 발견했다. 첫 수정은 적을 붙이는 데는 성공했지만, 사용자의 피드백대로 적이 그냥 따라오다 멈추고 방/클리어 감각이 전혀 없었다. 후속 수정에서 적을 room lifecycle에 묶고, 현재 HP와 명시적 clear/fail 메시지를 노출했다.

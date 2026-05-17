@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class CombatRoom : MonoBehaviour
@@ -12,6 +13,9 @@ public class CombatRoom : MonoBehaviour
     [Header("Actor Tracking")]
     [SerializeField] private Health heroHealth;
     [SerializeField] private Health[] enemyHealths = new Health[0];
+    [SerializeField] private bool autoFindTrackedCombatants = true;
+    [SerializeField] private bool refillTrackedCombatantsOnBegin = true;
+    [SerializeField] private bool manageTrackedEnemyActivity = true;
 
     [Header("Prototype Simulation")]
     [SerializeField] private bool simulateWhenNoEnemies = true;
@@ -44,16 +48,20 @@ public class CombatRoom : MonoBehaviour
     public float CurrentHeroHealth => Mathf.Max(0f, currentHeroHealth);
     public float CurrentEnemyHealth => Mathf.Max(0f, currentEnemyHealth);
     public CombatRoomResult LastResult => lastResult;
+    public bool UsesTrackedCombatants => heroHealth != null && HasAnyEnemyReference();
 
     private void Awake()
     {
         ResolveExpedition();
+        ResolveTrackedCombatants();
     }
 
     private void OnEnable()
     {
         ResolveExpedition();
+        ResolveTrackedCombatants();
         SubscribeToExpedition();
+        SetTrackedEnemiesActive(expedition != null && expedition.IsRunning && state == CombatRoomState.Running);
         TryBeginForRunningExpedition();
     }
 
@@ -95,6 +103,7 @@ public class CombatRoom : MonoBehaviour
     public bool BeginRoom()
     {
         ResolveExpedition();
+        ResolveTrackedCombatants();
 
         if (expedition == null || !expedition.IsRunning)
         {
@@ -103,6 +112,7 @@ public class CombatRoom : MonoBehaviour
         }
 
         activeRoomIndex = expedition.CurrentRoomIndex;
+        RefillTrackedCombatants();
         state = CombatRoomState.Starting;
         countdownRemaining = startCountdownSeconds;
         elapsedSeconds = 0f;
@@ -168,6 +178,7 @@ public class CombatRoom : MonoBehaviour
     {
         state = CombatRoomState.Running;
         countdownRemaining = 0f;
+        SetTrackedEnemiesActive(true);
         SetLastResult(CombatRoomResolution.None, "Room combat running");
         NotifyChanged();
     }
@@ -271,6 +282,7 @@ public class CombatRoom : MonoBehaviour
         }
 
         state = resolution == CombatRoomResolution.Cleared ? CombatRoomState.Cleared : CombatRoomState.Failed;
+        SetTrackedEnemiesActive(false);
         SetLastResult(resolution, message);
         Resolved?.Invoke(lastResult);
         NotifyChanged();
@@ -321,6 +333,7 @@ public class CombatRoom : MonoBehaviour
         elapsedSeconds = 0f;
         currentHeroHealth = 0f;
         currentEnemyHealth = 0f;
+        SetTrackedEnemiesActive(false);
         SetLastResult(CombatRoomResolution.None, "Room idle");
         NotifyChanged();
     }
@@ -388,6 +401,88 @@ public class CombatRoom : MonoBehaviour
         if (expedition == null && autoFindExpedition)
         {
             expedition = FindAnyObjectByType<ExpeditionDirector>();
+        }
+    }
+
+    private void ResolveTrackedCombatants()
+    {
+        if (!autoFindTrackedCombatants)
+        {
+            return;
+        }
+
+        if (heroHealth == null)
+        {
+            PlayerController player = FindAnyObjectByType<PlayerController>();
+            if (player != null)
+            {
+                heroHealth = player.GetComponent<Health>();
+            }
+        }
+
+        if (HasAnyEnemyReference())
+        {
+            return;
+        }
+
+        CharacterActor[] actors = FindObjectsByType<CharacterActor>(FindObjectsInactive.Include);
+        List<Health> trackedEnemies = new List<Health>(actors.Length);
+
+        for (int i = 0; i < actors.Length; i++)
+        {
+            CharacterActor actor = actors[i];
+            if (actor == null || actor.Team != CharacterTeam.Enemy)
+            {
+                continue;
+            }
+
+            if (actor.TryGetComponent(out Health enemyHealth))
+            {
+                trackedEnemies.Add(enemyHealth);
+            }
+        }
+
+        if (trackedEnemies.Count > 0)
+        {
+            enemyHealths = trackedEnemies.ToArray();
+        }
+    }
+
+    private void RefillTrackedCombatants()
+    {
+        if (!refillTrackedCombatantsOnBegin)
+        {
+            return;
+        }
+
+        heroHealth?.Refill();
+
+        for (int i = 0; i < enemyHealths.Length; i++)
+        {
+            enemyHealths[i]?.Refill();
+        }
+    }
+
+    private void SetTrackedEnemiesActive(bool active)
+    {
+        if (!manageTrackedEnemyActivity)
+        {
+            return;
+        }
+
+        for (int i = 0; i < enemyHealths.Length; i++)
+        {
+            Health enemyHealth = enemyHealths[i];
+            if (enemyHealth == null)
+            {
+                continue;
+            }
+
+            GameObject enemyObject = enemyHealth.gameObject;
+            if (enemyObject.activeSelf != active)
+            {
+                enemyObject.SetActive(active);
+            }
         }
     }
 
