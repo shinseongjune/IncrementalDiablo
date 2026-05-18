@@ -279,6 +279,25 @@ Canvas_Dungeon
 4. `PlayableLoopHud`는 추적 전투원을 발견하면 `wait` 대신 적을 클릭해 싸우라는 힌트, 현재 HP, 그리고 clear/fail 메시지를 보여 준다.
 5. 여러 방/여러 영웅 구조로 확장할 때는 자동 탐색 대신 명시적 참조 또는 스포너 기반 연결로 바꾼다.
 
+2026-05-18 visible room shell handoff:
+
+1. `DungeonRoomPresenter`는 코드로 준비되어 있지만, 최종 방 크기/배치/공간감은 Unity 에디터에서 직접 잡는다.
+2. 첫 수동 배치 때는 `Gameplay > DungeonRoot`에 `DungeonRoomPresenter`를 붙이고, authored room prefab이 아직 없을 때만 `Auto Build Runtime Visuals`를 임시 확인용으로 켠다.
+3. 방은 `Idle/Starting/Running/Cleared/Failed` 상태에 따라 회색/황색/적색/녹색/암적색으로 바뀌므로, 상태 피드백은 코드가 맡고 실제 모양은 씬 저작이 맡는다.
+4. authored 방 비주얼이 생기면 `Floor Renderer`와 `Boundary Renderers`에 실제 렌더러를 연결하고 `Auto Build Runtime Visuals`를 끈다.
+5. 다음 프리팹 단계에서는 현재 씬의 `Enemy`를 그대로 두는 대신 `PF_DungeonEnemy_Melee`를 만들고, 이후 스포너가 그 프리팹을 방 시작 시 생성하도록 전환한다.
+
+의도한 첫 시작값:
+
+- 권장 방 비율: 가로가 세로보다 조금 넓은 직사각형
+- 임시 시작 크기: `16 x 12`
+- 경계 표현: 실제 높은 벽보다, 첫 패스에서는 플레이 공간을 읽게 하는 낮은 경계선
+- 임시 경계 높이: `0.45`
+- 바닥 표식 두께: `0.05`
+- 배치 의도: 플레이어와 적이 서로를 인지한 뒤 1-2초 안에 교전권으로 들어오되, 클릭 이동으로 한 번은 거리 조절을 체감할 수 있는 여유를 남긴다.
+- 조정 가능 항목: 최종 방 크기, 벽 두께/높이, 재질, 장식, 카메라 각도
+- 지켜야 할 항목: 방이 시작 전에도 공간으로 읽히고, 전투 중/클리어 후 상태 변화가 눈에 보여야 한다.
+
 ## 4. 프리팹 목록
 
 ### 지상 디펜스 프리팹

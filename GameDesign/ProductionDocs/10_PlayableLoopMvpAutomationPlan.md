@@ -30,6 +30,7 @@ Daily automation은 매 실행 시작 시 이 문서를 읽고, **현재 phase�
 - 새로 발견한 막힌 연결부는 `Discovered` 섹션에 추가한다.
 - 구현 중 범위가 커지면 작은 다음 작업으로 쪼갠다.
 - Unity Editor 수동 배치가 필요한 경우 정확한 GameObject/Component/Inspector 연결 순서를 남긴다.
+- Unity Editor 수동 배치가 필요한 경우 연결 순서뿐 아니라, 의도한 시작 수치/범위, 형태, 배치 이유, 고정값과 조정 가능값도 함께 남긴다.
 - Git commit/push는 하지 않는다. 변경이 검증되어 올릴 만하면 보고서에서 "사용자 확인 필요: 커밋/푸시 요청"으로 요청한다.
 - 한 phase의 최소 검증이 끝났으면 디버그 HUD, smoke test, 진단 helper만 더 늘리는 작업을 기본 선택지로 삼지 않는다. 다음 phase의 **플레이어 가시 작업**으로 바로 넘어간다.
 
@@ -108,10 +109,10 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase C - First Real Game Slice |
-| Last meaningful movement | 2026-05-17: Phase B was closed by user confirmation, then the first dungeon encounter was corrected so enemies belong to a room lifecycle instead of free-roaming forever: hidden until room start, active during combat, explicit cleared/failed feedback on resolution. |
-| Next unlock | Turn the current encounter bridge into the first actual room slice: visible room bounds/presentation plus one enemy prefab path that feels like a dungeon encounter rather than a loose scene actor. |
-| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C has begun with one direct-control encounter path, but visible ground-defense action, authored item assets, and a room that reads spatially as a room are still open. |
-| Known blockers | The new direct-control encounter still needs Play Mode feel validation; authored item assets/drop tables, production item-definition registry, visible ground-defense action, and longer pacing remain open. |
+| Last meaningful movement | 2026-05-18: room presentation support was prepared in code with `DungeonRoomPresenter`, while the visual scene-authoring step was intentionally left for manual Unity work so room scale and spatial feel can be judged in-editor. |
+| Next unlock | Manually author the first actual room shell in Unity, then replace the remaining loose scene enemy with the first reusable melee-enemy prefab/spawn path. |
+| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C has one direct-control encounter path and code support for visible room presentation, but the authored room shell, visible ground-defense action, and authored item assets are still open. |
+| Known blockers | The direct-control encounter still needs Play Mode feel validation; room scale/layout should be judged manually in Unity, the enemy is still a scene actor rather than a prefab-driven spawn, and authored item assets/drop tables, production item-definition registry, visible ground-defense action, and longer pacing remain open. |
 
 ## 4. MVP Task Queue
 
@@ -370,7 +371,7 @@ Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루�
 - `EnemyAIController`가 적의 플레이어 추적/근접 공격을 맡고, `CombatRoom`은 첫 패스에서 Player/Enemy를 자동 탐색해 계산형 전투보다 실제 `Health` 기반 전투를 우선한다.
 - 사용자의 피드백대로 이 상태만으로는 "방"도 "클리어"도 아니었다. 적이 장면에 상시 존재하며 공격 피드백도 약했기 때문이다.
 - 후속 수정으로 적은 방 시작 전에는 비활성, 전투 중에만 활성, 해소 뒤에는 다시 비활성으로 바뀌고, HUD는 현재 HP와 `Room/Dungeon cleared` 메시지를 보여 준다.
-- 아직 실제 방 경계/프리팹/배치가 없으므로 이 항목은 `Next` 상태를 유지한다.
+- 2026-05-18에는 `DungeonRoomPresenter`를 추가해 상태 색 전환과 첫 방 표현을 위한 코드 기반 훅을 준비했다. 다만 방 크기/배치/공간감은 수동 Unity 저작이 더 적합하므로 실제 씬 배치는 사용자 확인 이후 진행하고, 실제 적 프리팹/스포너 경로도 아직 남아 있으므로 이 항목은 `Next` 상태를 유지한다.
 
 ### P0. 지상 전선 시각 프로토타입
 
