@@ -281,11 +281,12 @@ Canvas_Dungeon
 
 2026-05-18 visible room shell handoff:
 
-1. `DungeonRoomPresenter`는 코드로 준비되어 있지만, 최종 방 크기/배치/공간감은 Unity 에디터에서 직접 잡는다.
-2. 첫 수동 배치 때는 `Gameplay > DungeonRoot`에 `DungeonRoomPresenter`를 붙이고, authored room prefab이 아직 없을 때만 `Auto Build Runtime Visuals`를 임시 확인용으로 켠다.
-3. 방은 `Idle/Starting/Running/Cleared/Failed` 상태에 따라 회색/황색/적색/녹색/암적색으로 바뀌므로, 상태 피드백은 코드가 맡고 실제 모양은 씬 저작이 맡는다.
-4. authored 방 비주얼이 생기면 `Floor Renderer`와 `Boundary Renderers`에 실제 렌더러를 연결하고 `Auto Build Runtime Visuals`를 끈다.
-5. 다음 프리팹 단계에서는 현재 씬의 `Enemy`를 그대로 두는 대신 `PF_DungeonEnemy_Melee`를 만들고, 이후 스포너가 그 프리팹을 방 시작 시 생성하도록 전환한다.
+1. `DungeonRoomPresenter`는 최종 방 아트가 아니라, authored room prefab이 생기기 전까지 공간을 읽게 해 주는 **prototype/fallback 보조 컴포넌트**다.
+2. 첫 수동 배치 때는 `Gameplay > DungeonRoot`에 `DungeonRoomPresenter`를 붙이고, authored room prefab이 아직 없을 때만 `Auto Build Prototype Fallback Visuals`를 임시 확인용으로 켠다.
+3. `Prototype Debug Tint`는 개발 중 상태 확인용 옵션이다. 최종 게임의 방 상태는 통째 색을 바꾸는 방식이 아니라 문 잠금/해제, 적 등장 연출, 보상 오브젝트, 조명/VFX, UI 같은 authored 피드백으로 읽히게 한다.
+4. authored 방 비주얼을 붙였으면 기본적으로 `Apply Prototype State Tint`는 꺼 둔다. 상태 전환 검증이 필요할 때만 잠깐 켜고, 최종 비주얼 판단에는 섞지 않는다.
+5. `Floor Renderer`와 `Boundary Renderers`는 임시 tint 확인이 필요할 때만 연결하면 된다. 최종 room prefab이 자체 연출을 가지면 이 presenter 자체도 debug/fallback 용도로만 남거나 제거될 수 있다.
+6. 다음 프리팹 단계에서는 현재 씬의 `Enemy`를 그대로 두는 대신 `PF_DungeonEnemy_Melee`를 만들고, 이후 스포너가 그 프리팹을 방 시작 시 생성하도록 전환한다.
 
 의도한 첫 시작값:
 

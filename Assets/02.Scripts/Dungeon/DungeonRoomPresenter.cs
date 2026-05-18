@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class DungeonRoomPresenter : MonoBehaviour
 {
@@ -6,8 +7,9 @@ public class DungeonRoomPresenter : MonoBehaviour
     [SerializeField] private CombatRoom combatRoom;
     [SerializeField] private bool autoFindCombatRoom = true;
 
-    [Header("Runtime Room Shell")]
-    [SerializeField] private bool autoBuildRuntimeVisuals = true;
+    [Header("Prototype Room Shell Fallback")]
+    [FormerlySerializedAs("autoBuildRuntimeVisuals")]
+    [SerializeField] private bool autoBuildPrototypeFallbackVisuals = true;
     [SerializeField] private Transform visualRoot;
     [SerializeField] private Vector3 roomCenterWorldPosition = Vector3.zero;
     [SerializeField] private Vector2 roomSize = new Vector2(16f, 12f);
@@ -16,12 +18,18 @@ public class DungeonRoomPresenter : MonoBehaviour
     [SerializeField] private float wallHeight = 0.45f;
     [SerializeField] private float floorYOffset = 0.02f;
 
-    [Header("State Colors")]
-    [SerializeField] private Color idleColor = new Color(0.18f, 0.2f, 0.24f, 1f);
-    [SerializeField] private Color startingColor = new Color(0.72f, 0.48f, 0.16f, 1f);
-    [SerializeField] private Color runningColor = new Color(0.58f, 0.16f, 0.12f, 1f);
-    [SerializeField] private Color clearedColor = new Color(0.16f, 0.42f, 0.22f, 1f);
-    [SerializeField] private Color failedColor = new Color(0.34f, 0.1f, 0.12f, 1f);
+    [Header("Prototype Debug Tint")]
+    [SerializeField] private bool applyPrototypeStateTint;
+    [FormerlySerializedAs("idleColor")]
+    [SerializeField] private Color prototypeIdleTint = new Color(0.18f, 0.2f, 0.24f, 1f);
+    [FormerlySerializedAs("startingColor")]
+    [SerializeField] private Color prototypeStartingTint = new Color(0.72f, 0.48f, 0.16f, 1f);
+    [FormerlySerializedAs("runningColor")]
+    [SerializeField] private Color prototypeRunningTint = new Color(0.58f, 0.16f, 0.12f, 1f);
+    [FormerlySerializedAs("clearedColor")]
+    [SerializeField] private Color prototypeClearedTint = new Color(0.16f, 0.42f, 0.22f, 1f);
+    [FormerlySerializedAs("failedColor")]
+    [SerializeField] private Color prototypeFailedTint = new Color(0.34f, 0.1f, 0.12f, 1f);
 
     [Header("Optional Authored Renderers")]
     [SerializeField] private Renderer floorRenderer;
@@ -33,6 +41,7 @@ public class DungeonRoomPresenter : MonoBehaviour
     private CombatRoom subscribedRoom;
     private MaterialPropertyBlock propertyBlock;
     private Material runtimeMaterial;
+    private bool usingPrototypeFallbackVisuals;
 
     private void Awake()
     {
@@ -80,7 +89,7 @@ public class DungeonRoomPresenter : MonoBehaviour
 
     private void EnsureRuntimeVisuals()
     {
-        if (HasAuthoredVisuals() || !autoBuildRuntimeVisuals)
+        if (HasAuthoredVisuals() || !autoBuildPrototypeFallbackVisuals)
         {
             return;
         }
@@ -91,6 +100,8 @@ public class DungeonRoomPresenter : MonoBehaviour
             root.transform.position = roomCenterWorldPosition;
             visualRoot = root.transform;
         }
+
+        usingPrototypeFallbackVisuals = true;
 
         floorRenderer = CreateVisualPart(
             "FloorMarker",
@@ -191,33 +202,50 @@ public class DungeonRoomPresenter : MonoBehaviour
 
     private void RefreshVisuals()
     {
-        Color color = ResolveRoomColor();
-        ApplyColor(floorRenderer, color);
+        if (!ShouldApplyPrototypeStateTint())
+        {
+            ClearPrototypeTint(floorRenderer);
+
+            for (int i = 0; i < boundaryRenderers.Length; i++)
+            {
+                ClearPrototypeTint(boundaryRenderers[i]);
+            }
+
+            return;
+        }
+
+        Color color = ResolvePrototypeRoomTint();
+        ApplyPrototypeTint(floorRenderer, color);
 
         for (int i = 0; i < boundaryRenderers.Length; i++)
         {
-            ApplyColor(boundaryRenderers[i], color);
+            ApplyPrototypeTint(boundaryRenderers[i], color);
         }
     }
 
-    private Color ResolveRoomColor()
+    private bool ShouldApplyPrototypeStateTint()
+    {
+        return applyPrototypeStateTint || usingPrototypeFallbackVisuals;
+    }
+
+    private Color ResolvePrototypeRoomTint()
     {
         if (combatRoom == null)
         {
-            return idleColor;
+            return prototypeIdleTint;
         }
 
         return combatRoom.State switch
         {
-            CombatRoomState.Starting => startingColor,
-            CombatRoomState.Running => runningColor,
-            CombatRoomState.Cleared => clearedColor,
-            CombatRoomState.Failed => failedColor,
-            _ => idleColor
+            CombatRoomState.Starting => prototypeStartingTint,
+            CombatRoomState.Running => prototypeRunningTint,
+            CombatRoomState.Cleared => prototypeClearedTint,
+            CombatRoomState.Failed => prototypeFailedTint,
+            _ => prototypeIdleTint
         };
     }
 
-    private void ApplyColor(Renderer targetRenderer, Color color)
+    private void ApplyPrototypeTint(Renderer targetRenderer, Color color)
     {
         if (targetRenderer == null)
         {
@@ -231,6 +259,15 @@ public class DungeonRoomPresenter : MonoBehaviour
         targetRenderer.SetPropertyBlock(propertyBlock);
     }
 
+    private void ClearPrototypeTint(Renderer targetRenderer)
+    {
+        if (targetRenderer == null)
+        {
+            return;
+        }
+
+        targetRenderer.SetPropertyBlock(null);
+    }
     private Material GetRuntimeMaterial()
     {
         if (runtimeMaterial != null)
@@ -246,7 +283,7 @@ public class DungeonRoomPresenter : MonoBehaviour
 
         runtimeMaterial = new Material(shader)
         {
-            name = "DungeonRoomPresenter_RuntimeMaterial",
+            name = "DungeonRoomPresenter_PrototypeFallbackMaterial",
             hideFlags = HideFlags.DontSave
         };
         return runtimeMaterial;

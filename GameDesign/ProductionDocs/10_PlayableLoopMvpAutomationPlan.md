@@ -109,7 +109,7 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase C - First Real Game Slice |
-| Last meaningful movement | 2026-05-18: room presentation support was prepared in code with `DungeonRoomPresenter`, while the visual scene-authoring step was intentionally left for manual Unity work so room scale and spatial feel can be judged in-editor. |
+| Last meaningful movement | 2026-05-18: room presentation support was prepared with `DungeonRoomPresenter`, now explicitly scoped as a prototype/fallback helper rather than final room presentation, while the visual scene-authoring step stays manual so room scale and spatial feel can be judged in-editor. |
 | Next unlock | Manually author the first actual room shell in Unity, then replace the remaining loose scene enemy with the first reusable melee-enemy prefab/spawn path. |
 | Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C has one direct-control encounter path and code support for visible room presentation, but the authored room shell, visible ground-defense action, and authored item assets are still open. |
 | Known blockers | The direct-control encounter still needs Play Mode feel validation; room scale/layout should be judged manually in Unity, the enemy is still a scene actor rather than a prefab-driven spawn, and authored item assets/drop tables, production item-definition registry, visible ground-defense action, and longer pacing remain open. |
@@ -371,7 +371,7 @@ Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루�
 - `EnemyAIController`가 적의 플레이어 추적/근접 공격을 맡고, `CombatRoom`은 첫 패스에서 Player/Enemy를 자동 탐색해 계산형 전투보다 실제 `Health` 기반 전투를 우선한다.
 - 사용자의 피드백대로 이 상태만으로는 "방"도 "클리어"도 아니었다. 적이 장면에 상시 존재하며 공격 피드백도 약했기 때문이다.
 - 후속 수정으로 적은 방 시작 전에는 비활성, 전투 중에만 활성, 해소 뒤에는 다시 비활성으로 바뀌고, HUD는 현재 HP와 `Room/Dungeon cleared` 메시지를 보여 준다.
-- 2026-05-18에는 `DungeonRoomPresenter`를 추가해 상태 색 전환과 첫 방 표현을 위한 코드 기반 훅을 준비했다. 다만 방 크기/배치/공간감은 수동 Unity 저작이 더 적합하므로 실제 씬 배치는 사용자 확인 이후 진행하고, 실제 적 프리팹/스포너 경로도 아직 남아 있으므로 이 항목은 `Next` 상태를 유지한다.
+- 2026-05-18에는 `DungeonRoomPresenter`를 추가해 첫 방 표현을 위한 코드 기반 훅을 준비했다. 이 컴포넌트의 room shell과 tint는 prototype/fallback 용도이며, 최종 방 상태 피드백은 authored 문/스폰/보상/VFX/UI로 대체한다. 방 크기/배치/공간감은 수동 Unity 저작이 더 적합하고, 실제 적 프리팹/스포너 경로도 아직 남아 있으므로 이 항목은 `Next` 상태를 유지한다.
 
 ### P0. 지상 전선 시각 프로토타입
 
