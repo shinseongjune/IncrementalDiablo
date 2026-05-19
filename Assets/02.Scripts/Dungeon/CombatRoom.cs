@@ -139,6 +139,37 @@ public class CombatRoom : MonoBehaviour
         return ResolveRoom(CombatRoomResolution.Failed, "Room failed by debug command");
     }
 
+    public void RegisterTrackedEnemies(IReadOnlyList<Health> trackedEnemies, bool refill = false)
+    {
+        if (trackedEnemies == null || trackedEnemies.Count == 0)
+        {
+            enemyHealths = new Health[0];
+        }
+        else
+        {
+            List<Health> validEnemies = new List<Health>(trackedEnemies.Count);
+            for (int i = 0; i < trackedEnemies.Count; i++)
+            {
+                Health enemyHealth = trackedEnemies[i];
+                if (enemyHealth != null)
+                {
+                    validEnemies.Add(enemyHealth);
+                }
+            }
+
+            enemyHealths = validEnemies.ToArray();
+        }
+
+        if (refill)
+        {
+            RefillTrackedCombatants();
+        }
+
+        currentEnemyHealth = ResolveInitialEnemyHealth();
+        SetTrackedEnemiesActive(state == CombatRoomState.Running);
+        NotifyChanged();
+    }
+
     private void TickStarting()
     {
         if (expedition == null || !expedition.IsRunning)
@@ -455,11 +486,18 @@ public class CombatRoom : MonoBehaviour
             return;
         }
 
-        heroHealth?.Refill();
+        if (heroHealth != null)
+        {
+            heroHealth.Refill();
+        }
 
         for (int i = 0; i < enemyHealths.Length; i++)
         {
-            enemyHealths[i]?.Refill();
+            Health enemyHealth = enemyHealths[i];
+            if (enemyHealth != null)
+            {
+                enemyHealth.Refill();
+            }
         }
     }
 

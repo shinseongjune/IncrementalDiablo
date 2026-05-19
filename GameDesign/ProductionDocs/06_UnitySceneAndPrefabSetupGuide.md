@@ -299,6 +299,19 @@ Canvas_Dungeon
 - 조정 가능 항목: 최종 방 크기, 벽 두께/높이, 재질, 장식, 카메라 각도
 - 지켜야 할 항목: 방이 시작 전에도 공간으로 읽히고, 전투 중/클리어 후 상태 변화가 눈에 보여야 한다.
 
+2026-05-19 prefab enemy spawn handoff:
+
+1. Create or duplicate the first melee enemy prefab as `Assets/04.Prefabs/Dungeon/PF_DungeonEnemy_Melee.prefab`.
+2. Required components on the prefab: `CharacterActor`, `CharacterStats`, `Health`, `CharacterMotor`, `CombatDriver`, `EquipmentSlots`, `NavMeshAgent`, `EnemyAIController`, and a collider that can receive player clicks.
+3. Set `CharacterActor > Team` to `Enemy`. This is fixed for the prefab-spawned combat path.
+4. Suggested initial enemy stat targets: Max Health `35-60`, Attack Damage `4-8`, Attack Range `1.4-2.0`, Attack Cooldown `1.0-1.8`, Move Speed `2.5-3.8`. These are prototype feel values, not long-term balance targets.
+5. On `Gameplay > DungeonRoot` or the authored room object, add `EnemySpawner` beside `CombatRoom`.
+6. Wire `EnemySpawner > Combat Room` to the room's `CombatRoom`, assign `Enemy Prefab` to `PF_DungeonEnemy_Melee`, and keep `Spawn On Room Start` enabled.
+7. Add 1-3 empty spawn transforms under the room, named `EnemySpawnPoint_01`, `EnemySpawnPoint_02`, etc., then assign them to `EnemySpawner > Spawn Points`.
+8. Starting spatial intent: put the first spawn point ahead of the hero rather than directly on top of the hero, close enough for contact within roughly `1-2` seconds after the room starts. The exact distance, angle, camera read, silhouette, and cover/wall relation are adjustable in-editor.
+9. Fixed values: the spawned enemy must be owned by `EnemySpawner`, registered into `CombatRoom`, and inactive until `CombatRoom` reaches `Running`. Adjustable values: spawn count, spawn point positions, enemy prefab art/scale, NavMeshAgent radius, room size, camera angle, and final encounter composition.
+10. Play Mode check: press `Start Dungeon`; during `Starting`, spawned enemies should not attack yet; during `Running`, the prefab should activate, chase the hero, take click attacks, and clear the room through `All tracked enemies defeated`.
+
 ## 4. 프리팹 목록
 
 ### 지상 디펜스 프리팹

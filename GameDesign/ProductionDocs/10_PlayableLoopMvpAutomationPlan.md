@@ -109,10 +109,10 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase C - First Real Game Slice |
-| Last meaningful movement | 2026-05-18: room presentation support was prepared with `DungeonRoomPresenter`, now explicitly scoped as a prototype/fallback helper rather than final room presentation, while the visual scene-authoring step stays manual so room scale and spatial feel can be judged in-editor. |
-| Next unlock | Manually author the first actual room shell in Unity, then replace the remaining loose scene enemy with the first reusable melee-enemy prefab/spawn path. |
-| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C has one direct-control encounter path and code support for visible room presentation, but the authored room shell, visible ground-defense action, and authored item assets are still open. |
-| Known blockers | The direct-control encounter still needs Play Mode feel validation; room scale/layout should be judged manually in Unity, the enemy is still a scene actor rather than a prefab-driven spawn, and authored item assets/drop tables, production item-definition registry, visible ground-defense action, and longer pacing remain open. |
+| Last meaningful movement | 2026-05-19: prefab-driven dungeon enemy spawn support was added with `EnemySpawner`, and `CombatRoom` can now accept spawned `Health` references instead of relying only on loose scene enemies or prototype simulation. |
+| Next unlock | In Unity, author `PF_DungeonEnemy_Melee`, add room spawn points, wire them into `EnemySpawner`, and Play Mode validate that spawned enemies activate only when the room starts running. |
+| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C has one direct-control encounter path, code support for visible room presentation, and a prefab-spawn path for dungeon enemies; the authored room shell, actual enemy prefab wiring, visible ground-defense action, and authored item assets are still open. |
+| Known blockers | The direct-control encounter and new spawn path still need Play Mode feel validation; room scale/layout and spawn point placement should be judged manually in Unity, while authored item assets/drop tables, production item-definition registry, visible ground-defense action, and longer pacing remain open. |
 
 ## 4. MVP Task Queue
 
@@ -372,6 +372,12 @@ Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루�
 - 사용자의 피드백대로 이 상태만으로는 "방"도 "클리어"도 아니었다. 적이 장면에 상시 존재하며 공격 피드백도 약했기 때문이다.
 - 후속 수정으로 적은 방 시작 전에는 비활성, 전투 중에만 활성, 해소 뒤에는 다시 비활성으로 바뀌고, HUD는 현재 HP와 `Room/Dungeon cleared` 메시지를 보여 준다.
 - 2026-05-18에는 `DungeonRoomPresenter`를 추가해 첫 방 표현을 위한 코드 기반 훅을 준비했다. 이 컴포넌트의 room shell과 tint는 prototype/fallback 용도이며, 최종 방 상태 피드백은 authored 문/스폰/보상/VFX/UI로 대체한다. 방 크기/배치/공간감은 수동 Unity 저작이 더 적합하고, 실제 적 프리팹/스포너 경로도 아직 남아 있으므로 이 항목은 `Next` 상태를 유지한다.
+
+2026-05-19 code progress note:
+
+- `EnemySpawner` now exists for Phase C room setup. It listens to `CombatRoom` state changes, instantiates a configured melee enemy prefab at assigned spawn points, keeps spawned enemies inactive during the start countdown, then registers their `Health` components with `CombatRoom`.
+- `CombatRoom.RegisterTrackedEnemies(...)` lets prefab-spawned enemies replace loose scene enemy references without changing the existing reward/save/HUD flow.
+- This does not complete the Phase C P0 by itself. Unity still needs `PF_DungeonEnemy_Melee`, authored spawn transforms, NavMesh/collider setup, and Play Mode feel validation before the normal path can stop relying on the current loose scene enemy or prototype fallback.
 
 ### P0. 지상 전선 시각 프로토타입
 
