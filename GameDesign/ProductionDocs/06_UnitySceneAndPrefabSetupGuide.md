@@ -312,6 +312,15 @@ Canvas_Dungeon
 9. Fixed values: the spawned enemy must be owned by `EnemySpawner`, registered into `CombatRoom`, and inactive until `CombatRoom` reaches `Running`. Adjustable values: spawn count, spawn point positions, enemy prefab art/scale, NavMeshAgent radius, room size, camera angle, and final encounter composition.
 10. Play Mode check: press `Start Dungeon`; during `Starting`, spawned enemies should not attack yet; during `Running`, the prefab should activate, chase the hero, take click attacks, and clear the room through `All tracked enemies defeated`.
 
+2026-05-20 authored tier-1 reward handoff:
+
+1. `Assets/05.ScriptableObjects/Items` now contains the first six authored dungeon reward definitions: three Normal items, two Magic items, and one Rare ring.
+2. `LootDropper` now reads `Reward Table` before the legacy uniform `Reward Definitions` array. Use `Reward Table` for normal authored rewards so rarity pacing does not require duplicate asset references.
+3. `Gameplay > DungeonRoot > LootDropper` is wired to a prototype per-clear split of 78% Normal, 20% Magic, and 2% Rare. This is a short-term authored-reward bridge, not final long-term drop pacing.
+4. Keep `Create Prototype Reward When Table Empty` enabled only as a safety fallback. The normal Phase C path should grant one of the authored `ItemDefinition` assets.
+5. Play Mode check: clear the first room, confirm the HUD/latest item line shows one of the authored item names, equip or salvage it, then save/load and confirm the saved item reconnects through `SimpleInventory` known definitions.
+6. D2 pacing note: this split is intentionally more conservative than the D2-derived `lp_n_act1_tier1` table because the current Unity room grants one guaranteed item per clear. Revisit it when per-kill/material/no-drop lanes exist.
+
 ## 4. 프리팹 목록
 
 ### 지상 디펜스 프리팹

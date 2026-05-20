@@ -6161,6 +6161,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LootDropper
   inventory: {fileID: 1045172326}
   autoFindInventory: 1
+  rewardTable:
+  - definition: {fileID: 11400000, guid: 5c7ea7142bbf48549d79dd5d1dcb9769, type: 2}
+    weight: 30
+  - definition: {fileID: 11400000, guid: 4710f92715434bb4aecec1a83d521aa9, type: 2}
+    weight: 28
+  - definition: {fileID: 11400000, guid: f49089b5a6114f4e824cbbb5d8d247a7, type: 2}
+    weight: 20
+  - definition: {fileID: 11400000, guid: 11f6d572f53041b2896866876adc9fa5, type: 2}
+    weight: 12
+  - definition: {fileID: 11400000, guid: 32d9a563a33d4a299ee2be950495bdb2, type: 2}
+    weight: 8
+  - definition: {fileID: 11400000, guid: 0a1eea40b7ab4a30a6653b3db81b6e7c, type: 2}
+    weight: 2
   rewardDefinitions: []
   createPrototypeRewardWhenTableEmpty: 1
   prototypeIdPrefix: prototype_crypt

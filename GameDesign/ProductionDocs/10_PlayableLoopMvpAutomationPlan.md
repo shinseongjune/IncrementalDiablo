@@ -109,10 +109,10 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase C - First Real Game Slice |
-| Last meaningful movement | 2026-05-19: prefab-driven dungeon enemy spawn support was added with `EnemySpawner`, and `CombatRoom` can now accept spawned `Health` references instead of relying only on loose scene enemies or prototype simulation. |
-| Next unlock | In Unity, author `PF_DungeonEnemy_Melee`, add room spawn points, wire them into `EnemySpawner`, and Play Mode validate that spawned enemies activate only when the room starts running. |
-| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C has one direct-control encounter path, code support for visible room presentation, and a prefab-spawn path for dungeon enemies; the authored room shell, actual enemy prefab wiring, visible ground-defense action, and authored item assets are still open. |
-| Known blockers | The direct-control encounter and new spawn path still need Play Mode feel validation; room scale/layout and spawn point placement should be judged manually in Unity, while authored item assets/drop tables, production item-definition registry, visible ground-defense action, and longer pacing remain open. |
+| Last meaningful movement | 2026-05-20: the first authored tier-1 item reward table was added. `LootDropper` now supports weighted rewards, and `Gameplay` points to six real `ItemDefinition` assets instead of relying on prototype reward fallback for the normal dungeon-clear path. |
+| Next unlock | Play Mode validate the prefab-spawn combat plus authored reward table together: `Start Dungeon` -> spawned melee enemy activates only in `Running` -> clear grants one of the six authored tier-1 items -> equip/salvage/save/load still works. |
+| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C now has one direct-control encounter path, code support for visible room presentation, a prefab-spawn path for dungeon enemies, and authored tier-1 item definitions in the reward loop; the authored room shell, visible ground-defense action, player-facing inventory UI, and long-term item registry/drop-table tooling are still open. |
+| Known blockers | The direct-control encounter, spawned enemy path, and authored item rewards still need Play Mode feel/loop validation. Room scale/layout, spawn placement, and final visual composition should still be judged manually in Unity; visible ground-defense action, player-facing inventory UI, production item-definition registry, and longer pacing remain open. |
 
 ## 4. MVP Task Queue
 
@@ -395,7 +395,7 @@ Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루�
 
 ### P1. 첫 authored item 세트
 
-상태: Planned
+상태: Code Done (Play Mode validation pending)
 
 목표:
 런타임 임시 아이템 fallback에만 기대지 않고, 실제 `ItemDefinition` 에셋 몇 개가 던전 보상으로 떨어지기 시작한다.
@@ -406,6 +406,13 @@ Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루�
 - 일반 플레이 경로에서 보상은 authored definition을 우선 사용한다.
 - save/load 후에도 definition 재연결 경로가 분명하다.
 - prototype fallback은 비상 경로로만 남고, 일반 플레이 설명은 authored item 기준으로 바뀐다.
+
+2026-05-20 code progress note:
+
+- `LootDropper` now has a weighted `RewardEntry` table before the old uniform `rewardDefinitions` fallback. This keeps authored rewards sparse enough for Diablo-like item pacing without duplicating asset references in the scene.
+- Six tier-1 `ItemDefinition` assets now exist under `Assets/05.ScriptableObjects/Items`: three Normal items, two Magic items, and one Rare ring.
+- `Gameplay` wires those assets into `LootDropper` at a prototype per-clear weight split of 78% Normal, 20% Magic, and 2% Rare. This is intentionally conservative because every room clear currently grants one item; it is not a final long-term drop-rate target.
+- Prototype runtime rewards remain available only as a fallback if the authored table is empty or invalid.
 
 ## 5. 2주 목표 일정
 

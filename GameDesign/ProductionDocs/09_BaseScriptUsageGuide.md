@@ -33,6 +33,8 @@
 
 2026-05-17 Phase C bridge: `EnemyAIController` now gives the scene enemy a real chase/attack loop, and `CombatRoom` can auto-discover the current player plus `CharacterTeam.Enemy` actors before falling back to hidden prototype simulation. The first pass still did not read like a real room because the enemy was globally active and attacks had almost no feedback; the follow-up fix now gates tracked enemies to the room lifecycle and exposes current HP plus explicit clear/fail messaging in `PlayableLoopHud`. Explicit prefab/spawner wiring and combat-feel tuning remain future work.
 
+2026-05-20 Phase C authored-reward bridge: `LootDropper` now supports a weighted `Reward Table` before the old uniform `Reward Definitions` list. `Gameplay` uses six tier-1 `ItemDefinition` assets under `Assets/05.ScriptableObjects/Items` at 78% Normal, 20% Magic, and 2% Rare per clear, with prototype runtime rewards kept only as an empty-table fallback. These are prototype pacing weights for a guaranteed room-clear reward, not final long-term drop targets.
+
 목표는 다음 한 문장이 Unity Play 모드에서 돌아가는 것이다.
 
 ```text

@@ -3,11 +3,22 @@ using UnityEngine;
 
 public class LootDropper : MonoBehaviour
 {
+    [Serializable]
+    public class RewardEntry
+    {
+        [SerializeField] private ItemDefinition definition;
+        [SerializeField, Min(0f)] private float weight = 1f;
+
+        public ItemDefinition Definition => definition;
+        public float Weight => Mathf.Max(0f, weight);
+    }
+
     [Header("Inventory Link")]
     [SerializeField] private SimpleInventory inventory;
     [SerializeField] private bool autoFindInventory = true;
 
     [Header("Reward Definitions")]
+    [SerializeField] private RewardEntry[] rewardTable = new RewardEntry[0];
     [SerializeField] private ItemDefinition[] rewardDefinitions = new ItemDefinition[0];
 
     [Header("Prototype Fallback")]
@@ -36,6 +47,7 @@ public class LootDropper : MonoBehaviour
 
     private void OnValidate()
     {
+        rewardTable ??= new RewardEntry[0];
         rewardDefinitions ??= new ItemDefinition[0];
         prototypeTier = Mathf.Max(1, prototypeTier);
         prototypeLevel = Mathf.Max(1, prototypeLevel);
@@ -89,11 +101,25 @@ public class LootDropper : MonoBehaviour
 
     private void RegisterRewardDefinitions()
     {
+        if (rewardTable != null)
+        {
+            for (int i = 0; i < rewardTable.Length; i++)
+            {
+                inventory?.RegisterDefinition(rewardTable[i]?.Definition);
+            }
+        }
+
         inventory?.RegisterDefinitions(rewardDefinitions);
     }
 
     private ItemDefinition SelectRewardDefinition()
     {
+        ItemDefinition weightedReward = SelectWeightedRewardDefinition();
+        if (weightedReward != null)
+        {
+            return weightedReward;
+        }
+
         if (rewardDefinitions != null && rewardDefinitions.Length > 0)
         {
             int startIndex = UnityEngine.Random.Range(0, rewardDefinitions.Length);
@@ -108,6 +134,48 @@ public class LootDropper : MonoBehaviour
         }
 
         return createPrototypeRewardWhenTableEmpty ? CreatePrototypeDefinition() : null;
+    }
+
+    private ItemDefinition SelectWeightedRewardDefinition()
+    {
+        if (rewardTable == null || rewardTable.Length == 0)
+        {
+            return null;
+        }
+
+        float totalWeight = 0f;
+        for (int i = 0; i < rewardTable.Length; i++)
+        {
+            RewardEntry entry = rewardTable[i];
+            if (entry?.Definition != null && entry.Weight > 0f)
+            {
+                totalWeight += entry.Weight;
+            }
+        }
+
+        if (totalWeight <= 0f)
+        {
+            return null;
+        }
+
+        float roll = UnityEngine.Random.Range(0f, totalWeight);
+        float accumulated = 0f;
+        for (int i = 0; i < rewardTable.Length; i++)
+        {
+            RewardEntry entry = rewardTable[i];
+            if (entry?.Definition == null || entry.Weight <= 0f)
+            {
+                continue;
+            }
+
+            accumulated += entry.Weight;
+            if (roll <= accumulated)
+            {
+                return entry.Definition;
+            }
+        }
+
+        return null;
     }
 
     private ItemDefinition CreatePrototypeDefinition()
