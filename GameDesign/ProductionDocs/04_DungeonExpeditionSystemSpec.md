@@ -235,3 +235,10 @@ MVP 보상:
 - 실패하면 보상 일부가 사라진다.
 - 장비 장착 후 영웅이 강해진다.
 - 던전 보상이 지상 강화 또는 제작에 쓰인다.
+
+## 13. 2026-05-21 Current Implementation Note
+
+- The first Phase C room path now distinguishes three combat paths in code/HUD: tracked enemies, prototype simulation, and setup blocked.
+- `EnemySpawner` setup blockers stop `CombatRoom` from using prototype simulation, so a missing prefab or missing spawned `Health` cannot silently clear the dungeon.
+- `LootDropper` records whether the clear reward came from the authored weighted table, the legacy definition list, or prototype fallback.
+- The current `Gameplay` scene already wires `PF_DungeonEnemy_Melee`, one spawn point, and the authored tier-1 reward table. The remaining completion gate is Play Mode validation of feel, activation timing, click combat, reward grant, equip/salvage, and save/load.

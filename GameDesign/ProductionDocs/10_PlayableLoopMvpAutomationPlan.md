@@ -109,10 +109,10 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase C - First Real Game Slice |
-| Last meaningful movement | 2026-05-20: the first authored tier-1 item reward table was added. `LootDropper` now supports weighted rewards, and `Gameplay` points to six real `ItemDefinition` assets instead of relying on prototype reward fallback for the normal dungeon-clear path. |
-| Next unlock | Play Mode validate the prefab-spawn combat plus authored reward table together: `Start Dungeon` -> spawned melee enemy activates only in `Running` -> clear grants one of the six authored tier-1 items -> equip/salvage/save/load still works. |
-| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C now has one direct-control encounter path, code support for visible room presentation, a prefab-spawn path for dungeon enemies, and authored tier-1 item definitions in the reward loop; the authored room shell, visible ground-defense action, player-facing inventory UI, and long-term item registry/drop-table tooling are still open. |
-| Known blockers | The direct-control encounter, spawned enemy path, and authored item rewards still need Play Mode feel/loop validation. Room scale/layout, spawn placement, and final visual composition should still be judged manually in Unity; visible ground-defense action, player-facing inventory UI, production item-definition registry, and longer pacing remain open. |
+| Last meaningful movement | 2026-05-21: Phase C fallback masking was reduced. `EnemySpawner` now reports enemy setup blockers to `CombatRoom`, `CombatRoom` stops hidden prototype simulation while that blocker is active, `LootDropper` records whether the reward came from the authored weighted table, and `PlayableLoopHud` shows combat path plus loot source. |
+| Next unlock | Play Mode validate the prefab-spawn combat plus authored reward table together: `Start Dungeon` -> HUD path shows tracked enemies, spawned melee enemy activates only in `Running` -> clear grants an authored-table item -> equip/salvage/save/load still works. |
+| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C now has one direct-control encounter path, visible room-presentation support, `Gameplay` wiring for `PF_DungeonEnemy_Melee` through `EnemySpawner`, authored tier-1 item definitions in the reward loop, and HUD diagnostics that expose prototype fallback instead of silently hiding it; the authored room shell, visible ground-defense action, player-facing inventory UI, and long-term item registry/drop-table tooling are still open. |
+| Known blockers | The direct-control encounter, spawned enemy path, and authored item rewards still need Play Mode feel/loop validation. Room scale/layout, spawn placement, NavMesh feel, and final visual composition should still be judged manually in Unity; visible ground-defense action, player-facing inventory UI, production item-definition registry, and longer pacing remain open. |
 
 ## 4. MVP Task Queue
 
@@ -377,7 +377,14 @@ Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루�
 
 - `EnemySpawner` now exists for Phase C room setup. It listens to `CombatRoom` state changes, instantiates a configured melee enemy prefab at assigned spawn points, keeps spawned enemies inactive during the start countdown, then registers their `Health` components with `CombatRoom`.
 - `CombatRoom.RegisterTrackedEnemies(...)` lets prefab-spawned enemies replace loose scene enemy references without changing the existing reward/save/HUD flow.
-- This does not complete the Phase C P0 by itself. Unity still needs `PF_DungeonEnemy_Melee`, authored spawn transforms, NavMesh/collider setup, and Play Mode feel validation before the normal path can stop relying on the current loose scene enemy or prototype fallback.
+- Follow-up scene work has since added `PF_DungeonEnemy_Melee` and one spawn point to `Gameplay`. This still does not complete the Phase C P0 by itself; Play Mode must confirm activation timing, NavMesh movement, click-to-attack feel, clear/fail messaging, and save/reward continuity.
+
+2026-05-21 code progress note:
+
+- `EnemySpawner` now keeps a `LastSpawnMessage` and reports missing prefab / missing `Health` setup blockers into `CombatRoom`.
+- `CombatRoom` now stores `TrackedEnemySetupBlocker` and blocks prototype simulation while an enemy-spawn setup blocker is active, so the first real room cannot silently fake-clear through hidden simulation when the prefab path is broken.
+- `PlayableLoopHud` now shows the current combat path (`tracked enemies`, `prototype simulation`, `setup blocked`, or `waiting for enemies`) in the dungeon line. If setup is blocked, the action hint names the blocker.
+- `Gameplay` already points `EnemySpawner` at `Assets/04.Prefabs/Dungeon/PF_DungeonEnemy_Melee.prefab` and one spawn point. The remaining P0 gate is user Play Mode validation, not more prefab creation by automation.
 
 ### P0. 지상 전선 시각 프로토타입
 
@@ -413,6 +420,11 @@ Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루�
 - Six tier-1 `ItemDefinition` assets now exist under `Assets/05.ScriptableObjects/Items`: three Normal items, two Magic items, and one Rare ring.
 - `Gameplay` wires those assets into `LootDropper` at a prototype per-clear weight split of 78% Normal, 20% Magic, and 2% Rare. This is intentionally conservative because every room clear currently grants one item; it is not a final long-term drop-rate target.
 - Prototype runtime rewards remain available only as a fallback if the authored table is empty or invalid.
+
+2026-05-21 diagnostics note:
+
+- `LootDropper` now records `LastRewardSource` (`WeightedRewardTable`, `RewardDefinitions`, or `PrototypeFallback`) and includes the source in `LastDropMessage`.
+- `PlayableLoopHud` now shows whether the dungeon reward path is using the authored weighted table, a legacy list, or prototype fallback. No item weights or rarity pacing numbers changed in this run.
 
 ## 5. 2주 목표 일정
 

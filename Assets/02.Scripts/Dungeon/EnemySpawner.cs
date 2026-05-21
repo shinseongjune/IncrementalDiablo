@@ -20,13 +20,18 @@ public class EnemySpawner : MonoBehaviour
 
     [Header("Runtime")]
     [SerializeField] private List<Health> spawnedEnemyHealths = new List<Health>();
+    [SerializeField] private string lastSpawnMessage;
 
     private readonly List<GameObject> spawnedObjects = new List<GameObject>();
     private CombatRoom subscribedRoom;
     private int lastSpawnedRoomIndex = int.MinValue;
     private int lastMissingPrefabWarningRoomIndex = int.MinValue;
+    private int lastBlockedRoomIndex = int.MinValue;
 
     public IReadOnlyList<Health> SpawnedEnemyHealths => spawnedEnemyHealths;
+    public bool HasEnemyPrefab => enemyPrefab != null;
+    public bool HasSpawnedEnemies => HasSpawnedEnemyRecords();
+    public string LastSpawnMessage => lastSpawnMessage;
 
     private void Awake()
     {
@@ -64,20 +69,23 @@ public class EnemySpawner : MonoBehaviour
 
         if (combatRoom == null)
         {
-            Debug.LogWarning("EnemySpawner cannot spawn because no CombatRoom was found.", this);
+            SetLastSpawnMessage("EnemySpawner cannot spawn because no CombatRoom was found.");
+            Debug.LogWarning(lastSpawnMessage, this);
             return false;
         }
 
         int roomIndex = combatRoom.ActiveRoomIndex;
         if (roomIndex < 0)
         {
-            Debug.LogWarning("EnemySpawner cannot spawn because the CombatRoom has no active room index.", this);
+            SetLastSpawnMessage("EnemySpawner cannot spawn because the CombatRoom has no active room index.");
+            Debug.LogWarning(lastSpawnMessage, this);
             return false;
         }
 
         if (enemyPrefab == null)
         {
             WarnMissingPrefabOnce(roomIndex);
+            ReportSpawnBlocker(roomIndex, "EnemySpawner blocked the visible combat path: enemy prefab is not assigned.");
             return false;
         }
 
@@ -96,14 +104,17 @@ public class EnemySpawner : MonoBehaviour
 
         if (spawnedEnemyHealths.Count == 0)
         {
-            Debug.LogWarning("EnemySpawner created enemies, but none exposed a Health component for CombatRoom tracking.", this);
             ClearPreviousSpawns();
+            ReportSpawnBlocker(roomIndex, "EnemySpawner blocked the visible combat path: spawned enemies have no Health component for CombatRoom tracking.");
+            Debug.LogWarning(lastSpawnMessage, this);
             return false;
         }
 
         lastSpawnedRoomIndex = roomIndex;
+        lastBlockedRoomIndex = int.MinValue;
         combatRoom.RegisterTrackedEnemies(spawnedEnemyHealths, refill: true);
         SyncSpawnedEnemyActivity();
+        SetLastSpawnMessage($"EnemySpawner spawned {spawnedEnemyHealths.Count} tracked enemy record(s) for room {roomIndex + 1}.");
         return true;
     }
 
@@ -132,6 +143,11 @@ public class EnemySpawner : MonoBehaviour
         }
 
         if (combatRoom.State != CombatRoomState.Starting && combatRoom.State != CombatRoomState.Running)
+        {
+            return;
+        }
+
+        if (combatRoom.ActiveRoomIndex == lastBlockedRoomIndex && !HasSpawnedEnemyRecords())
         {
             return;
         }
@@ -319,6 +335,7 @@ public class EnemySpawner : MonoBehaviour
         spawnedObjects.Clear();
         spawnedEnemyHealths.Clear();
         lastSpawnedRoomIndex = int.MinValue;
+        lastBlockedRoomIndex = int.MinValue;
     }
 
     private void WarnMissingPrefabOnce(int roomIndex)
@@ -330,6 +347,18 @@ public class EnemySpawner : MonoBehaviour
 
         lastMissingPrefabWarningRoomIndex = roomIndex;
         Debug.LogWarning("EnemySpawner needs an enemy prefab before CombatRoom can use prefab-spawned enemies.", this);
+    }
+
+    private void ReportSpawnBlocker(int roomIndex, string message)
+    {
+        lastBlockedRoomIndex = roomIndex;
+        SetLastSpawnMessage(message);
+        combatRoom?.ReportTrackedEnemySetupBlocker(message);
+    }
+
+    private void SetLastSpawnMessage(string message)
+    {
+        lastSpawnMessage = string.IsNullOrWhiteSpace(message) ? string.Empty : message;
     }
 
     private void ResolveCombatRoom()

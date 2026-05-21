@@ -344,7 +344,7 @@ public class PlayableLoopHud : MonoBehaviour
 
         string rewardState = BuildRewardStateText();
         string result = string.IsNullOrWhiteSpace(expedition.LastResult) ? "none" : expedition.LastResult;
-        string dungeonTextValue = $"Dungeon: {expedition.State} / Room {expedition.RoomsCompleted}/{expedition.TotalRooms} / {expedition.ElapsedSeconds:0.0}s / {rewardState}\nLast: {result}";
+        string dungeonTextValue = $"Dungeon: {expedition.State} / Room {expedition.RoomsCompleted}/{expedition.TotalRooms} / {expedition.ElapsedSeconds:0.0}s / {rewardState} / Loot {BuildLootSourceText()}\nLast: {result}";
 
         if (combatRoom == null)
         {
@@ -357,7 +357,7 @@ public class PlayableLoopHud : MonoBehaviour
             ? $"starting in {combatRoom.CountdownRemaining:0.0}s"
             : $"{combatRoom.ElapsedSeconds:0.0}s";
 
-        return $"{dungeonTextValue}\nRoom: {combatRoom.State} / {roomProgress} / Hero {combatRoom.CurrentHeroHealth:0.#} / Enemy {combatRoom.CurrentEnemyHealth:0.#}\nRoom Last: {roomMessage}";
+        return $"{dungeonTextValue}\nRoom: {combatRoom.State} / {roomProgress} / Path {BuildCombatPathText()} / Hero {combatRoom.CurrentHeroHealth:0.#} / Enemy {combatRoom.CurrentEnemyHealth:0.#}\nRoom Last: {roomMessage}";
     }
 
     private string BuildRewardStateText()
@@ -387,6 +387,46 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         return "No reward pending";
+    }
+
+    private string BuildLootSourceText()
+    {
+        if (lootDropper == null)
+        {
+            return "unavailable";
+        }
+
+        if (lootDropper.LastRewardSource != LootRewardSource.None)
+        {
+            return FormatLootRewardSource(lootDropper.LastRewardSource);
+        }
+
+        if (lootDropper.HasValidWeightedRewardTable)
+        {
+            return $"authored table ({lootDropper.RewardTableWeight:0.#}w)";
+        }
+
+        return "prototype fallback";
+    }
+
+    private string BuildCombatPathText()
+    {
+        if (combatRoom == null)
+        {
+            return "unavailable";
+        }
+
+        if (combatRoom.HasTrackedEnemySetupBlocker)
+        {
+            return "setup blocked";
+        }
+
+        if (combatRoom.UsesTrackedCombatants)
+        {
+            return "tracked enemies";
+        }
+
+        return combatRoom.IsPrototypeSimulationAvailable ? "prototype simulation" : "waiting for enemies";
     }
 
     private string BuildLatestItemText()
@@ -441,6 +481,11 @@ public class PlayableLoopHud : MonoBehaviour
 
         if (expedition.IsRunning)
         {
+            if (combatRoom != null && combatRoom.HasTrackedEnemySetupBlocker)
+            {
+                return $"Next: fix enemy spawn setup: {combatRoom.TrackedEnemySetupBlocker}";
+            }
+
             return combatRoom != null && combatRoom.UsesTrackedCombatants
                 ? "Next: click enemies to fight through the room; one click issues one order."
                 : "Next: wait for the room result; failure should explain what to improve.";
@@ -853,6 +898,17 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         return string.Join(", ", Array.ConvertAll(rewards, reward => reward.ToString()));
+    }
+
+    private static string FormatLootRewardSource(LootRewardSource rewardSource)
+    {
+        return rewardSource switch
+        {
+            LootRewardSource.WeightedRewardTable => "authored table",
+            LootRewardSource.RewardDefinitions => "legacy list",
+            LootRewardSource.PrototypeFallback => "prototype fallback",
+            _ => "none"
+        };
     }
 
     private static void SetText(TMP_Text target, string value)

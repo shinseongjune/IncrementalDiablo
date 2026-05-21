@@ -321,6 +321,15 @@ Canvas_Dungeon
 5. Play Mode check: clear the first room, confirm the HUD/latest item line shows one of the authored item names, equip or salvage it, then save/load and confirm the saved item reconnects through `SimpleInventory` known definitions.
 6. D2 pacing note: this split is intentionally more conservative than the D2-derived `lp_n_act1_tier1` table because the current Unity room grants one guaranteed item per clear. Revisit it when per-kill/material/no-drop lanes exist.
 
+2026-05-21 Phase C fallback-guard handoff:
+
+1. `Gameplay > DungeonRoot > EnemySpawner` is already wired to `Assets/04.Prefabs/Dungeon/PF_DungeonEnemy_Melee.prefab` and one spawn point.
+2. `CombatRoom` now blocks prototype simulation while `EnemySpawner` reports a setup blocker. This prevents a broken prefab path from clearing the room through hidden prototype combat.
+3. `PlayableLoopHud > Dungeon` now shows `Path tracked enemies`, `Path prototype simulation`, `Path setup blocked`, or `Path waiting for enemies`.
+4. `PlayableLoopHud > Dungeon` also shows the loot source: authored table, legacy list, or prototype fallback.
+5. Play Mode check for the current gate: press `Start Dungeon`; during `Starting`, the spawned enemy should not attack; during `Running`, the HUD should show `Path tracked enemies`; after clear, the loot line should show authored table and the latest item should be one of the six tier-1 assets.
+6. If the HUD shows `Path setup blocked`, fix the named prefab/spawn/Health setup issue before judging combat feel. Do not accept a prototype-simulation clear as Phase C completion.
+
 ## 4. 프리팹 목록
 
 ### 지상 디펜스 프리팹

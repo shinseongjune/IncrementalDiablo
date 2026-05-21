@@ -16,6 +16,7 @@ public class CombatRoom : MonoBehaviour
     [SerializeField] private bool autoFindTrackedCombatants = true;
     [SerializeField] private bool refillTrackedCombatantsOnBegin = true;
     [SerializeField] private bool manageTrackedEnemyActivity = true;
+    [SerializeField] private bool blockPrototypeSimulationWhenEnemySetupBlocked = true;
 
     [Header("Prototype Simulation")]
     [SerializeField] private bool simulateWhenNoEnemies = true;
@@ -34,6 +35,7 @@ public class CombatRoom : MonoBehaviour
     [SerializeField] private float currentHeroHealth;
     [SerializeField] private float currentEnemyHealth;
     [SerializeField] private CombatRoomResult lastResult;
+    [SerializeField] private string trackedEnemySetupBlocker;
 
     private ExpeditionDirector subscribedExpedition;
     private bool resolvingRoom;
@@ -49,6 +51,9 @@ public class CombatRoom : MonoBehaviour
     public float CurrentEnemyHealth => Mathf.Max(0f, currentEnemyHealth);
     public CombatRoomResult LastResult => lastResult;
     public bool UsesTrackedCombatants => heroHealth != null && HasAnyEnemyReference();
+    public bool HasTrackedEnemySetupBlocker => !string.IsNullOrWhiteSpace(trackedEnemySetupBlocker);
+    public string TrackedEnemySetupBlocker => trackedEnemySetupBlocker;
+    public bool IsPrototypeSimulationAvailable => simulateWhenNoEnemies && !HasAnyEnemyReference() && (!HasTrackedEnemySetupBlocker || !blockPrototypeSimulationWhenEnemySetupBlocked);
 
     private void Awake()
     {
@@ -112,6 +117,7 @@ public class CombatRoom : MonoBehaviour
         }
 
         activeRoomIndex = expedition.CurrentRoomIndex;
+        ClearTrackedEnemySetupBlocker(false);
         RefillTrackedCombatants();
         state = CombatRoomState.Starting;
         countdownRemaining = startCountdownSeconds;
@@ -167,7 +173,31 @@ public class CombatRoom : MonoBehaviour
 
         currentEnemyHealth = ResolveInitialEnemyHealth();
         SetTrackedEnemiesActive(state == CombatRoomState.Running);
+        ClearTrackedEnemySetupBlocker(false);
         NotifyChanged();
+    }
+
+    public void ReportTrackedEnemySetupBlocker(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return;
+        }
+
+        trackedEnemySetupBlocker = message.Trim();
+
+        if (state == CombatRoomState.Starting || state == CombatRoomState.Running)
+        {
+            currentEnemyHealth = 0f;
+            SetLastResult(CombatRoomResolution.None, trackedEnemySetupBlocker);
+        }
+
+        NotifyChanged();
+    }
+
+    public void ClearTrackedEnemySetupBlocker()
+    {
+        ClearTrackedEnemySetupBlocker(true);
     }
 
     private void TickStarting()
@@ -195,6 +225,11 @@ public class CombatRoom : MonoBehaviour
         elapsedSeconds += Time.deltaTime;
 
         if (TryResolveTrackedCombatants())
+        {
+            return;
+        }
+
+        if (HasTrackedEnemySetupBlocker && blockPrototypeSimulationWhenEnemySetupBlocked)
         {
             return;
         }
@@ -364,6 +399,7 @@ public class CombatRoom : MonoBehaviour
         elapsedSeconds = 0f;
         currentHeroHealth = 0f;
         currentEnemyHealth = 0f;
+        ClearTrackedEnemySetupBlocker(false);
         SetTrackedEnemiesActive(false);
         SetLastResult(CombatRoomResolution.None, "Room idle");
         NotifyChanged();
@@ -412,6 +448,21 @@ public class CombatRoom : MonoBehaviour
         }
 
         return false;
+    }
+
+    private void ClearTrackedEnemySetupBlocker(bool notifyChanged)
+    {
+        if (!HasTrackedEnemySetupBlocker)
+        {
+            return;
+        }
+
+        trackedEnemySetupBlocker = string.Empty;
+
+        if (notifyChanged)
+        {
+            NotifyChanged();
+        }
     }
 
     private void SetLastResult(CombatRoomResolution resolution, string message)

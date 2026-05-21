@@ -262,3 +262,8 @@ MVP에서 하지 않는다.
 - 장비 장착이 영웅 스탯에 반영된다.
 - 일부 옵션이 지상 디펜스에 반영된다.
 - 분해로 재료를 회수할 수 있다.
+
+## 12. 2026-05-21 Reward Diagnostics Note
+
+- `LootDropper` now records `LastRewardSource` so Play Mode can tell authored weighted-table rewards apart from legacy-list and prototype-fallback rewards.
+- No item weight, rarity, salvage, crafting, or economy value changed in this run. The current 78/20/2 tier-1 table remains a prototype per-clear bridge until a real Unity drop-balance export exists.

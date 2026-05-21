@@ -34,10 +34,14 @@ public class LootDropper : MonoBehaviour
     [Header("Diagnostics")]
     [SerializeField] private bool logGrantedRewards = true;
     [SerializeField] private string lastDropMessage;
+    [SerializeField] private LootRewardSource lastRewardSource = LootRewardSource.None;
 
     public event Action<ItemInstance> RewardGranted;
 
     public string LastDropMessage => lastDropMessage;
+    public LootRewardSource LastRewardSource => lastRewardSource;
+    public bool HasValidWeightedRewardTable => CalculateRewardTableWeight() > 0f;
+    public float RewardTableWeight => CalculateRewardTableWeight();
 
     private void Awake()
     {
@@ -74,9 +78,10 @@ public class LootDropper : MonoBehaviour
             return false;
         }
 
-        ItemDefinition definition = SelectRewardDefinition();
+        ItemDefinition definition = SelectRewardDefinition(out LootRewardSource rewardSource);
         if (definition == null)
         {
+            lastRewardSource = LootRewardSource.None;
             SetLastDropMessage("Loot reward failed: no ItemDefinition reward or prototype fallback is available.");
             Debug.LogWarning(lastDropMessage, this);
             return false;
@@ -84,12 +89,14 @@ public class LootDropper : MonoBehaviour
 
         if (!inventory.TryAdd(definition, out item))
         {
+            lastRewardSource = LootRewardSource.None;
             SetLastDropMessage($"Loot reward failed: inventory is full or rejected {definition.DisplayName}.");
             Debug.LogWarning(lastDropMessage, this);
             return false;
         }
 
-        SetLastDropMessage($"Loot reward granted: {item.DisplayName} ({item.Rarity}, power {item.RolledPower}).");
+        lastRewardSource = rewardSource;
+        SetLastDropMessage($"Loot reward granted from {FormatRewardSource(rewardSource)}: {item.DisplayName} ({item.Rarity}, power {item.RolledPower}).");
         if (logGrantedRewards)
         {
             Debug.Log(lastDropMessage, this);
@@ -112,11 +119,13 @@ public class LootDropper : MonoBehaviour
         inventory?.RegisterDefinitions(rewardDefinitions);
     }
 
-    private ItemDefinition SelectRewardDefinition()
+    private ItemDefinition SelectRewardDefinition(out LootRewardSource rewardSource)
     {
+        rewardSource = LootRewardSource.None;
         ItemDefinition weightedReward = SelectWeightedRewardDefinition();
         if (weightedReward != null)
         {
+            rewardSource = LootRewardSource.WeightedRewardTable;
             return weightedReward;
         }
 
@@ -128,12 +137,19 @@ public class LootDropper : MonoBehaviour
                 int index = (startIndex + offset) % rewardDefinitions.Length;
                 if (rewardDefinitions[index] != null)
                 {
+                    rewardSource = LootRewardSource.RewardDefinitions;
                     return rewardDefinitions[index];
                 }
             }
         }
 
-        return createPrototypeRewardWhenTableEmpty ? CreatePrototypeDefinition() : null;
+        if (!createPrototypeRewardWhenTableEmpty)
+        {
+            return null;
+        }
+
+        rewardSource = LootRewardSource.PrototypeFallback;
+        return CreatePrototypeDefinition();
     }
 
     private ItemDefinition SelectWeightedRewardDefinition()
@@ -176,6 +192,26 @@ public class LootDropper : MonoBehaviour
         }
 
         return null;
+    }
+
+    private float CalculateRewardTableWeight()
+    {
+        if (rewardTable == null || rewardTable.Length == 0)
+        {
+            return 0f;
+        }
+
+        float totalWeight = 0f;
+        for (int i = 0; i < rewardTable.Length; i++)
+        {
+            RewardEntry entry = rewardTable[i];
+            if (entry?.Definition != null && entry.Weight > 0f)
+            {
+                totalWeight += entry.Weight;
+            }
+        }
+
+        return totalWeight;
     }
 
     private ItemDefinition CreatePrototypeDefinition()
@@ -242,4 +278,23 @@ public class LootDropper : MonoBehaviour
     {
         lastDropMessage = message;
     }
+
+    private static string FormatRewardSource(LootRewardSource rewardSource)
+    {
+        return rewardSource switch
+        {
+            LootRewardSource.WeightedRewardTable => "authored weighted table",
+            LootRewardSource.RewardDefinitions => "legacy definition list",
+            LootRewardSource.PrototypeFallback => "prototype fallback",
+            _ => "no source"
+        };
+    }
+}
+
+public enum LootRewardSource
+{
+    None,
+    WeightedRewardTable,
+    RewardDefinitions,
+    PrototypeFallback
 }
