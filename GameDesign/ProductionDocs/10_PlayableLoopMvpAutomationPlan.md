@@ -109,10 +109,10 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase C - First Real Game Slice |
-| Last meaningful movement | 2026-05-21: Phase C fallback masking was reduced. `EnemySpawner` now reports enemy setup blockers to `CombatRoom`, `CombatRoom` stops hidden prototype simulation while that blocker is active, `LootDropper` records whether the reward came from the authored weighted table, and `PlayableLoopHud` shows combat path plus loot source. |
-| Next unlock | Play Mode validate the prefab-spawn combat plus authored reward table together: `Start Dungeon` -> HUD path shows tracked enemies, spawned melee enemy activates only in `Running` -> clear grants an authored-table item -> equip/salvage/save/load still works. |
-| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C now has one direct-control encounter path, visible room-presentation support, `Gameplay` wiring for `PF_DungeonEnemy_Melee` through `EnemySpawner`, authored tier-1 item definitions in the reward loop, and HUD diagnostics that expose prototype fallback instead of silently hiding it; the authored room shell, visible ground-defense action, player-facing inventory UI, and long-term item registry/drop-table tooling are still open. |
-| Known blockers | The direct-control encounter, spawned enemy path, and authored item rewards still need Play Mode feel/loop validation. Room scale/layout, spawn placement, NavMesh feel, and final visual composition should still be judged manually in Unity; visible ground-defense action, player-facing inventory UI, production item-definition registry, and longer pacing remain open. |
+| Last meaningful movement | 2026-05-22: Phase C visible ground-defense lane work started. `GroundDefenseLanePresenter` now reads `DefenseDirector.Runtime` and drives scene-authored anchors, pressure/progress markers, wall/pressure fills, state objects, renderer colors, and labels without hardcoding camera or lane layout. |
+| Next unlock | Unity scene authoring and Play Mode validation for the visible ground lane: add `GroundDefenseLanePresenter` under `DefenseRoot`, wire anchors/markers/fills, then confirm Hold/Push pressure, Push progress, wall damage, and breach state move with the same values shown by `PlayableLoopHud`. Also still validate the prefab-spawn combat plus authored reward table together. |
+| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C now has one direct-control encounter path, visible room-presentation support, `Gameplay` wiring for `PF_DungeonEnemy_Melee` through `EnemySpawner`, authored tier-1 item definitions in the reward loop, HUD diagnostics that expose prototype fallback, and a code bridge for visible ground-defense lane presentation; the ground lane still needs scene-authored anchors/markers and Play Mode validation, and player-facing inventory UI plus long-term item registry/drop-table tooling remain open. |
+| Known blockers | The direct-control encounter, spawned enemy path, authored item rewards, and new ground lane presenter still need Play Mode feel/loop validation. Room scale/layout, spawn placement, NavMesh feel, lane length, camera framing, marker art, and final visual composition should still be judged manually in Unity; player-facing inventory UI, production item-definition registry, and longer pacing remain open. |
 
 ## 4. MVP Task Queue
 
@@ -388,7 +388,7 @@ Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루�
 
 ### P0. 지상 전선 시각 프로토타입
 
-상태: Planned
+상태: In Progress (code bridge added, scene validation pending)
 
 목표:
 숫자 압박 모델만 보이던 지상 전선을, 적이 성벽으로 밀려오고 방어가 자동으로 대응하는 장면으로 바꾼다.
@@ -399,6 +399,12 @@ Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루�
 - 포탑 또는 병력이 자동으로 적을 공격한다.
 - 압박 증가와 성벽 손상이 숫자뿐 아니라 장면에서도 읽힌다.
 - 기존 `DefenseDirector` 수치 루프와 시각 오브젝트가 분리되지 않고 함께 움직인다.
+
+2026-05-22 code progress note:
+
+- `GroundDefenseLanePresenter` was added as the first visible-lane bridge. It reads `DefenseDirector.Runtime` and moves scene-authored pressure/progress markers, scales wall/pressure fills, toggles Hold/Push/Breached state objects, colors optional renderers, and updates optional TMP labels.
+- The component deliberately does not decide lane size, camera framing, wall shape, enemy art, or final marker placement. Those values are visual-authored in Unity and documented in `06_UnitySceneAndPrefabSetupGuide.md`.
+- This does not complete the P0 yet. The next gate is Unity scene setup plus Play Mode validation that Hold/Push, pressure, progress, wall damage, and breach state are visible in the same runtime that also keeps dungeon and item systems loaded.
 
 ### P1. 첫 authored item 세트
 

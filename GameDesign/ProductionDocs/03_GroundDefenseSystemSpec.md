@@ -206,7 +206,8 @@ Frontline Lv. 12 유지
 3. Hold/Push 전환 버튼을 붙인다.
 4. 성벽/포탑/병력 강화 버튼을 붙인다.
 5. 숫자 시뮬레이션에서 단계 상승과 돌파가 이해되는지 확인한다.
-6. 이후 `DefenseEnemy`, `TowerBattery`, `DefenseWall`을 붙여 시각 전투로 확장한다.
+6. `GroundDefenseLanePresenter`를 붙여 숫자 루프가 실제 배치된 앵커/마커/성벽 표시와 함께 움직이는지 확인한다. 이 단계는 시각 전투의 임시 브리지이며, 레인 크기와 카메라 구도는 Unity에서 수동 저작한다.
+7. 이후 `DefenseEnemy`, `TowerBattery`, `DefenseWall`을 붙여 실제 적 이동, 자동 공격, 피격/처치 피드백으로 확장한다.
 
 ## 13. 완료 기준
 

@@ -330,6 +330,20 @@ Canvas_Dungeon
 5. Play Mode check for the current gate: press `Start Dungeon`; during `Starting`, the spawned enemy should not attack; during `Running`, the HUD should show `Path tracked enemies`; after clear, the loot line should show authored table and the latest item should be one of the six tier-1 assets.
 6. If the HUD shows `Path setup blocked`, fix the named prefab/spawn/Health setup issue before judging combat feel. Do not accept a prototype-simulation clear as Phase C completion.
 
+2026-05-22 visible ground lane presenter handoff:
+
+1. Add a scene object under `Gameplay > DefenseRoot` named `GroundDefenseLane`.
+2. Add `GroundDefenseLanePresenter` to `GroundDefenseLane`.
+3. Wire `Defense` to the scene `DefenseDirector`, or leave `Auto Find Defense` enabled for the first pass.
+4. Create two empty anchors: `EnemySpawnAnchor` at the enemy-entry side of the lane and `WallAnchor` at the citadel/wall side. Assign them to the presenter. The presenter only reads these positions; the exact lane length, camera angle, and silhouette are editor-authored values.
+5. Add a simple marker object named `EnemyPressureMarker` and assign it. It moves from spawn toward wall as `EnemyPressure / EnemyPressureCapacity` rises.
+6. Add a second marker named `PushProgressMarker` and assign it. It moves from wall toward spawn as `FrontlineProgress / FrontlineProgressRequired` rises while Push is active.
+7. Optional: add thin child transforms for `WallHealthFill` and `PressureFill`. Their local X scale is multiplied by wall-health percent and pressure percent, so set their full-size scale in the editor before Play Mode.
+8. Optional: assign renderers for wall, pressure, and progress. The presenter changes `_BaseColor`/`_Color` through a material property block for Idle/Hold/Push/warning/breached states without editing shared materials.
+9. Optional: assign small TMP labels for state, pressure, progress, and wall health if the normal HUD is not visible while tuning the lane.
+10. Starting values: place `EnemySpawnAnchor` and `WallAnchor` far enough apart that the pressure marker movement is readable at the gameplay camera's normal zoom; use simple blockout shapes first. Adjustable values are lane length, marker art, fill thickness, colors, and label placement. Fixed values are the data source (`DefenseDirector.Runtime`) and the mapping: pressure approaches the wall, Push progress moves outward, wall health shrinks, and breach state must be visible.
+11. Play Mode check: start defense, toggle Hold/Push, wait for pressure/progress changes, then force or tune toward a breach. Confirm the marker positions, fill scales, labels, and state objects change with the same values shown in `PlayableLoopHud`.
+
 ## 4. 프리팹 목록
 
 ### 지상 디펜스 프리팹
@@ -338,6 +352,7 @@ Canvas_Dungeon
 | --- | --- | --- |
 | `PF_GameSystems` | CurrencyWallet, DefenseUpgradeModel, DefenseDirector | 지속 전선 숫자 시뮬레이션 |
 | `PF_DefenseHud` | DefenseHud | UI |
+| `PF_GroundDefenseLane` | GroundDefenseLanePresenter + scene-authored anchors/markers | Phase C 지상 전선 시각 브리지 |
 | `PF_DefenseWall` | DefenseWall, HealthBarUI | 시각 단계 성벽 체력 |
 | `PF_TowerBattery` | TowerBattery | 시각 단계 자동 공격 |
 | `PF_DefenderSquad` | DefenderSquad | 시각 단계 병력 전투력 |
@@ -383,6 +398,7 @@ MVP 숫자 검증은 `PF_GameSystems`와 `PF_DefenseHud`만으로 시작한다.
 | DefenseDirector | 지속 압박, 보상, 단계 상승, 돌파 판정 |
 | DefenseUpgradeModel | 강화 레벨과 비용 |
 | DefenseHud | 버튼과 표시 갱신 |
+| GroundDefenseLanePresenter | `DefenseDirector.Runtime`을 읽어 scene-authored 지상 전선 앵커, 압박/진행 마커, 성벽/압박 fill, 상태 오브젝트, 색상, 라벨을 갱신 |
 | DefenseEnemy | 시각 단계 지상 적 스탯과 피격 |
 | EnemyMover | 시각 단계 성벽 방향 이동 |
 | DefenseWall | 시각 단계 성벽 체력과 손상 |
