@@ -109,10 +109,26 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase C - First Real Game Slice |
-| Last meaningful movement | 2026-05-22: Phase C visible ground-defense lane work started. `GroundDefenseLanePresenter` now reads `DefenseDirector.Runtime` and drives scene-authored anchors, pressure/progress markers, wall/pressure fills, state objects, renderer colors, and labels without hardcoding camera or lane layout. |
-| Next unlock | Unity scene authoring and Play Mode validation for the visible ground lane: add `GroundDefenseLanePresenter` under `DefenseRoot`, wire anchors/markers/fills, then confirm Hold/Push pressure, Push progress, wall damage, and breach state move with the same values shown by `PlayableLoopHud`. Also still validate the prefab-spawn combat plus authored reward table together. |
-| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C now has one direct-control encounter path, visible room-presentation support, `Gameplay` wiring for `PF_DungeonEnemy_Melee` through `EnemySpawner`, authored tier-1 item definitions in the reward loop, HUD diagnostics that expose prototype fallback, and a code bridge for visible ground-defense lane presentation; the ground lane still needs scene-authored anchors/markers and Play Mode validation, and player-facing inventory UI plus long-term item registry/drop-table tooling remain open. |
-| Known blockers | The direct-control encounter, spawned enemy path, authored item rewards, and new ground lane presenter still need Play Mode feel/loop validation. Room scale/layout, spawn placement, NavMesh feel, lane length, camera framing, marker art, and final visual composition should still be judged manually in Unity; player-facing inventory UI, production item-definition registry, and longer pacing remain open. |
+| Last meaningful movement | 2026-05-22: Phase C visible ground-defense bridge was validated in Unity and pushed as `077d1c7 Add ground defense lane presenter`. `GroundDefenseLanePresenter` is wired in `Gameplay`, and scene-authored markers/fills/text now follow `DefenseDirector.Runtime`. |
+| Next unlock | Replace the verified marker lane with the first real defense combat slice: enemy/pressure actors advance toward the wall, wall-contact damage is visible, and tower/defender attacks produce readable feedback while staying driven by the existing `DefenseDirector` values. |
+| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C now has one direct-control dungeon encounter path, visible room-presentation support, `Gameplay` wiring for `PF_DungeonEnemy_Melee` through `EnemySpawner`, authored tier-1 item definitions in the reward loop, HUD diagnostics that expose prototype fallback, and a verified ground-lane presentation bridge. Real ground-defense combat, the authored dungeon room shell, player-facing inventory UI, and long-term item registry/drop-table tooling are still open. |
+| Known blockers | There is no current build or publish blocker after `077d1c7`. Product blockers remain: the visible ground lane is still a presentation bridge rather than real defense combat; the direct-control dungeon encounter and authored reward path still need full Play Mode feel/loop validation; room scale/layout, spawn placement, NavMesh feel, and final visual composition still require manual Unity judgment. |
+
+## 3.1 Progress Assessment Against Game-Form Plan
+
+Current assessment: progress is on track for the staged goal of making the project take recognizable game form, but it is not close to a finished Steam 1.0 product. The project is between the 30-60 minute core-loop MVP target and the 5-10 hour vertical-slice target: the loop systems are connected enough to verify, while the player-facing action layer is still thin.
+
+Speed assessment:
+
+- Good: save/load, dungeon run state, reward plumbing, authored item definitions, HUD diagnostics, scene wiring, and the ground-lane presenter have moved quickly enough to support a 2-4 month "game form" objective.
+- Weak point: visible gameplay production is behind the support systems. Too many future runs spent on markers, diagnostics, fallback paths, or documentation would slow the project below the intended pace.
+- Required correction: Phase C work must now default to concrete player-visible combat objects and feedback, especially real ground-defense enemies, wall contact/damage, and automatic defender/tower attacks.
+
+Direction assessment:
+
+- Correct direction: the project is still preserving the intended PC incremental action RPG shape: automatic ground defense, direct-control dungeon combat, loot, equipment, crafting/salvage, save/load, and long-term progression.
+- Current risk: the verified ground lane can be mistaken for "the defense game," but it is only the bridge that lets real defense actors read from the same runtime state.
+- Operating rule: unless a regression or build blocker appears, do not spend two consecutive runs on helper-only or documentation-only work. The next meaningful production increment should make the defense layer visibly fight.
 
 ## 4. MVP Task Queue
 
@@ -388,7 +404,7 @@ Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루�
 
 ### P0. 지상 전선 시각 프로토타입
 
-상태: In Progress (code bridge added, scene validation pending)
+상태: Bridge Verified (real combat pending)
 
 목표:
 숫자 압박 모델만 보이던 지상 전선을, 적이 성벽으로 밀려오고 방어가 자동으로 대응하는 장면으로 바꾼다.
@@ -400,11 +416,10 @@ Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루�
 - 압박 증가와 성벽 손상이 숫자뿐 아니라 장면에서도 읽힌다.
 - 기존 `DefenseDirector` 수치 루프와 시각 오브젝트가 분리되지 않고 함께 움직인다.
 
-2026-05-22 code progress note:
+2026-05-22 progress note:
 
-- `GroundDefenseLanePresenter` was added as the first visible-lane bridge. It reads `DefenseDirector.Runtime` and moves scene-authored pressure/progress markers, scales wall/pressure fills, toggles Hold/Push/Breached state objects, colors optional renderers, and updates optional TMP labels.
-- The component deliberately does not decide lane size, camera framing, wall shape, enemy art, or final marker placement. Those values are visual-authored in Unity and documented in `06_UnitySceneAndPrefabSetupGuide.md`.
-- This does not complete the P0 yet. The next gate is Unity scene setup plus Play Mode validation that Hold/Push, pressure, progress, wall damage, and breach state are visible in the same runtime that also keeps dungeon and item systems loaded.
+- `GroundDefenseLanePresenter` and the `Gameplay` scene wiring proved that scene-authored lane markers, wall fill, pressure fill, state objects, and TMP labels can follow the live `DefenseDirector.Runtime` without hardcoding layout or camera composition.
+- This completes the presentation bridge, not the real defense game. The P0 remains open until enemy/pressure actors visibly move toward the wall, wall contact produces readable damage, and tower/defender attacks are represented as player-facing action.
 
 ### P1. 첫 authored item 세트
 

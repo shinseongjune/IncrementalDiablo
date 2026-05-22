@@ -99,3 +99,21 @@ MVP는 세 루프가 작게라도 한 바퀴 도는 상태다.
 ## 7. Automation MVP Queue
 
 `10_PlayableLoopMvpAutomationPlan.md` is the current daily automation task queue for the playable loop MVP. Read it before choosing autonomous production work, and update it whenever a task is completed, split, blocked, or newly discovered.
+
+## 8. Current Progress Assessment
+
+현재 진행 상태를 볼 때는 다음 문서를 함께 읽는다.
+
+| 문서 | 확인할 내용 |
+| --- | --- |
+| `10_PlayableLoopMvpAutomationPlan.md` | 오늘 기준 Phase, 다음 unlock, 실제로 완료/검증된 작업, 남은 blocker |
+| `08_ImplementationRoadmap.md` | 2-4개월 게임 형태 목표 대비 속도와 방향 평가 |
+| `../GameDesignDocument.md` | 장기 마일스톤상 현재 위치와 수직 조각 전환 기준 |
+
+2026-05-22 기준 판단:
+
+- 진행은 "게임 형태를 갖추는 단계" 기준으로 정상 궤도다.
+- 완성판 또는 Steam 1.0 기준으로는 아직 초기다.
+- 현재 위치는 `30-60분 핵심 루프 MVP`와 `5-10시간 수직 조각` 사이에 있다.
+- 다음 생산 초점은 문서, 마커, 진단 helper가 아니라 실제 지상 디펜스 전투다.
+- 특히 적/압박 오브젝트 전진, 성벽 접촉 피해, 자동 공격 피드백, 던전 실제 적 처치, authored item 보상 확인이 우선이다.
