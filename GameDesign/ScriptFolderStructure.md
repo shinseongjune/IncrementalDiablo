@@ -34,7 +34,7 @@ Ground defense code owns the continuous frontline, defense upgrades, local save 
 - `GroundDefense/Runtime/`: frontline state, Hold/Push simulation, upgrades, and defense save manager.
 - `GroundDefense/UI/`: HUD components for frontline status and defense actions.
 
-Current implementation note: `DefenseDirector` and `DefenseRuntimeState` own the formula-driven frontline simulation. `DefenseHud` remains the focused numeric/debug HUD, while `GroundDefenseLanePresenter` is the first Phase C visual bridge for the ground lane. It does not author room scale, camera, enemy art, or final layout; it reads `DefenseDirector.Runtime` and drives scene-authored anchors, pressure/progress markers, wall/pressure fills, state objects, renderer colors, and optional TMP labels so the visible lane stays synchronized with the real Hold/Push, pressure, wall-health, and breach state.
+Current implementation note: `DefenseDirector` and `DefenseRuntimeState` own the formula-driven frontline simulation. `DefenseHud` remains the focused numeric/debug HUD, while `GroundDefenseLanePresenter` is the first Phase C visual bridge for the ground lane. It does not author room scale, camera, enemy art, or final layout; it reads `DefenseDirector.Runtime` and drives scene-authored anchors, pressure/progress markers, auto-resolved marker renderers, optional enemy-flow markers, wall/pressure fills, state objects, renderer colors, and optional TMP labels so the visible lane stays synchronized with the real Hold/Push, pressure, wall-health, and breach state. `ActiveEnemyFlowMarkerCount` and `LastPresentationMessage` expose the current presentation state for Play Mode validation.
 
 ## UI
 

@@ -37,6 +37,8 @@
 
 2026-05-21 Phase C fallback-guard scope: `EnemySpawner` now reports missing prefab or missing spawned `Health` setup into `CombatRoom`, and `CombatRoom` blocks prototype simulation while that setup blocker is active. `LootDropper` records `LastRewardSource`, and `PlayableLoopHud` shows combat path plus loot source so the current Play Mode check can confirm spawned enemies and authored reward-table drops are actually being used.
 
+2026-05-23 Phase C visible-lane scope: `GroundDefenseLanePresenter` now auto-resolves renderers from assigned pressure/progress marker transforms and can drive optional scene-authored `Enemy Flow Markers` from `EnemySpawnAnchor` to `WallAnchor`. This makes the ground lane read more like continuous enemy pressure while still leaving lane length, marker art/count, camera framing, and composition to manual Unity authoring.
+
 목표는 다음 한 문장이 Unity Play 모드에서 돌아가는 것이다.
 
 ```text

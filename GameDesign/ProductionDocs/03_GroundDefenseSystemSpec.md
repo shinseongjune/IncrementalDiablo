@@ -1,5 +1,11 @@
 # Ground Defense System Spec
 
+2026-05-23 Phase C visual bridge note:
+
+- `GroundDefenseLanePresenter` now auto-resolves renderers from assigned pressure/progress marker transforms and colors those markers by runtime state.
+- Optional scene-authored `Enemy Flow Markers` move from `EnemySpawnAnchor` to `WallAnchor`; active marker count rises with pressure and all assigned markers stay visible on breach.
+- This is a visual bridge only. Enemy art, marker count, lane length, camera framing, and final composition remain manual Unity authoring decisions.
+
 작성일: 2026-05-03
 문서 목적: 지상 디펜스를 끊임없는 전선 전투와 자동 단계 상승 구조로 정의한다.
 

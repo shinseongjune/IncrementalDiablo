@@ -109,10 +109,10 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase C - First Real Game Slice |
-| Last meaningful movement | 2026-05-22: Phase C visible ground-defense bridge was validated in Unity and pushed as `077d1c7 Add ground defense lane presenter`. `GroundDefenseLanePresenter` is wired in `Gameplay`, and scene-authored markers/fills/text now follow `DefenseDirector.Runtime`. |
-| Next unlock | Replace the verified marker lane with the first real defense combat slice: enemy/pressure actors advance toward the wall, wall-contact damage is visible, and tower/defender attacks produce readable feedback while staying driven by the existing `DefenseDirector` values. |
-| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C now has one direct-control dungeon encounter path, visible room-presentation support, `Gameplay` wiring for `PF_DungeonEnemy_Melee` through `EnemySpawner`, authored tier-1 item definitions in the reward loop, HUD diagnostics that expose prototype fallback, and a verified ground-lane presentation bridge. Real ground-defense combat, the authored dungeon room shell, player-facing inventory UI, and long-term item registry/drop-table tooling are still open. |
-| Known blockers | There is no current build or publish blocker after `077d1c7`. Product blockers remain: the visible ground lane is still a presentation bridge rather than real defense combat; the direct-control dungeon encounter and authored reward path still need full Play Mode feel/loop validation; room scale/layout, spawn placement, NavMesh feel, and final visual composition still require manual Unity judgment. |
+| Last meaningful movement | 2026-05-23: After the 2026-05-22 verified ground-lane bridge, `GroundDefenseLanePresenter` gained automatic marker-renderer resolution plus optional enemy-flow markers. Existing pressure/progress markers can now recolor by Hold/Push/warning/breach state, and scene-authored flow markers can move from spawn to wall from the real `DefenseDirector.Runtime`. |
+| Next unlock | Move from the verified presentation bridge toward the first real defense combat slice: add/validate enemy or pressure actors advancing toward the wall, visible wall-contact damage, and readable tower/defender attack feedback while staying driven by `DefenseDirector` values. Optional `Enemy Flow Markers` are a visual bridge, not the final combat system. |
+| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C now has one direct-control dungeon encounter path, visible room-presentation support, `Gameplay` wiring for `PF_DungeonEnemy_Melee` through `EnemySpawner`, authored tier-1 item definitions in the reward loop, HUD diagnostics that expose prototype fallback, and a verified ground-lane presentation bridge with marker coloring plus optional enemy-flow support. Real ground-defense combat, the authored dungeon room shell, player-facing inventory UI, and long-term item registry/drop-table tooling remain open. |
+| Known blockers | There is no current code build blocker. Product blockers remain: the visible ground lane is still a presentation bridge rather than real defense combat; direct-control dungeon encounter and authored reward path still need full Play Mode feel/loop validation; room scale/layout, spawn placement, NavMesh feel, marker art/count, lane/camera framing, and final visual composition still require manual Unity judgment. |
 
 ## 3.1 Progress Assessment Against Game-Form Plan
 
@@ -420,6 +420,13 @@ Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루�
 
 - `GroundDefenseLanePresenter` and the `Gameplay` scene wiring proved that scene-authored lane markers, wall fill, pressure fill, state objects, and TMP labels can follow the live `DefenseDirector.Runtime` without hardcoding layout or camera composition.
 - This completes the presentation bridge, not the real defense game. The P0 remains open until enemy/pressure actors visibly move toward the wall, wall contact produces readable damage, and tower/defender attacks are represented as player-facing action.
+
+2026-05-23 code progress note:
+
+- `GroundDefenseLanePresenter` now auto-resolves `Renderer` components from the assigned pressure and Push progress marker transforms, so the existing `Gameplay > DefenseRoot` marker objects can recolor by runtime state without extra Inspector wiring.
+- Optional `Enemy Flow Markers` can now be assigned as scene-authored transforms. When the frontline is running, the presenter activates a pressure-scaled count of those markers and moves them from `EnemySpawnAnchor` toward `WallAnchor`; on breach, all assigned flow markers remain active.
+- The script exposes `LastPresentationMessage` and `ActiveEnemyFlowMarkerCount` for Inspector/HUD diagnostics, but it still leaves marker art, marker count, lane length, camera framing, and final composition to manual Unity authoring.
+- This advances the visible ground-lane P0 but does not turn the bridge into real ground combat. The next production work should add visible pressure/enemy actors, wall-contact damage, and tower/defender feedback rather than more helper-only lane diagnostics.
 
 ### P1. 첫 authored item 세트
 

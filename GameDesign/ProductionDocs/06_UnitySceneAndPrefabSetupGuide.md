@@ -344,6 +344,15 @@ Canvas_Dungeon
 10. Starting values: place `EnemySpawnAnchor` and `WallAnchor` far enough apart that the pressure marker movement is readable at the gameplay camera's normal zoom; use simple blockout shapes first. Adjustable values are lane length, marker art, fill thickness, colors, and label placement. Fixed values are the data source (`DefenseDirector.Runtime`) and the mapping: pressure approaches the wall, Push progress moves outward, wall health shrinks, and breach state must be visible.
 11. Play Mode check: start defense, toggle Hold/Push, wait for pressure/progress changes, then force or tune toward a breach. Confirm the marker positions, fill scales, labels, and state objects change with the same values shown in `PlayableLoopHud`.
 
+2026-05-23 visible ground lane enemy-flow update:
+
+1. The presenter now auto-finds `Renderer` components on the assigned `EnemyPressureMarker` and `PushProgressMarker` transforms when `Auto Resolve Marker Renderers` is enabled. Existing marker objects in `Gameplay > DefenseRoot` should therefore recolor by Hold/Push/warning/breach state without assigning renderer fields manually.
+2. To show continuous enemy pressure, add 2-5 simple scene-authored marker objects under `DefenseRoot`, name them `EnemyFlowMarker_01`, `EnemyFlowMarker_02`, etc., and assign their transforms to `GroundDefenseLanePresenter > Enemy Flow Markers`.
+3. Fixed mapping: assigned flow markers move from `EnemySpawnAnchor` toward `WallAnchor`; the active marker count rises with `EnemyPressure / EnemyPressureCapacity`; all assigned flow markers remain active while breached.
+4. Adjustable values: marker count, mesh/sprite/art, size, height above the lane, material, lane length, camera framing, and final silhouette. These are visual authoring choices and should be tuned in Unity.
+5. Suggested first pass: use 3 small, clearly visible placeholder markers. Keep `Minimum Running Enemy Markers` at `1` and `Enemy Flow Cycles Per Second` near `0.18` until the lane is readable; tune speed only after the camera framing is settled.
+6. Play Mode check: start defense, confirm at least one flow marker moves while Holding/Pushing, toggle Push, wait for pressure changes, and confirm marker color/count reads consistently with `PlayableLoopHud` pressure and wall/breach state.
+
 ## 4. 프리팹 목록
 
 ### 지상 디펜스 프리팹
@@ -398,7 +407,7 @@ MVP 숫자 검증은 `PF_GameSystems`와 `PF_DefenseHud`만으로 시작한다.
 | DefenseDirector | 지속 압박, 보상, 단계 상승, 돌파 판정 |
 | DefenseUpgradeModel | 강화 레벨과 비용 |
 | DefenseHud | 버튼과 표시 갱신 |
-| GroundDefenseLanePresenter | `DefenseDirector.Runtime`을 읽어 scene-authored 지상 전선 앵커, 압박/진행 마커, 성벽/압박 fill, 상태 오브젝트, 색상, 라벨을 갱신 |
+| GroundDefenseLanePresenter | `DefenseDirector.Runtime`을 읽어 scene-authored 지상 전선 앵커, 압박/진행 마커, 자동 marker renderer, 선택 enemy-flow marker, 성벽/압박 fill, 상태 오브젝트, 색상, 라벨을 갱신 |
 | DefenseEnemy | 시각 단계 지상 적 스탯과 피격 |
 | EnemyMover | 시각 단계 성벽 방향 이동 |
 | DefenseWall | 시각 단계 성벽 체력과 손상 |
