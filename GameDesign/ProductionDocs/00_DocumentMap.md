@@ -37,6 +37,7 @@
 | 06 | `06_UnitySceneAndPrefabSetupGuide.md` | Unity에서 어떤 씬, 폴더, 프리팹, 컴포넌트를 만들지 단계별로 지시한다. 개발자가 그대로 따라 세팅할 수 있어야 한다. | Unity 세팅 |
 | 07 | `07_DataSaveAndBalanceSpec.md` | ScriptableObject, 런타임 상태, 저장 데이터, 초기 밸런스 값을 분리한다. 하드코딩을 줄이고 테스트를 쉽게 만든다. | 데이터/저장 구현 |
 | 08 | `08_ImplementationRoadmap.md` | 실제 작업 순서와 완료 기준을 제시한다. 지금 당장 무엇부터 만들지 결정한다. | 개발 일정 관리 |
+| 11 | `11_PlayableScreenPresentationSpec.md` | MVP 임시값 기준의 메인 플레이 화면, 방어/던전 분할 레이아웃, 카메라 소유권, HUD 영역, 포커스 전환 규칙을 저장한다. production UI/viewport/camera 작업 전에 먼저 확인한다. | UI/카메라/프레젠테이션 구현 |
 
 ## 3. 기존 문서와의 관계
 
@@ -70,6 +71,7 @@ ProductionDocs의 시스템 상세 문서
 5. Unity 세팅 전 `06_UnitySceneAndPrefabSetupGuide.md`
 6. 저장/밸런스 작업 전 `07_DataSaveAndBalanceSpec.md`
 7. 오늘 할 일을 정할 때 `08_ImplementationRoadmap.md`
+8. 플레이 화면, 카메라, HUD, 방어/던전 전환을 구현할 때 `11_PlayableScreenPresentationSpec.md`
 
 ## 5. 문서 작성 규칙
 
@@ -108,6 +110,7 @@ MVP는 세 루프가 작게라도 한 바퀴 도는 상태다.
 | --- | --- |
 | `10_PlayableLoopMvpAutomationPlan.md` | 오늘 기준 Phase, 다음 unlock, 실제로 완료/검증된 작업, 남은 blocker |
 | `08_ImplementationRoadmap.md` | 2-4개월 게임 형태 목표 대비 속도와 방향 평가 |
+| `11_PlayableScreenPresentationSpec.md` | 저장된 최종 화면 예시와 현재 MVP 임시값 기준의 UI/카메라/전환 결정 |
 | `../GameDesignDocument.md` | 장기 마일스톤상 현재 위치와 수직 조각 전환 기준 |
 
 2026-05-22 기준 판단:

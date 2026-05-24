@@ -553,6 +553,20 @@ Bootstrap 또는 GameplayCore 씬
 - 던전 additive 씬을 로드해도 `DefenseDirector`는 계속 살아 있고, 지상 상태는 HUD로 표시된다.
 - 지상 additive 씬을 보고 있어도 `ExpeditionDirector`의 보상 대기/실패/진행 상태는 유지된다.
 
+### 7.1 MVP presentation target reference
+
+Before implementing production UI panels, camera viewports, RenderTextures, or focus transitions, use `11_PlayableScreenPresentationSpec.md` as the current MVP reference.
+
+MVP temporary presentation values:
+
+- Start in `DefenseFocus`.
+- On dungeon entry, compress defense into the right-side panel and slide/expand the dungeon viewport into the main play area.
+- Keep the global top bar and bottom action bar fixed during the transition.
+- Use a `70%` dungeon / `30%` defense split in `DungeonFocus`.
+- Treat `0.38` seconds as the first-pass entry transition duration and `0.32` seconds as the first-pass exit duration.
+- Do not reload scenes or pause `DefenseDirector` just to switch focus.
+- Exact camera framing, object scale, panel crop, and ornate frame density remain Unity Editor feel-tuning tasks.
+
 ## 8. 완료 기준
 
 Unity 세팅 완료 기준:

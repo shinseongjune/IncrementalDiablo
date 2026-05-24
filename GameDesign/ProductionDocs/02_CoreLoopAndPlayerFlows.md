@@ -246,6 +246,21 @@ Frontline Lv.12 돌파됨
 추천: 성벽 수리, 포탑 Lv.4 강화, Hold로 재시작
 ```
 
+### 6.1 Main playable screen presentation
+
+The current MVP presentation target is defined in `11_PlayableScreenPresentationSpec.md`.
+
+Flow rule:
+
+- The player starts in `DefenseFocus`.
+- Starting direct dungeon play transitions into `DungeonFocus`.
+- During the transition, the defense view compresses into a persistent right-side panel and the dungeon viewport slides/expands into the main play area.
+- The top global bar and bottom action bar stay fixed.
+- Ground defense remains alive and readable while dungeon input becomes primary.
+- Inventory, crafting, rewards, and item tooltips are overlays over the current focus state.
+
+MVP temporary values live in `11_PlayableScreenPresentationSpec.md` so implementation can proceed before final camera/framing/art judgment.
+
 ## 7. 구현 완료 기준
 
 이 문서 기준 구현 완료:
