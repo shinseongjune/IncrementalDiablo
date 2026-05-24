@@ -39,6 +39,8 @@
 
 2026-05-23 Phase C visible-lane scope: `GroundDefenseLanePresenter` now auto-resolves renderers from assigned pressure/progress marker transforms and can drive optional scene-authored `Enemy Flow Markers` from `EnemySpawnAnchor` to `WallAnchor`. This makes the ground lane read more like continuous enemy pressure while still leaving lane length, marker art/count, camera framing, and composition to manual Unity authoring.
 
+2026-05-24 Phase C ground-combat feedback scope: `GroundDefenseCombatPresenter` adds the next visual bridge for ground defense. It reads `DefenseDirector.Runtime` and drives scene-authored pressure actors, a wall-contact flash, and tower/defender attack pulses. `PlayableLoopHud` auto-finds it and shows its `LastCombatMessage` in the frontline summary when present. This is still a feedback bridge, not final enemy AI, final art, or long-term combat balance.
+
 목표는 다음 한 문장이 Unity Play 모드에서 돌아가는 것이다.
 
 ```text
@@ -47,7 +49,7 @@
 
 아직 의도적으로 넣지 않은 것:
 
-- 실제 적 오브젝트가 달려오는 시각 전투
+- 최종 `DefenseEnemy`/`TowerBattery`/`DefenseWall` 스탯 전투와 완성형 지상 전투 아트
 - 실제 적 오브젝트가 있는 던전 방/보스/아이템 드랍
 - 실제 드랍 테이블과 장비 에셋
 - 완성형 인벤토리 UI와 장비 드래그 장착
@@ -89,6 +91,7 @@
 | `StatMod` | `Assets/02.Scripts/Character/Stats/StatMod.cs` | 특정 스탯에 Flat, PercentAdd, PercentMult 보정을 준다. Percent 값은 10 = 10%로 입력한다. | `ItemDefinition`의 Modifiers 배열에서 사용한다. | 퍼센트 입력 방식이 이해되는지 |
 | `EquipmentSlots` | `Assets/02.Scripts/Character/Core/EquipmentSlots.cs` | Weapon/Armor/Ring에 장비 정의 또는 live `ItemInstance`를 장착하고 `CharacterStats`로 보정을 전달한다. | 영웅 오브젝트의 `CharacterActor`와 함께 붙어 있다. 슬롯에 `ItemDefinition` 에셋을 직접 넣거나 `SimpleInventory.TryEquip(...)`으로 인스턴스를 장착하면 스탯이 바뀐다. | 장비 장착 후 공격력/체력/이동 속도 체감이 맞는지, 저장/로드 후 장착이 복원되는지 |
 | `DefenseHud` | `Assets/02.Scripts/GroundDefense/UI/DefenseHud.cs` | TMP 텍스트와 버튼을 연결해서 현재 상태와 강화 버튼을 보여준다 | Canvas 안의 HUD 오브젝트에 붙이고 Text/Button 슬롯을 연결한다. | 화면에 보이는 문구가 충분히 직관적인지 |
+| `GroundDefenseCombatPresenter` | `Assets/02.Scripts/GroundDefense/UI/GroundDefenseCombatPresenter.cs` | `DefenseDirector.Runtime`을 읽어 압박 적, 벽 피격 flash, 타워/수비대 공격 pulse를 scene-authored 오브젝트로 보여준다. | `Gameplay > DefenseRoot` 또는 `GroundDefenseLane` 오브젝트에 붙인다. `EnemySpawnAnchor`, `WallAnchor`, `AttackOrigin`, `Pressure Actors`, `Wall Contact Object`, `Attack Pulses`를 연결한다. 첫 패스는 `Auto Find Defense`를 켜 둔다. | 적 압박이 정말 성벽으로 몰리는지, 벽 피해가 보이는지, 공격 pulse가 타워/수비대 대응처럼 읽히는지 |
 | `PlayableLoopHud` | `Assets/02.Scripts/UI/PlayableLoopHud.cs` | 최소 플레이어 HUD. 지상/던전/아이템/저장 상태를 한 패널에서 보여주고 핵심 버튼을 실행한다. | Canvas 안의 오브젝트에 붙이고 TMP 텍스트 6-7개와 Button 12개를 연결한다. 첫 패스는 `Auto Find References`를 켜 둔다. | 디버그 도구처럼 보이지 않는지, 다음 행동과 전투 결과가 버튼 상태/현재 HP/메시지로 충분히 드러나는지 |
 
 아이템 경제 테스트 시 `ItemDefinition.SalvageRewards`는 분해 보상 미리보기이고, `ItemDefinition.AffixRerollCost`는 Rare 장비 옵션 변형 비용 미리보기다. Normal/Magic은 변형 비용을 반환하지 않는다. Rare도 낮은 `baseTier`에서는 `AlterStone` 분해 보상이 없으므로, 초반 장비가 너무 빨리 재굴림 루프로 들어가지 않는지 확인해야 한다.

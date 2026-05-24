@@ -34,7 +34,7 @@ Ground defense code owns the continuous frontline, defense upgrades, local save 
 - `GroundDefense/Runtime/`: frontline state, Hold/Push simulation, upgrades, and defense save manager.
 - `GroundDefense/UI/`: HUD components for frontline status and defense actions.
 
-Current implementation note: `DefenseDirector` and `DefenseRuntimeState` own the formula-driven frontline simulation. `DefenseHud` remains the focused numeric/debug HUD, while `GroundDefenseLanePresenter` is the first Phase C visual bridge for the ground lane. It does not author room scale, camera, enemy art, or final layout; it reads `DefenseDirector.Runtime` and drives scene-authored anchors, pressure/progress markers, auto-resolved marker renderers, optional enemy-flow markers, wall/pressure fills, state objects, renderer colors, and optional TMP labels so the visible lane stays synchronized with the real Hold/Push, pressure, wall-health, and breach state. `ActiveEnemyFlowMarkerCount` and `LastPresentationMessage` expose the current presentation state for Play Mode validation.
+Current implementation note: `DefenseDirector` and `DefenseRuntimeState` own the formula-driven frontline simulation. `DefenseHud` remains the focused numeric/debug HUD, while `GroundDefenseLanePresenter` is the first Phase C visual bridge for the ground lane. It does not author room scale, camera, enemy art, or final layout; it reads `DefenseDirector.Runtime` and drives scene-authored anchors, pressure/progress markers, auto-resolved marker renderers, optional enemy-flow markers, wall/pressure fills, state objects, renderer colors, and optional TMP labels so the visible lane stays synchronized with the real Hold/Push, pressure, wall-health, and breach state. `GroundDefenseCombatPresenter` is the next bridge toward readable ground-defense combat: it drives scene-authored pressure actors, wall-contact flash feedback, and tower/defender attack pulses from the same runtime state, then exposes `ActivePressureActorCount`, `ActiveAttackPulseCount`, `WallContactEventCount`, and `LastCombatMessage` for HUD/Inspector validation. These presenters are not final authored combat or final art; they leave silhouette, spacing, camera framing, marker count, and feel tuning to Unity scene authoring.
 
 ## UI
 
@@ -42,7 +42,7 @@ Shared UI code owns player-facing screens that cross ground defense, dungeon, it
 
 - `PlayableLoopHud`
 
-Current implementation note: `PlayableLoopHud` is the first Canvas/TMP/Button bridge away from OnGUI debug panels. It can show frontline status, resources, dungeon state, combat path, loot source, latest item, current/max hero HP, a message line, and an action hint, then call button-safe methods for ground defense, dungeon, item, save, and load actions. It is wired into `Gameplay` as the normal combined-loop HUD; the debug OnGUI HUDs remain smoke-test fallbacks only.
+Current implementation note: `PlayableLoopHud` is the first Canvas/TMP/Button bridge away from OnGUI debug panels. It can show frontline status, resources, ground-combat presenter status, dungeon state, combat path, loot source, latest item, current/max hero HP, a message line, and an action hint, then call button-safe methods for ground defense, dungeon, item, save, and load actions. It is wired into `Gameplay` as the normal combined-loop HUD; the debug OnGUI HUDs remain smoke-test fallbacks only.
 
 ## Items
 

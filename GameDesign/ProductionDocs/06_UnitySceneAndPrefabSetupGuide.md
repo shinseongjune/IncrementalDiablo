@@ -353,6 +353,18 @@ Canvas_Dungeon
 5. Suggested first pass: use 3 small, clearly visible placeholder markers. Keep `Minimum Running Enemy Markers` at `1` and `Enemy Flow Cycles Per Second` near `0.18` until the lane is readable; tune speed only after the camera framing is settled.
 6. Play Mode check: start defense, confirm at least one flow marker moves while Holding/Pushing, toggle Push, wait for pressure changes, and confirm marker color/count reads consistently with `PlayableLoopHud` pressure and wall/breach state.
 
+2026-05-24 ground combat feedback handoff:
+
+1. Add `GroundDefenseCombatPresenter` to `Gameplay > DefenseRoot` or to the same `GroundDefenseLane` object used for lane presentation.
+2. Wire `Defense` to the scene `DefenseDirector`, or leave `Auto Find Defense` enabled for the first pass.
+3. Reuse the same `EnemySpawnAnchor` and `WallAnchor` used by `GroundDefenseLanePresenter`. Fixed mapping: pressure actors move from spawn to wall, and breached state parks all active actors at the wall.
+4. Create 2-5 scene-authored placeholder objects named `PressureActor_01`, `PressureActor_02`, etc., and assign their transforms to `Pressure Actors`. Suggested first pass: 3 readable, enemy-like placeholders. Adjustable values are count, mesh/sprite/art, height, scale, material, spacing, and silhouette.
+5. Create one small flash object at the wall, named `WallContactFlash`, and assign it to `Wall Contact Object` or assign its renderer to `Wall Contact Renderer`. The presenter activates it when `WallHealth` drops or the frontline breaches. Adjustable values are flash art, scale, material, and exact offset from the wall; fixed intent is that wall damage must be visible.
+6. Create 1-4 small projectile/slash objects named `DefenseAttackPulse_01`, etc., and assign them to `Attack Pulses`. Create an `AttackOrigin` transform near the tower/defender silhouette and assign it. Fixed mapping: pulses move from `AttackOrigin` toward the leading active pressure actor; active pulse count scales with `DefenseUpgradeModel.TotalDefensePower`.
+7. Suggested starting values: `Minimum Running Actors = 1`, `Pressure Actor Cycles Per Second = 0.16`, `Wall Contact Flash Seconds = 0.22`, `Wall Contact Scale Multiplier = 1.2`, `Attack Pulse Cycles Per Second = 0.85`, `Defense Power Per Visible Pulse = 8`.
+8. `PlayableLoopHud` auto-finds `GroundDefenseCombatPresenter` and shows `Ground combat visuals: ...` in the frontline summary when the component is present. If the line says `missing lane anchors` or `anchors only`, the scene wiring is not ready.
+9. Play Mode check: start defense, confirm pressure actors advance; toggle Push and confirm actor count changes with pressure; tune or wait until wall health drops and confirm a wall flash; buy a tower/defender upgrade and confirm attack pulses remain readable. This does not judge final art, only that the real runtime state produces visible combat feedback.
+
 ## 4. 프리팹 목록
 
 ### 지상 디펜스 프리팹
@@ -362,6 +374,7 @@ Canvas_Dungeon
 | `PF_GameSystems` | CurrencyWallet, DefenseUpgradeModel, DefenseDirector | 지속 전선 숫자 시뮬레이션 |
 | `PF_DefenseHud` | DefenseHud | UI |
 | `PF_GroundDefenseLane` | GroundDefenseLanePresenter + scene-authored anchors/markers | Phase C 지상 전선 시각 브리지 |
+| `PF_GroundDefenseCombatFeedback` | GroundDefenseCombatPresenter + pressure actors + wall contact flash + attack pulses | Phase C 지상 전투 피드백 브리지 |
 | `PF_DefenseWall` | DefenseWall, HealthBarUI | 시각 단계 성벽 체력 |
 | `PF_TowerBattery` | TowerBattery | 시각 단계 자동 공격 |
 | `PF_DefenderSquad` | DefenderSquad | 시각 단계 병력 전투력 |
@@ -408,6 +421,7 @@ MVP 숫자 검증은 `PF_GameSystems`와 `PF_DefenseHud`만으로 시작한다.
 | DefenseUpgradeModel | 강화 레벨과 비용 |
 | DefenseHud | 버튼과 표시 갱신 |
 | GroundDefenseLanePresenter | `DefenseDirector.Runtime`을 읽어 scene-authored 지상 전선 앵커, 압박/진행 마커, 자동 marker renderer, 선택 enemy-flow marker, 성벽/압박 fill, 상태 오브젝트, 색상, 라벨을 갱신 |
+| GroundDefenseCombatPresenter | `DefenseDirector.Runtime`을 읽어 scene-authored pressure actors, wall-contact flash, tower/defender attack pulses를 갱신하고 `LastCombatMessage`를 HUD/Inspector에 노출 |
 | DefenseEnemy | 시각 단계 지상 적 스탯과 피격 |
 | EnemyMover | 시각 단계 성벽 방향 이동 |
 | DefenseWall | 시각 단계 성벽 체력과 손상 |

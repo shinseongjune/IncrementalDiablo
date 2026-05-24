@@ -17,6 +17,7 @@ public class PlayableLoopHud : MonoBehaviour
     [SerializeField] private Health heroHealth;
     [SerializeField] private CurrencyWallet wallet;
     [SerializeField] private DefenseSaveManager saveManager;
+    [SerializeField] private GroundDefenseCombatPresenter groundCombatPresenter;
     [SerializeField] private bool autoFindReferences = true;
 
     [Header("Labels")]
@@ -332,7 +333,8 @@ public class PlayableLoopHud : MonoBehaviour
             ? "Upgrades unavailable"
             : $"Wall Lv.{defense.Upgrades.WallLevel} / Tower Lv.{defense.Upgrades.TowerLevel} / Defenders Lv.{defense.Upgrades.DefenderLevel}";
 
-        return $"Frontline Lv.{runtime.FrontlineLevel} / {runtime.State} / {runtime.Mode} / Wall {Mathf.CeilToInt(runtime.WallHealth)}/{Mathf.CeilToInt(runtime.WallMaxHealth)}\nPressure {pressureText} / Progress {progressText}\n{upgradeText}";
+        string groundCombatText = groundCombatPresenter == null ? string.Empty : $"\n{groundCombatPresenter.LastCombatMessage}";
+        return $"Frontline Lv.{runtime.FrontlineLevel} / {runtime.State} / {runtime.Mode} / Wall {Mathf.CeilToInt(runtime.WallHealth)}/{Mathf.CeilToInt(runtime.WallMaxHealth)}\nPressure {pressureText} / Progress {progressText}\n{upgradeText}{groundCombatText}";
     }
 
     private string BuildDungeonText()
@@ -692,6 +694,11 @@ public class PlayableLoopHud : MonoBehaviour
         if (saveManager == null || force)
         {
             saveManager = FindAnyObjectByType<DefenseSaveManager>();
+        }
+
+        if (groundCombatPresenter == null || force)
+        {
+            groundCombatPresenter = FindAnyObjectByType<GroundDefenseCombatPresenter>();
         }
 
         if (equipmentSlots == null || force)

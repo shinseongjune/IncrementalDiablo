@@ -109,10 +109,10 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase C - First Real Game Slice |
-| Last meaningful movement | 2026-05-23: After the 2026-05-22 verified ground-lane bridge, `GroundDefenseLanePresenter` gained automatic marker-renderer resolution plus optional enemy-flow markers. Existing pressure/progress markers can now recolor by Hold/Push/warning/breach state, and scene-authored flow markers can move from spawn to wall from the real `DefenseDirector.Runtime`. |
-| Next unlock | Move from the verified presentation bridge toward the first real defense combat slice: add/validate enemy or pressure actors advancing toward the wall, visible wall-contact damage, and readable tower/defender attack feedback while staying driven by `DefenseDirector` values. Optional `Enemy Flow Markers` are a visual bridge, not the final combat system. |
-| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C now has one direct-control dungeon encounter path, visible room-presentation support, `Gameplay` wiring for `PF_DungeonEnemy_Melee` through `EnemySpawner`, authored tier-1 item definitions in the reward loop, HUD diagnostics that expose prototype fallback, and a verified ground-lane presentation bridge with marker coloring plus optional enemy-flow support. Real ground-defense combat, the authored dungeon room shell, player-facing inventory UI, and long-term item registry/drop-table tooling remain open. |
-| Known blockers | There is no current code build blocker. Product blockers remain: the visible ground lane is still a presentation bridge rather than real defense combat; direct-control dungeon encounter and authored reward path still need full Play Mode feel/loop validation; room scale/layout, spawn placement, NavMesh feel, marker art/count, lane/camera framing, and final visual composition still require manual Unity judgment. |
+| Last meaningful movement | 2026-05-24: `GroundDefenseCombatPresenter` added the first code bridge for real ground-defense action feedback. Scene-authored pressure actors can now advance from `EnemySpawnAnchor` to `WallAnchor`, wall damage can flash a contact object, and attack pulse transforms can move from a tower/defender origin toward the leading pressure actor while staying driven by `DefenseDirector.Runtime`. |
+| Next unlock | Wire `GroundDefenseCombatPresenter` into `Gameplay > DefenseRoot` and Play Mode validate that pressure actors, wall-contact damage, and tower/defender attack pulses read as a fight rather than only marker diagnostics. This is now a scene/feel validation gate, not a code build blocker. |
+| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C now has one direct-control dungeon encounter path, visible room-presentation support, `Gameplay` wiring for `PF_DungeonEnemy_Melee` through `EnemySpawner`, authored tier-1 item definitions in the reward loop, HUD diagnostics that expose prototype fallback, a verified ground-lane presentation bridge, and a code-ready ground combat feedback presenter. Authored scene wiring/Play Mode validation for real ground-defense combat, the authored dungeon room shell, player-facing inventory UI, and long-term item registry/drop-table tooling remain open. |
+| Known blockers | There is no current code build blocker. Product blockers remain: `GroundDefenseCombatPresenter` needs manual Unity scene wiring and feel validation; direct-control dungeon encounter and authored reward path still need full Play Mode feel/loop validation; room scale/layout, spawn placement, NavMesh feel, marker art/count, lane/camera framing, and final visual composition still require manual Unity judgment. |
 
 ## 3.1 Progress Assessment Against Game-Form Plan
 
@@ -404,7 +404,7 @@ Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루�
 
 ### P0. 지상 전선 시각 프로토타입
 
-상태: Bridge Verified (real combat pending)
+상태: Code bridge added (scene wiring and real-combat feel validation pending)
 
 목표:
 숫자 압박 모델만 보이던 지상 전선을, 적이 성벽으로 밀려오고 방어가 자동으로 대응하는 장면으로 바꾼다.
@@ -427,6 +427,14 @@ Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루�
 - Optional `Enemy Flow Markers` can now be assigned as scene-authored transforms. When the frontline is running, the presenter activates a pressure-scaled count of those markers and moves them from `EnemySpawnAnchor` toward `WallAnchor`; on breach, all assigned flow markers remain active.
 - The script exposes `LastPresentationMessage` and `ActiveEnemyFlowMarkerCount` for Inspector/HUD diagnostics, but it still leaves marker art, marker count, lane length, camera framing, and final composition to manual Unity authoring.
 - This advances the visible ground-lane P0 but does not turn the bridge into real ground combat. The next production work should add visible pressure/enemy actors, wall-contact damage, and tower/defender feedback rather than more helper-only lane diagnostics.
+
+2026-05-24 code progress note:
+
+- `GroundDefenseCombatPresenter` now exists as the next Phase C bridge after the marker-only lane. It reads `DefenseDirector.Runtime` and drives scene-authored `Pressure Actors`, `Wall Contact` feedback, and `Attack Pulses`.
+- Pressure actors move from `EnemySpawnAnchor` to `WallAnchor`; active count scales with `EnemyPressure / EnemyPressureCapacity`, and all assigned actors stay at the wall while breached.
+- Wall contact feedback flashes when `WallHealth` drops or the frontline becomes breached. Attack pulses scale with `DefenseUpgradeModel.TotalDefensePower` and move from `Attack Origin` toward the leading active pressure actor.
+- `PlayableLoopHud` now auto-finds `GroundDefenseCombatPresenter` and shows `LastCombatMessage` in the frontline summary when the component is present, so Play Mode can tell whether this path is wired.
+- This is still not final authored defense combat. The remaining gate is manual Unity placement plus Play Mode feel validation of silhouettes, pulse readability, wall-hit timing, and whether the scene reads as defenders fighting enemies rather than as abstract markers.
 
 ### P1. 첫 authored item 세트
 
