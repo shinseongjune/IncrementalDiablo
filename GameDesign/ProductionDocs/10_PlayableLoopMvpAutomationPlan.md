@@ -109,10 +109,10 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase C - First Real Game Slice |
-| Last meaningful movement | 2026-05-24: `GroundDefenseCombatPresenter` added the first code bridge for real ground-defense action feedback, and `11_PlayableScreenPresentationSpec.md` captured the saved final-screen reference as MVP temporary layout/camera/HUD/transition values. |
-| Next unlock | Wire `GroundDefenseCombatPresenter` into `Gameplay > DefenseRoot` and Play Mode validate that pressure actors, wall-contact damage, and tower/defender attack pulses read as a fight rather than only marker diagnostics. This is now a scene/feel validation gate, not a code build blocker. |
-| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C now has one direct-control dungeon encounter path, visible room-presentation support, `Gameplay` wiring for `PF_DungeonEnemy_Melee` through `EnemySpawner`, authored tier-1 item definitions in the reward loop, HUD diagnostics that expose prototype fallback, a verified ground-lane presentation bridge, and a code-ready ground combat feedback presenter. Authored scene wiring/Play Mode validation for real ground-defense combat, the authored dungeon room shell, player-facing inventory UI, and long-term item registry/drop-table tooling remain open. |
-| Known blockers | There is no current code build blocker. Product blockers remain: `GroundDefenseCombatPresenter` needs manual Unity scene wiring and feel validation; direct-control dungeon encounter and authored reward path still need full Play Mode feel/loop validation; room scale/layout, spawn placement, NavMesh feel, marker art/count, lane/camera framing, and final visual composition still require manual Unity judgment. The MVP presentation target now has temporary values, but final split ratio, camera feel, panel crop, and ornate UI density still require user/Unity Editor review. |
+| Last meaningful movement | 2026-05-25: `DefenseRuntimeState` now exposes last-tick incoming pressure, cleared pressure, wall damage, and push progress rates, and `GroundDefenseCombatPresenter` uses those rates for actor colors, attack-pulse intensity, and HUD validation text. |
+| Next unlock | Play Mode validate the already-wired `Gameplay > DefenseRoot` ground-combat feedback path: pressure actors should advance, attack pulses should intensify when pressure is being cleared, wall contact should flash when damage occurs, and the HUD `pressure +/-/s` line should match the fight feel. This is a scene/feel validation gate, not a code build blocker. |
+| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C now has one direct-control dungeon encounter path, visible room-presentation support, `Gameplay` wiring for `PF_DungeonEnemy_Melee` through `EnemySpawner`, authored tier-1 item definitions in the reward loop, HUD diagnostics that expose prototype fallback, a verified ground-lane presentation bridge, and a `Gameplay`-wired ground combat feedback presenter with runtime combat telemetry. Play Mode validation for real ground-defense feel, the authored dungeon room shell, player-facing inventory UI, and long-term item registry/drop-table tooling remain open. |
+| Known blockers | There is no current code build blocker. Product blockers remain: `GroundDefenseCombatPresenter` needs Play Mode feel validation; direct-control dungeon encounter and authored reward path still need full Play Mode feel/loop validation; room scale/layout, spawn placement, NavMesh feel, marker art/count, lane/camera framing, and final visual composition still require manual Unity judgment. The MVP presentation target now has temporary values, but final split ratio, camera feel, panel crop, and ornate UI density still require user/Unity Editor review. |
 
 ## 3.1 Progress Assessment Against Game-Form Plan
 
@@ -404,7 +404,7 @@ Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루�
 
 ### P0. 지상 전선 시각 프로토타입
 
-상태: Code bridge added (scene wiring and real-combat feel validation pending)
+상태: Code telemetry added (Play Mode real-combat feel validation pending)
 
 목표:
 숫자 압박 모델만 보이던 지상 전선을, 적이 성벽으로 밀려오고 방어가 자동으로 대응하는 장면으로 바꾼다.
@@ -435,6 +435,13 @@ Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루�
 - Wall contact feedback flashes when `WallHealth` drops or the frontline becomes breached. Attack pulses scale with `DefenseUpgradeModel.TotalDefensePower` and move from `Attack Origin` toward the leading active pressure actor.
 - `PlayableLoopHud` now auto-finds `GroundDefenseCombatPresenter` and shows `LastCombatMessage` in the frontline summary when the component is present, so Play Mode can tell whether this path is wired.
 - This is still not final authored defense combat. The remaining gate is manual Unity placement plus Play Mode feel validation of silhouettes, pulse readability, wall-hit timing, and whether the scene reads as defenders fighting enemies rather than as abstract markers.
+
+2026-05-25 code progress note:
+
+- `DefenseRuntimeState` now records the most recent frontline tick as rates: incoming pressure per second, pressure cleared per second, wall damage per second, and push progress per second. These are runtime feedback values only; they do not change save data or long-term scaling rules.
+- `GroundDefenseCombatPresenter` now colors pressure actors by combat state and uses the measured cleared-pressure rate, not only upgrade level, when deciding how many attack pulses should be visible.
+- `LastCombatMessage` now includes `pressure +/-/s` and `wall /s` values so `PlayableLoopHud` can verify whether the visible pressure actors, defender/tower pulses, and wall contact are following the real simulation.
+- Static scene inspection confirms `Gameplay > DefenseRoot` already has `GroundDefenseCombatPresenter`, pressure actors, wall-contact flash, and attack pulses wired. The remaining gate is Play Mode feel validation, not more scene-wiring code.
 
 ### P1. 첫 authored item 세트
 

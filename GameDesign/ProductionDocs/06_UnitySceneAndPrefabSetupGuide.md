@@ -360,10 +360,10 @@ Canvas_Dungeon
 3. Reuse the same `EnemySpawnAnchor` and `WallAnchor` used by `GroundDefenseLanePresenter`. Fixed mapping: pressure actors move from spawn to wall, and breached state parks all active actors at the wall.
 4. Create 2-5 scene-authored placeholder objects named `PressureActor_01`, `PressureActor_02`, etc., and assign their transforms to `Pressure Actors`. Suggested first pass: 3 readable, enemy-like placeholders. Adjustable values are count, mesh/sprite/art, height, scale, material, spacing, and silhouette.
 5. Create one small flash object at the wall, named `WallContactFlash`, and assign it to `Wall Contact Object` or assign its renderer to `Wall Contact Renderer`. The presenter activates it when `WallHealth` drops or the frontline breaches. Adjustable values are flash art, scale, material, and exact offset from the wall; fixed intent is that wall damage must be visible.
-6. Create 1-4 small projectile/slash objects named `DefenseAttackPulse_01`, etc., and assign them to `Attack Pulses`. Create an `AttackOrigin` transform near the tower/defender silhouette and assign it. Fixed mapping: pulses move from `AttackOrigin` toward the leading active pressure actor; active pulse count scales with `DefenseUpgradeModel.TotalDefensePower`.
-7. Suggested starting values: `Minimum Running Actors = 1`, `Pressure Actor Cycles Per Second = 0.16`, `Wall Contact Flash Seconds = 0.22`, `Wall Contact Scale Multiplier = 1.2`, `Attack Pulse Cycles Per Second = 0.85`, `Defense Power Per Visible Pulse = 8`.
-8. `PlayableLoopHud` auto-finds `GroundDefenseCombatPresenter` and shows `Ground combat visuals: ...` in the frontline summary when the component is present. If the line says `missing lane anchors` or `anchors only`, the scene wiring is not ready.
-9. Play Mode check: start defense, confirm pressure actors advance; toggle Push and confirm actor count changes with pressure; tune or wait until wall health drops and confirm a wall flash; buy a tower/defender upgrade and confirm attack pulses remain readable. This does not judge final art, only that the real runtime state produces visible combat feedback.
+6. Create 1-4 small projectile/slash objects named `DefenseAttackPulse_01`, etc., and assign them to `Attack Pulses`. Create an `AttackOrigin` transform near the tower/defender silhouette and assign it. Fixed mapping: pulses move from `AttackOrigin` toward the leading active pressure actor; active pulse count scales with the larger of `DefenseUpgradeModel.TotalDefensePower` and the measured pressure-cleared-per-second feedback from `DefenseRuntimeState`.
+7. Suggested starting values: `Minimum Running Actors = 1`, `Pressure Actor Cycles Per Second = 0.16`, `Wall Contact Flash Seconds = 0.22`, `Wall Contact Scale Multiplier = 1.2`, `Attack Pulse Cycles Per Second = 0.85`, `Defense Power Per Visible Pulse = 8`. Optional color values can be tuned later: pressure actors default red, turn warmer under fire, and use the wall-contact color near breach/contact.
+8. `PlayableLoopHud` auto-finds `GroundDefenseCombatPresenter` and shows `Ground combat visuals: ...` in the frontline summary when the component is present. If the line says `missing lane anchors` or `anchors only`, the scene wiring is not ready. If wired, the line should include `pressure +incoming/-cleared/s` and `wall damage/s` values.
+9. Play Mode check: start defense, confirm pressure actors advance; toggle Push and confirm actor count changes with pressure; confirm attack pulse count/intensity rises when the `pressure -cleared/s` value is high; tune or wait until wall health drops and confirm a wall flash plus `wall /s` value. This does not judge final art, only that the real runtime state produces visible combat feedback.
 
 ## 4. 프리팹 목록
 
@@ -421,7 +421,7 @@ MVP 숫자 검증은 `PF_GameSystems`와 `PF_DefenseHud`만으로 시작한다.
 | DefenseUpgradeModel | 강화 레벨과 비용 |
 | DefenseHud | 버튼과 표시 갱신 |
 | GroundDefenseLanePresenter | `DefenseDirector.Runtime`을 읽어 scene-authored 지상 전선 앵커, 압박/진행 마커, 자동 marker renderer, 선택 enemy-flow marker, 성벽/압박 fill, 상태 오브젝트, 색상, 라벨을 갱신 |
-| GroundDefenseCombatPresenter | `DefenseDirector.Runtime`을 읽어 scene-authored pressure actors, wall-contact flash, tower/defender attack pulses를 갱신하고 `LastCombatMessage`를 HUD/Inspector에 노출 |
+| GroundDefenseCombatPresenter | `DefenseDirector.Runtime`을 읽어 scene-authored pressure actors, wall-contact flash, tower/defender attack pulses를 갱신하고 최근 압박/방어/벽 피해율을 포함한 `LastCombatMessage`를 HUD/Inspector에 노출 |
 | DefenseEnemy | 시각 단계 지상 적 스탯과 피격 |
 | EnemyMover | 시각 단계 성벽 방향 이동 |
 | DefenseWall | 시각 단계 성벽 체력과 손상 |

@@ -41,6 +41,8 @@
 
 2026-05-24 Phase C ground-combat feedback scope: `GroundDefenseCombatPresenter` adds the next visual bridge for ground defense. It reads `DefenseDirector.Runtime` and drives scene-authored pressure actors, a wall-contact flash, and tower/defender attack pulses. `PlayableLoopHud` auto-finds it and shows its `LastCombatMessage` in the frontline summary when present. This is still a feedback bridge, not final enemy AI, final art, or long-term combat balance.
 
+2026-05-25 Phase C runtime-combat telemetry scope: `DefenseRuntimeState` now records incoming pressure, pressure cleared by defense, wall damage, and push progress as last-tick per-second feedback values. `GroundDefenseCombatPresenter` uses those values to color pressure actors, scale attack pulse intensity, and show `pressure +/-/s` plus `wall /s` in `LastCombatMessage`, so Play Mode validation can tell whether the visible fight follows the real simulation.
+
 목표는 다음 한 문장이 Unity Play 모드에서 돌아가는 것이다.
 
 ```text
@@ -70,7 +72,7 @@
 | `CurrencyWallet` | `Assets/02.Scripts/Shared/CurrencyWallet.cs` | 플레이어가 가진 재화를 저장하고 더하거나 소비한다 | `GameSystems` 같은 빈 오브젝트에 붙인다. `Starting Amounts`로 초기 Gold/Scrap을 넣을 수 있다. | 시작 재화가 너무 짜거나 넉넉한지 |
 | `FrontlineMode` | `Assets/02.Scripts/GroundDefense/Runtime/FrontlineMode.cs` | `Hold`와 `Push` 모드를 구분한다. | 직접 붙이지 않는다. `DefenseDirector`가 사용한다. | Hold/Push 이름이 이해되는지 |
 | `DefenseState` | `Assets/02.Scripts/GroundDefense/Runtime/DefenseState.cs` | Idle, Holding, Pushing, Breached 같은 상태 목록 | 직접 붙이지 않는다. `DefenseDirector`가 사용한다. | 상태명이 직관적인지 |
-| `DefenseRuntimeState` | `Assets/02.Scripts/GroundDefense/Runtime/DefenseRuntimeState.cs` | Frontline Level, 성벽 체력, 적 압박, 단계 진행도를 저장 | 직접 붙이지 않는다. `DefenseDirector` Inspector 안에서 보인다. | Pressure/Progress/WallHealth 숫자가 이해되는지 |
+| `DefenseRuntimeState` | `Assets/02.Scripts/GroundDefense/Runtime/DefenseRuntimeState.cs` | Frontline Level, 성벽 체력, 적 압박, 단계 진행도, 최근 압박/방어/벽 피해 피드백 값을 저장 | 직접 붙이지 않는다. `DefenseDirector` Inspector 안에서 보인다. | Pressure/Progress/WallHealth 숫자와 `Last...PerSecond` 전투 피드백이 화면 연출과 맞는지 |
 | `DefenseUpgradeModel` | `Assets/02.Scripts/GroundDefense/Runtime/DefenseUpgradeModel.cs` | 성벽/포탑/병력 레벨, 성벽 체력, 방어 DPS, 강화 비용을 계산 | `CurrencyWallet`와 같은 오브젝트에 붙인다. 수치 밸런스는 Inspector에서 조정한다. | 강화 비용 증가가 너무 빠른지, 강화 체감이 약한지 |
 | `DefenseDirector` | `Assets/02.Scripts/GroundDefense/Runtime/DefenseDirector.cs` | 지속 압박 생성, 보상 지급, 단계 상승, 돌파 판정을 관리 | `GameSystems` 오브젝트에 붙이고 `Wallet`, `Upgrades`를 연결한다. 비워도 같은 오브젝트에서 자동 탐색한다. | Hold/Push 위험도, 보상 속도, 단계 상승 속도가 맞는지 |
 | `DungeonRunState` | `Assets/02.Scripts/Dungeon/DungeonRunState.cs` | Ready, Running, Cleared, Failed 던전 런 상태를 정의한다. | 직접 붙이지 않는다. `ExpeditionDirector`와 `DungeonSaveData`가 사용한다. | 상태명이 던전 HUD에 보여도 이해되는지 |
@@ -91,7 +93,7 @@
 | `StatMod` | `Assets/02.Scripts/Character/Stats/StatMod.cs` | 특정 스탯에 Flat, PercentAdd, PercentMult 보정을 준다. Percent 값은 10 = 10%로 입력한다. | `ItemDefinition`의 Modifiers 배열에서 사용한다. | 퍼센트 입력 방식이 이해되는지 |
 | `EquipmentSlots` | `Assets/02.Scripts/Character/Core/EquipmentSlots.cs` | Weapon/Armor/Ring에 장비 정의 또는 live `ItemInstance`를 장착하고 `CharacterStats`로 보정을 전달한다. | 영웅 오브젝트의 `CharacterActor`와 함께 붙어 있다. 슬롯에 `ItemDefinition` 에셋을 직접 넣거나 `SimpleInventory.TryEquip(...)`으로 인스턴스를 장착하면 스탯이 바뀐다. | 장비 장착 후 공격력/체력/이동 속도 체감이 맞는지, 저장/로드 후 장착이 복원되는지 |
 | `DefenseHud` | `Assets/02.Scripts/GroundDefense/UI/DefenseHud.cs` | TMP 텍스트와 버튼을 연결해서 현재 상태와 강화 버튼을 보여준다 | Canvas 안의 HUD 오브젝트에 붙이고 Text/Button 슬롯을 연결한다. | 화면에 보이는 문구가 충분히 직관적인지 |
-| `GroundDefenseCombatPresenter` | `Assets/02.Scripts/GroundDefense/UI/GroundDefenseCombatPresenter.cs` | `DefenseDirector.Runtime`을 읽어 압박 적, 벽 피격 flash, 타워/수비대 공격 pulse를 scene-authored 오브젝트로 보여준다. | `Gameplay > DefenseRoot` 또는 `GroundDefenseLane` 오브젝트에 붙인다. `EnemySpawnAnchor`, `WallAnchor`, `AttackOrigin`, `Pressure Actors`, `Wall Contact Object`, `Attack Pulses`를 연결한다. 첫 패스는 `Auto Find Defense`를 켜 둔다. | 적 압박이 정말 성벽으로 몰리는지, 벽 피해가 보이는지, 공격 pulse가 타워/수비대 대응처럼 읽히는지 |
+| `GroundDefenseCombatPresenter` | `Assets/02.Scripts/GroundDefense/UI/GroundDefenseCombatPresenter.cs` | `DefenseDirector.Runtime`을 읽어 압박 적, 벽 피격 flash, 타워/수비대 공격 pulse를 scene-authored 오브젝트로 보여주고, 최근 압박/방어/벽 피해율을 `LastCombatMessage`로 노출한다. | `Gameplay > DefenseRoot` 또는 `GroundDefenseLane` 오브젝트에 붙인다. `EnemySpawnAnchor`, `WallAnchor`, `AttackOrigin`, `Pressure Actors`, `Wall Contact Object`, `Attack Pulses`를 연결한다. 첫 패스는 `Auto Find Defense`를 켜 둔다. `Gameplay > DefenseRoot`에는 현재 이 경로가 이미 연결되어 있다. | 적 압박이 정말 성벽으로 몰리는지, 벽 피해가 보이는지, 공격 pulse가 타워/수비대 대응처럼 읽히는지, HUD의 `pressure +/-/s`와 `wall /s`가 전투 감각과 맞는지 |
 | `PlayableLoopHud` | `Assets/02.Scripts/UI/PlayableLoopHud.cs` | 최소 플레이어 HUD. 지상/던전/아이템/저장 상태를 한 패널에서 보여주고 핵심 버튼을 실행한다. | Canvas 안의 오브젝트에 붙이고 TMP 텍스트 6-7개와 Button 12개를 연결한다. 첫 패스는 `Auto Find References`를 켜 둔다. | 디버그 도구처럼 보이지 않는지, 다음 행동과 전투 결과가 버튼 상태/현재 HP/메시지로 충분히 드러나는지 |
 
 아이템 경제 테스트 시 `ItemDefinition.SalvageRewards`는 분해 보상 미리보기이고, `ItemDefinition.AffixRerollCost`는 Rare 장비 옵션 변형 비용 미리보기다. Normal/Magic은 변형 비용을 반환하지 않는다. Rare도 낮은 `baseTier`에서는 `AlterStone` 분해 보상이 없으므로, 초반 장비가 너무 빨리 재굴림 루프로 들어가지 않는지 확인해야 한다.

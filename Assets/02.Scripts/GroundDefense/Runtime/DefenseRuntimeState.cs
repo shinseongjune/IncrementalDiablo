@@ -16,6 +16,10 @@ public class DefenseRuntimeState
     [SerializeField] private float totalElapsed;
     [SerializeField] private float levelElapsed;
     [SerializeField] private bool wallDamaged;
+    [SerializeField] private float lastIncomingPressurePerSecond;
+    [SerializeField] private float lastPressureClearedPerSecond;
+    [SerializeField] private float lastWallDamagePerSecond;
+    [SerializeField] private float lastProgressPerSecond;
 
     public DefenseState State => state;
     public FrontlineMode Mode => mode;
@@ -29,6 +33,10 @@ public class DefenseRuntimeState
     public float TotalElapsed => totalElapsed;
     public float LevelElapsed => levelElapsed;
     public bool WallDamaged => wallDamaged;
+    public float LastIncomingPressurePerSecond => lastIncomingPressurePerSecond;
+    public float LastPressureClearedPerSecond => lastPressureClearedPerSecond;
+    public float LastWallDamagePerSecond => lastWallDamagePerSecond;
+    public float LastProgressPerSecond => lastProgressPerSecond;
     public float WallHealthPercent => wallMaxHealth <= 0f ? 0f : Mathf.Clamp01(wallHealth / wallMaxHealth);
     public float PressurePercent => enemyPressureCapacity <= 0f ? 0f : Mathf.Clamp01(enemyPressure / enemyPressureCapacity);
     public float FrontlineProgressPercent => frontlineProgressRequired <= 0f ? 0f : Mathf.Clamp01(frontlineProgress / frontlineProgressRequired);
@@ -47,6 +55,7 @@ public class DefenseRuntimeState
         totalElapsed = 0f;
         levelElapsed = 0f;
         wallDamaged = false;
+        ClearLastTickFeedback();
         state = DefenseState.Idle;
     }
 
@@ -83,13 +92,25 @@ public class DefenseRuntimeState
         totalElapsed += safeDeltaTime;
         levelElapsed += safeDeltaTime;
 
-        float incomingPressure = Mathf.Max(0f, incomingPressurePerSecond) * safeDeltaTime;
-        float clearedPressure = Mathf.Max(0f, defensePowerPerSecond) * safeDeltaTime;
+        float safeIncomingPressurePerSecond = Mathf.Max(0f, incomingPressurePerSecond);
+        float safeDefensePowerPerSecond = Mathf.Max(0f, defensePowerPerSecond);
+        float incomingPressure = safeIncomingPressurePerSecond * safeDeltaTime;
+        float clearedPressure = safeDefensePowerPerSecond * safeDeltaTime;
+        float pressureBeforeDefense = enemyPressure + incomingPressure;
+        float effectiveClearedPressure = Mathf.Min(Mathf.Max(0f, pressureBeforeDefense), clearedPressure);
+
+        lastIncomingPressurePerSecond = safeIncomingPressurePerSecond;
+        lastPressureClearedPerSecond = safeDeltaTime <= 0f ? 0f : effectiveClearedPressure / safeDeltaTime;
+        lastWallDamagePerSecond = 0f;
+        lastProgressPerSecond = 0f;
+
         enemyPressure = Mathf.Clamp(enemyPressure + incomingPressure - clearedPressure, 0f, enemyPressureCapacity);
 
         if (enemyPressure > 0f)
         {
-            ApplyWallDamage(enemyPressure * Mathf.Max(0f, wallDamagePerPressureSecond) * safeDeltaTime);
+            float wallDamage = enemyPressure * Mathf.Max(0f, wallDamagePerPressureSecond) * safeDeltaTime;
+            lastWallDamagePerSecond = safeDeltaTime <= 0f ? 0f : wallDamage / safeDeltaTime;
+            ApplyWallDamage(wallDamage);
             return 0f;
         }
 
@@ -98,7 +119,8 @@ public class DefenseRuntimeState
             return 0f;
         }
 
-        float progressAdded = Mathf.Max(0f, progressPerSecond) * safeDeltaTime;
+        lastProgressPerSecond = Mathf.Max(0f, progressPerSecond);
+        float progressAdded = lastProgressPerSecond * safeDeltaTime;
         frontlineProgress += progressAdded;
         return progressAdded;
     }
@@ -187,6 +209,7 @@ public class DefenseRuntimeState
         totalElapsed = Mathf.Max(0f, saveData.totalElapsed);
         levelElapsed = Mathf.Max(0f, saveData.levelElapsed);
         wallDamaged = saveData.wallDamaged || wallHealth < wallMaxHealth;
+        ClearLastTickFeedback();
 
         if (state == DefenseState.Holding && mode == FrontlineMode.Push)
         {
@@ -196,5 +219,13 @@ public class DefenseRuntimeState
         {
             state = DefenseState.Holding;
         }
+    }
+
+    private void ClearLastTickFeedback()
+    {
+        lastIncomingPressurePerSecond = 0f;
+        lastPressureClearedPerSecond = 0f;
+        lastWallDamagePerSecond = 0f;
+        lastProgressPerSecond = 0f;
     }
 }

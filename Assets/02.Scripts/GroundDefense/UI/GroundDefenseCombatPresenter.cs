@@ -16,6 +16,8 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
     [SerializeField] private bool showPressureActors = true;
     [SerializeField] private int minimumRunningActors = 1;
     [SerializeField] private float pressureActorCyclesPerSecond = 0.16f;
+    [SerializeField] private Color pressureActorColor = new Color(0.82f, 0.18f, 0.12f);
+    [SerializeField] private Color pressureActorUnderFireColor = new Color(1f, 0.68f, 0.18f);
 
     [Header("Wall Contact Feedback")]
     [SerializeField] private GameObject wallContactObject;
@@ -180,6 +182,7 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
                     ? 1f
                     : Mathf.Repeat(flowPhase + spacing, 1f);
                 actor.position = Vector3.Lerp(enemySpawnAnchor.position, wallAnchor.position, travelPercent);
+                SetRendererColor(actor.GetComponentInChildren<Renderer>(), GetPressureActorColor(runtime, travelPercent));
                 ActivePressureActorCount += 1;
                 activeActorIndex += 1;
             }
@@ -274,8 +277,9 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
         }
 
         float defensePower = defense.Upgrades == null ? 0f : defense.Upgrades.TotalDefensePower;
+        float visibleDefenseRate = Mathf.Max(defensePower, runtime.LastPressureClearedPerSecond);
         int activeTarget = Mathf.Clamp(
-            Mathf.CeilToInt(defensePower / defensePowerPerVisiblePulse),
+            Mathf.CeilToInt(visibleDefenseRate / defensePowerPerVisiblePulse),
             1,
             validPulseCount);
         Vector3 targetPosition = GetAttackTargetPosition();
@@ -358,7 +362,17 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
             return;
         }
 
-        LastCombatMessage = $"Ground combat visuals: {runtime.State} / actors {ActivePressureActorCount}/{CountAssigned(pressureActors)} / attacks {ActiveAttackPulseCount}/{CountAssigned(attackPulses)} / wall hits {WallContactEventCount}";
+        LastCombatMessage = $"Ground combat visuals: {runtime.State} / actors {ActivePressureActorCount}/{CountAssigned(pressureActors)} / attacks {ActiveAttackPulseCount}/{CountAssigned(attackPulses)} / wall hits {WallContactEventCount} / pressure +{runtime.LastIncomingPressurePerSecond:0.#}/-{runtime.LastPressureClearedPerSecond:0.#}/s / wall {runtime.LastWallDamagePerSecond:0.##}/s";
+    }
+
+    private Color GetPressureActorColor(DefenseRuntimeState runtime, float travelPercent)
+    {
+        if (runtime.State == DefenseState.Breached || runtime.LastWallDamagePerSecond > 0f || travelPercent >= 0.92f)
+        {
+            return wallContactColor;
+        }
+
+        return runtime.LastPressureClearedPerSecond > 0f ? pressureActorUnderFireColor : pressureActorColor;
     }
 
     private void CaptureBaseScales()

@@ -12,6 +12,12 @@
 - It does not invent waves or hand-authored encounters. It reads the existing continuous `DefenseDirector.Runtime` values and drives scene-authored pressure actors, wall-contact feedback, and tower/defender attack pulses.
 - Scene placement, silhouette, marker art, pulse scale, camera framing, and final composition remain manual Unity authoring decisions.
 
+2026-05-25 Phase C runtime-combat telemetry note:
+
+- `DefenseRuntimeState` exposes last-tick incoming pressure, pressure cleared by defense, wall damage, and push progress as per-second feedback values.
+- `GroundDefenseCombatPresenter` uses those values to color pressure actors, scale visible attack-pulse count, and report `pressure +/-/s` plus `wall /s` in `LastCombatMessage`.
+- This improves Play Mode validation of the existing continuous frontline simulation without adding manual waves, hand-authored enemy lists, or final art assumptions.
+
 작성일: 2026-05-03
 문서 목적: 지상 디펜스를 끊임없는 전선 전투와 자동 단계 상승 구조로 정의한다.
 
@@ -62,7 +68,7 @@ MVP 화면은 한 줄 레인이다.
 | 오브젝트 | Unity 이름 예시 | 역할 |
 | --- | --- | --- |
 | DefenseDirector | `DefenseDirector` | 지속 전선 시뮬레이션, 단계 상승, 보상, 돌파 판정 |
-| DefenseRuntimeState | `DefenseRuntimeState` | 현재 전선 상태, 단계, 압박, 진행도, 성벽 체력 |
+| DefenseRuntimeState | `DefenseRuntimeState` | 현재 전선 상태, 단계, 압박, 진행도, 성벽 체력, 최근 압박/방어/벽 피해 피드백 |
 | DefenseUpgradeModel | `DefenseUpgradeModel` | 성벽/포탑/병력 레벨과 방어 수치 계산 |
 | CurrencyWallet | `CurrencyWallet` | Gold/Scrap/Essence/AlterStone 보관과 소비 |
 | DefenseHud | `DefenseHud` | 단계, 압박, 진행도, 재화, 수리/강화 버튼 표시 |
@@ -220,7 +226,7 @@ Frontline Lv. 12 유지
 4. 성벽/포탑/병력 강화 버튼을 붙인다.
 5. 숫자 시뮬레이션에서 단계 상승과 돌파가 이해되는지 확인한다.
 6. `GroundDefenseLanePresenter`를 붙여 숫자 루프가 실제 배치된 앵커/마커/성벽 표시와 함께 움직이는지 확인한다. 이 단계는 시각 전투의 임시 브리지이며, 레인 크기와 카메라 구도는 Unity에서 수동 저작한다.
-7. `GroundDefenseCombatPresenter`를 붙여 scene-authored 압박 적, 벽 피격 flash, 타워/수비대 공격 pulse가 같은 `DefenseDirector.Runtime` 값을 읽는지 검증한다.
+7. `GroundDefenseCombatPresenter`를 붙여 scene-authored 압박 적, 벽 피격 flash, 타워/수비대 공격 pulse가 같은 `DefenseDirector.Runtime` 값을 읽는지 검증한다. HUD의 `pressure +/-/s`와 `wall /s` 값이 보이는 전투 피드백과 맞는지도 함께 본다.
 8. 이후 `DefenseEnemy`, `TowerBattery`, `DefenseWall`을 실제 스탯/타겟팅/처치 규칙이 있는 컴포넌트로 분리해 확장한다.
 
 ## 13. 완료 기준
