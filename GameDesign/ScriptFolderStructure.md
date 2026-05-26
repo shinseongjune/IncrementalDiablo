@@ -65,6 +65,12 @@ Current implementation note: `ItemSlot`, `ItemRarity`, `ItemDefinition`, `ItemEc
 
 Shared code is for small, generic helpers used across systems. Keep this folder small.
 
+## Automation
+
+Project automation helpers that are not Unity runtime code live outside `Assets`.
+
+- `Tools/Automation/Invoke-IncrementalDiabloChecks.ps1`: safe daily verification harness for Codex automation. It runs the solution build, `git diff --check`, required `Gameplay.unity` scene-contract checks, missing-script scan, optional overlay wiring warning, automation-plan freshness checks, and local automation TOML health checks without invoking Unity batchmode.
+
 ## Rule
 
 Prefer component composition over inheritance.

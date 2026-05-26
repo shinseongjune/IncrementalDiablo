@@ -273,15 +273,16 @@ Canvas_Dungeon
 
 2026-05-26 playable screen focus handoff:
 
-1. On the main gameplay Canvas, create a parent main-play-area object between the global top bar and bottom action bar. Suggested name: `Panel_MainPlayArea`.
-2. Under it, create or assign `Panel_DefenseSide` and `Panel_DungeonViewport` as RectTransforms. Attach `PlayableScreenLayoutController` to a nearby UI controller object, then wire those two RectTransforms.
+1. The current `Gameplay` scene already has the first screen-focus bridge: `PlayableScreenLayoutController`, `Panel_DefenseSide`, and `Panel_DungeonViewport` are present and wired for the MVP defense/dungeon split.
+2. If rebuilding the scene from scratch, create a parent main-play-area object between the global top bar and bottom action bar. Suggested name: `Panel_MainPlayArea`. Under it, create or assign `Panel_DefenseSide` and `Panel_DungeonViewport` as RectTransforms, attach `PlayableScreenLayoutController` to a nearby UI controller object, then wire those two RectTransforms.
 3. Starting values: keep `Starting Focus` as `DefenseFocus`, `Dungeon Focus Dungeon Width` at `0.70`, `Defense Panel On Right` enabled, `Entry Duration Seconds` at `0.38`, and `Exit Duration Seconds` at `0.32`. These are MVP temporary values from `11_PlayableScreenPresentationSpec.md`, not final art direction.
 4. Fixed intent: `DefenseFocus` should make the defense panel fill the main play area; `DungeonFocus` should make the dungeon panel fill the left 70% and compress defense to the right 30%. The controller only changes anchors and active overlay objects. It does not choose final camera angle, ornate frame density, object scale, or panel art.
-5. Optional overlays: create `Panel_InventoryOverlay`, `Panel_CraftingOverlay`, and `Panel_RewardOverlay`, keep them inactive by default, and wire them into the controller. Their exact content, item list density, tooltip placement, and art treatment are adjustable in Unity.
+5. Optional overlays are not wired yet in the current `Gameplay` scene: create `Panel_InventoryOverlay`, `Panel_CraftingOverlay`, and `Panel_RewardOverlay`, keep them inactive by default, and wire them into the controller. Their exact content, item list density, tooltip placement, and art treatment are adjustable in Unity.
 6. If `PlayableLoopHud > Sync Screen Focus With Dungeon` is enabled, the HUD auto-finds `PlayableScreenLayoutController`: `Start Dungeon` requests `DungeonFocus`, and room clear/fail requests `DefenseFocus`.
 7. Add buttons later for `OpenInventoryOverlay`, `OpenCraftingOverlay`, `OpenRewardOverlay`, and `CloseOverlay` if the bottom action bar has room. These are normal Unity button methods on `PlayableScreenLayoutController`.
 8. Play Mode check: start in `DefenseFocus`, press `Start Dungeon`, confirm the dungeon panel becomes dominant and defense stays visible, clear or fail the room, confirm the view returns to `DefenseFocus`, then open/close any wired overlay and confirm it returns to the previous gameplay focus.
 9. Manual visual review required: split ratio, side-panel crop, camera framing, overlay size, text density, and final Diablo-like UI treatment are user/Unity Editor decisions.
+10. Automation-side check: run `.\Tools\Automation\Invoke-IncrementalDiabloChecks.ps1` from the repo root. The harness should pass the required scene-contract checks and warn about optional overlays until those GameObjects are authored.
 
 2026-05-17 first real dungeon-room bridge:
 

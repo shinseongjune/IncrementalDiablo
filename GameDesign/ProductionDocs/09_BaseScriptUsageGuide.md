@@ -45,6 +45,8 @@
 
 2026-05-26 Phase C playable-screen focus scope: `PlayableScreenFocus` and `PlayableScreenLayoutController` add the first reusable code bridge for the MVP screen states from `11_PlayableScreenPresentationSpec.md`. The controller changes authored RectTransform anchors for DefenseFocus/DungeonFocus, toggles inventory/crafting/reward overlay GameObjects, and exposes button-safe methods for opening/closing overlays. `PlayableLoopHud` can auto-find it and request DungeonFocus on dungeon start, then DefenseFocus when the room resolves. This does not author final layout, camera crop, overlay content, or art style.
 
+2026-05-26 automation verification scope: `Tools/Automation/Invoke-IncrementalDiabloChecks.ps1` is the safe daily verification harness while Unity batchmode remains avoided. It checks the solution build, `git diff --check`, required `Gameplay.unity` scene-contract tokens, missing script references, optional overlay wiring, automation-plan freshness, and local automation TOML health before the Korean handoff report.
+
 목표는 다음 한 문장이 Unity Play 모드에서 돌아가는 것이다.
 
 ```text

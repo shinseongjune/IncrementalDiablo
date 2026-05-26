@@ -40,9 +40,9 @@ Daily automation은 매 실행 시작 시 이 문서를 읽고, **현재 phase�
 
 기본 검증 순서는 다음으로 제한한다.
 
-- `dotnet build .\IncrementalDiablo.sln -v:minimal`
-- `git diff --check`
-- 변경 파일 범위와 씬 YAML 직렬화 필드 확인
+- `.\Tools\Automation\Invoke-IncrementalDiabloChecks.ps1`
+- The harness runs the reliable local baseline: `dotnet build .\IncrementalDiablo.sln -v:minimal`, `git diff --check`, `Gameplay.unity` scene-contract checks, automation-plan freshness checks, and local automation TOML health checks.
+- Warnings from the harness, especially optional overlay wiring or stale next-unlock text, should be triaged in the same run when they are small/fix-now issues.
 - 필요한 경우 사용자에게 Unity Editor Play Mode 수동 검증 절차를 정확히 요청
 
 Unity Editor 검증이 꼭 필요하면 먼저 실행 중인 `Unity.exe`, `Unity.ILPP.*`, `Bee*`, `UnityAutoQuitter.exe` 프로세스가 없는지 확인하고, 사용자가 명시적으로 허락한 짧은 검증만 수행한다. `-noUpm`을 붙인 무인 batchmode 재시도는 금지한다.
@@ -109,10 +109,10 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase C - First Real Game Slice |
-| Last meaningful movement | 2026-05-26: `PlayableScreenFocus` and `PlayableScreenLayoutController` now provide the first code-owned DefenseFocus/DungeonFocus/inventory-crafting-reward overlay bridge, and `PlayableLoopHud` can automatically switch to DungeonFocus on dungeon start and back to DefenseFocus when the room resolves. |
-| Next unlock | Add the layout controller to the `Gameplay` Canvas, wire authored `Panel_DefenseSide`, `Panel_DungeonViewport`, `Panel_InventoryOverlay`, `Panel_CraftingOverlay`, and optional `Panel_RewardOverlay` RectTransforms/GameObjects, then Play Mode validate that dungeon entry compresses defense to the right-side panel and room clear/fail returns to DefenseFocus. Ground-combat feel validation remains a parallel scene/feel gate. |
-| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C now has one direct-control dungeon encounter path, visible room-presentation support, `Gameplay` wiring for `PF_DungeonEnemy_Melee` through `EnemySpawner`, authored tier-1 item definitions in the reward loop, HUD diagnostics that expose prototype fallback, a verified ground-lane presentation bridge, a `Gameplay`-wired ground combat feedback presenter with runtime combat telemetry, and a reusable screen-focus/overlay controller for the first dual-panel playable screen. Play Mode validation for real ground-defense feel, the authored dungeon room shell, layout transition readability, player-facing inventory content, and long-term item registry/drop-table tooling remain open. |
-| Known blockers | There is no current code build blocker. Product blockers remain: `GroundDefenseCombatPresenter` needs Play Mode feel validation; direct-control dungeon encounter and authored reward path still need full Play Mode feel/loop validation; room scale/layout, spawn placement, NavMesh feel, marker art/count, lane/camera framing, panel RectTransform composition, and final visual composition still require manual Unity judgment. The MVP presentation target has temporary code defaults, but final split ratio, camera feel, panel crop, overlay content density, and ornate UI density still require user/Unity Editor review. |
+| Last meaningful movement | 2026-05-26: `Tools/Automation/Invoke-IncrementalDiabloChecks.ps1` now provides a reusable automation verification harness for build/diff checks, `Gameplay.unity` scene contracts, automation-plan freshness, and local automation TOML health. The previous visible-game movement remains the user-validated `PlayableScreenLayoutController` wiring in `Gameplay`. |
+| Next unlock | Play Mode validate the currently wired `Gameplay` screen-focus path: start in `DefenseFocus`, press `Start Dungeon`, confirm dungeon becomes dominant while defense compresses to the right-side panel, then confirm clear/fail returns to `DefenseFocus`. After that, add or wire `Panel_InventoryOverlay`, `Panel_CraftingOverlay`, and `Panel_RewardOverlay` plus buttons if the bottom action bar has room. Ground-combat feel validation remains a parallel scene/feel gate. |
+| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C now has one direct-control dungeon encounter path, visible room-presentation support, `Gameplay` wiring for `PF_DungeonEnemy_Melee` through `EnemySpawner`, authored tier-1 item definitions in the reward loop, HUD diagnostics that expose prototype fallback, a verified ground-lane presentation bridge, a `Gameplay`-wired ground combat feedback presenter with runtime combat telemetry, a reusable screen-focus/overlay controller for the first dual-panel playable screen, and a scriptable automation check for the current scene/docs/config contract. Play Mode validation for real ground-defense feel, the authored dungeon room shell, layout transition readability, player-facing inventory content, and long-term item registry/drop-table tooling remain open. |
+| Known blockers | There is no current code build blocker. Product blockers remain: `GroundDefenseCombatPresenter` needs Play Mode feel validation; direct-control dungeon encounter and authored reward path still need full Play Mode feel/loop validation; room scale/layout, spawn placement, NavMesh feel, marker art/count, lane/camera framing, panel RectTransform composition, and final visual composition still require manual Unity judgment. The MVP presentation target has temporary code defaults; optional inventory/crafting/reward overlay GameObjects are still unwired and the harness reports them as warnings until authored. Final split ratio, camera feel, panel crop, overlay content density, and ornate UI density still require user/Unity Editor review. |
 
 ## 3.1 Progress Assessment Against Game-Form Plan
 
@@ -463,6 +463,12 @@ Completion criteria:
 - The layout controller drives authored RectTransforms by normalized anchors: default `DefenseFocus` uses the full main area; `DungeonFocus` uses a prototype 70/30 split with defense on the right; inventory, crafting, and reward are GameObject overlays over the previous gameplay focus.
 - `PlayableLoopHud` now auto-finds the layout controller. If `Sync Screen Focus With Dungeon` is enabled, `StartDungeon()` requests `DungeonFocus`, and room clear/fail requests `DefenseFocus`.
 - This advances screen-state behavior only. It does not decide final camera framing, ornate UI art, overlay item list content, or exact panel placement.
+
+2026-05-26 verification harness note:
+
+- `Tools/Automation/Invoke-IncrementalDiabloChecks.ps1` now runs the daily safe verification baseline without Unity batchmode: solution build, `git diff --check`, required `Gameplay.unity` scene-contract tokens, missing-script scan, optional overlay wiring warning, automation-plan freshness, and local automation TOML health.
+- The harness intentionally reports unwired inventory/crafting/reward overlays as warnings rather than failures because those panels are authored UI work, not a code blocker.
+- Future automation runs should run this harness before the final report, fix small harness failures immediately, and explain any remaining warnings in the Korean handoff.
 
 ### P1. 첫 authored item 세트
 
