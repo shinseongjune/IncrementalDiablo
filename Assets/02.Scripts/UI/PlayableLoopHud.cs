@@ -18,7 +18,9 @@ public class PlayableLoopHud : MonoBehaviour
     [SerializeField] private CurrencyWallet wallet;
     [SerializeField] private DefenseSaveManager saveManager;
     [SerializeField] private GroundDefenseCombatPresenter groundCombatPresenter;
+    [SerializeField] private PlayableScreenLayoutController screenLayout;
     [SerializeField] private bool autoFindReferences = true;
+    [SerializeField] private bool syncScreenFocusWithDungeon = true;
 
     [Header("Labels")]
     [SerializeField] private TMP_Text summaryText;
@@ -105,6 +107,11 @@ public class PlayableLoopHud : MonoBehaviour
         {
             SetMessage("Dungeon expedition is already running.");
             return;
+        }
+
+        if (syncScreenFocusWithDungeon)
+        {
+            screenLayout?.ShowDungeonFocus();
         }
 
         SetMessage(combatRoom == null
@@ -701,6 +708,11 @@ public class PlayableLoopHud : MonoBehaviour
             groundCombatPresenter = FindAnyObjectByType<GroundDefenseCombatPresenter>();
         }
 
+        if (screenLayout == null || force)
+        {
+            screenLayout = FindAnyObjectByType<PlayableScreenLayoutController>();
+        }
+
         if (equipmentSlots == null || force)
         {
             equipmentSlots = FindEquipmentSlots();
@@ -882,6 +894,12 @@ public class PlayableLoopHud : MonoBehaviour
 
     private void HandleRoomResolved(CombatRoomResult result)
     {
+        ResolveReferences();
+        if (syncScreenFocusWithDungeon)
+        {
+            screenLayout?.ShowDefenseFocus();
+        }
+
         if (result.resolution == CombatRoomResolution.Cleared)
         {
             string rewardText = expedition != null && expedition.State == DungeonRunState.Cleared

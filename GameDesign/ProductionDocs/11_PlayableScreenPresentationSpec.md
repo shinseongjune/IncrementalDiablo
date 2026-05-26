@@ -186,6 +186,13 @@ Suggested names:
 - `Panel_InventoryOverlay`
 - `Panel_CraftingOverlay`
 
+2026-05-26 implementation bridge:
+
+- `PlayableScreenFocus` now exists with `DefenseFocus`, `DungeonFocus`, `InventoryOverlay`, `CraftingOverlay`, and `RewardOverlay`.
+- `PlayableScreenLayoutController` now exists as the first code bridge for this spec. It expects authored RectTransforms for defense and dungeon panels, applies the MVP 70/30 dungeon-focus split by normalized anchors, and toggles overlay GameObjects without reloading scenes.
+- `PlayableLoopHud` can auto-find the layout controller. With `Sync Screen Focus With Dungeon` enabled, starting a dungeon requests `DungeonFocus`, and room clear/fail requests `DefenseFocus`.
+- This bridge intentionally leaves final panel art, camera framing, split-ratio review, overlay content, and text density to Unity Editor authoring.
+
 ## 10. MVP Acceptance Check
 
 The presentation slice is acceptable for MVP when:

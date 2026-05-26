@@ -109,10 +109,10 @@ Docs-only work is allowed only when it directly unblocks code work, records requ
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase C - First Real Game Slice |
-| Last meaningful movement | 2026-05-25: `DefenseRuntimeState` now exposes last-tick incoming pressure, cleared pressure, wall damage, and push progress rates, and `GroundDefenseCombatPresenter` uses those rates for actor colors, attack-pulse intensity, and HUD validation text. |
-| Next unlock | Play Mode validate the already-wired `Gameplay > DefenseRoot` ground-combat feedback path: pressure actors should advance, attack pulses should intensify when pressure is being cleared, wall contact should flash when damage occurs, and the HUD `pressure +/-/s` line should match the fight feel. This is a scene/feel validation gate, not a code build blocker. |
-| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C now has one direct-control dungeon encounter path, visible room-presentation support, `Gameplay` wiring for `PF_DungeonEnemy_Melee` through `EnemySpawner`, authored tier-1 item definitions in the reward loop, HUD diagnostics that expose prototype fallback, a verified ground-lane presentation bridge, and a `Gameplay`-wired ground combat feedback presenter with runtime combat telemetry. Play Mode validation for real ground-defense feel, the authored dungeon room shell, player-facing inventory UI, and long-term item registry/drop-table tooling remain open. |
-| Known blockers | There is no current code build blocker. Product blockers remain: `GroundDefenseCombatPresenter` needs Play Mode feel validation; direct-control dungeon encounter and authored reward path still need full Play Mode feel/loop validation; room scale/layout, spawn placement, NavMesh feel, marker art/count, lane/camera framing, and final visual composition still require manual Unity judgment. The MVP presentation target now has temporary values, but final split ratio, camera feel, panel crop, and ornate UI density still require user/Unity Editor review. |
+| Last meaningful movement | 2026-05-26: `PlayableScreenFocus` and `PlayableScreenLayoutController` now provide the first code-owned DefenseFocus/DungeonFocus/inventory-crafting-reward overlay bridge, and `PlayableLoopHud` can automatically switch to DungeonFocus on dungeon start and back to DefenseFocus when the room resolves. |
+| Next unlock | Add the layout controller to the `Gameplay` Canvas, wire authored `Panel_DefenseSide`, `Panel_DungeonViewport`, `Panel_InventoryOverlay`, `Panel_CraftingOverlay`, and optional `Panel_RewardOverlay` RectTransforms/GameObjects, then Play Mode validate that dungeon entry compresses defense to the right-side panel and room clear/fail returns to DefenseFocus. Ground-combat feel validation remains a parallel scene/feel gate. |
+| Loop coverage | Phase A debug loop and Phase B player HUD slice are confirmed. Phase C now has one direct-control dungeon encounter path, visible room-presentation support, `Gameplay` wiring for `PF_DungeonEnemy_Melee` through `EnemySpawner`, authored tier-1 item definitions in the reward loop, HUD diagnostics that expose prototype fallback, a verified ground-lane presentation bridge, a `Gameplay`-wired ground combat feedback presenter with runtime combat telemetry, and a reusable screen-focus/overlay controller for the first dual-panel playable screen. Play Mode validation for real ground-defense feel, the authored dungeon room shell, layout transition readability, player-facing inventory content, and long-term item registry/drop-table tooling remain open. |
+| Known blockers | There is no current code build blocker. Product blockers remain: `GroundDefenseCombatPresenter` needs Play Mode feel validation; direct-control dungeon encounter and authored reward path still need full Play Mode feel/loop validation; room scale/layout, spawn placement, NavMesh feel, marker art/count, lane/camera framing, panel RectTransform composition, and final visual composition still require manual Unity judgment. The MVP presentation target has temporary code defaults, but final split ratio, camera feel, panel crop, overlay content density, and ornate UI density still require user/Unity Editor review. |
 
 ## 3.1 Progress Assessment Against Game-Form Plan
 
@@ -442,6 +442,27 @@ Phase A의 "작동하는 루프"를 Phase B의 "짧게 플레이 가능한 루�
 - `GroundDefenseCombatPresenter` now colors pressure actors by combat state and uses the measured cleared-pressure rate, not only upgrade level, when deciding how many attack pulses should be visible.
 - `LastCombatMessage` now includes `pressure +/-/s` and `wall /s` values so `PlayableLoopHud` can verify whether the visible pressure actors, defender/tower pulses, and wall contact are following the real simulation.
 - Static scene inspection confirms `Gameplay > DefenseRoot` already has `GroundDefenseCombatPresenter`, pressure actors, wall-contact flash, and attack pulses wired. The remaining gate is Play Mode feel validation, not more scene-wiring code.
+
+### P1. Playable screen focus and overlay bridge
+
+Status: Code bridge added (Unity panel wiring and Play Mode validation pending)
+
+Goal:
+Move the first combined-loop screen away from a single static HUD into the MVP presentation shape described in `11_PlayableScreenPresentationSpec.md`: ground defense fills the default view, starting a dungeon makes dungeon play dominant while defense remains visible, and inventory/crafting/reward panels can open as overlays without reloading scenes.
+
+Completion criteria:
+
+- A reusable controller can switch between `DefenseFocus` and `DungeonFocus` without stopping `DefenseDirector` or `ExpeditionDirector`.
+- The controller exposes overlay states for inventory, crafting, and reward presentation.
+- The normal `PlayableLoopHud` can request DungeonFocus on dungeon start and DefenseFocus on room clear/fail without requiring debug HUDs.
+- The exact RectTransform composition, camera crop, panel art, and overlay contents remain Unity-authored values.
+
+2026-05-26 code progress note:
+
+- Added `PlayableScreenFocus` and `PlayableScreenLayoutController` under `Assets/02.Scripts/UI`.
+- The layout controller drives authored RectTransforms by normalized anchors: default `DefenseFocus` uses the full main area; `DungeonFocus` uses a prototype 70/30 split with defense on the right; inventory, crafting, and reward are GameObject overlays over the previous gameplay focus.
+- `PlayableLoopHud` now auto-finds the layout controller. If `Sync Screen Focus With Dungeon` is enabled, `StartDungeon()` requests `DungeonFocus`, and room clear/fail requests `DefenseFocus`.
+- This advances screen-state behavior only. It does not decide final camera framing, ornate UI art, overlay item list content, or exact panel placement.
 
 ### P1. 첫 authored item 세트
 

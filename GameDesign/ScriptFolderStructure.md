@@ -41,8 +41,10 @@ Current implementation note: `DefenseDirector` and `DefenseRuntimeState` own the
 Shared UI code owns player-facing screens that cross ground defense, dungeon, item, and save systems.
 
 - `PlayableLoopHud`
+- `PlayableScreenFocus`
+- `PlayableScreenLayoutController`
 
-Current implementation note: `PlayableLoopHud` is the first Canvas/TMP/Button bridge away from OnGUI debug panels. It can show frontline status, resources, ground-combat presenter status, dungeon state, combat path, loot source, latest item, current/max hero HP, a message line, and an action hint, then call button-safe methods for ground defense, dungeon, item, save, and load actions. It is wired into `Gameplay` as the normal combined-loop HUD; the debug OnGUI HUDs remain smoke-test fallbacks only.
+Current implementation note: `PlayableLoopHud` is the first Canvas/TMP/Button bridge away from OnGUI debug panels. It can show frontline status, resources, ground-combat presenter status, dungeon state, combat path, loot source, latest item, current/max hero HP, a message line, and an action hint, then call button-safe methods for ground defense, dungeon, item, save, and load actions. `PlayableScreenFocus` and `PlayableScreenLayoutController` add the first reusable screen-state bridge for DefenseFocus, DungeonFocus, inventory overlay, crafting overlay, and reward overlay. The controller moves authored UI RectTransforms between the MVP defense-fullscreen and dungeon-dominant 70/30 layouts and can be driven by buttons. `PlayableLoopHud` can auto-find it and request DungeonFocus on dungeon start, then DefenseFocus when the room resolves. It is not final layout authoring; panel composition, camera crop, overlay density, and art treatment remain Unity Editor work. The debug OnGUI HUDs remain smoke-test fallbacks only.
 
 ## Items
 
