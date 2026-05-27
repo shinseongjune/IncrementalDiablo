@@ -279,10 +279,18 @@ Canvas_Dungeon
 4. Fixed intent: `DefenseFocus` should make the defense panel fill the main play area; `DungeonFocus` should make the dungeon panel fill the left 70% and compress defense to the right 30%. The controller only changes anchors and active overlay objects. It does not choose final camera angle, ornate frame density, object scale, or panel art.
 5. Optional overlays are not wired yet in the current `Gameplay` scene: create `Panel_InventoryOverlay`, `Panel_CraftingOverlay`, and `Panel_RewardOverlay`, keep them inactive by default, and wire them into the controller. Their exact content, item list density, tooltip placement, and art treatment are adjustable in Unity.
 6. If `PlayableLoopHud > Sync Screen Focus With Dungeon` is enabled, the HUD auto-finds `PlayableScreenLayoutController`: `Start Dungeon` requests `DungeonFocus`, and room clear/fail requests `DefenseFocus`.
-7. Add buttons later for `OpenInventoryOverlay`, `OpenCraftingOverlay`, `OpenRewardOverlay`, and `CloseOverlay` if the bottom action bar has room. These are normal Unity button methods on `PlayableScreenLayoutController`.
+7. Add bottom-action-bar buttons for `OpenInventoryOverlay`, `OpenCraftingOverlay`, `OpenRewardOverlay`, and `CloseOverlay` if the bottom action bar has room. Prefer wiring these to the matching `PlayableLoopHud` button slots so interactability follows the controller's overlay wiring state; the same methods also exist on `PlayableScreenLayoutController` for direct scene tests.
 8. Play Mode check: start in `DefenseFocus`, press `Start Dungeon`, confirm the dungeon panel becomes dominant and defense stays visible, clear or fail the room, confirm the view returns to `DefenseFocus`, then open/close any wired overlay and confirm it returns to the previous gameplay focus.
 9. Manual visual review required: split ratio, side-panel crop, camera framing, overlay size, text density, and final Diablo-like UI treatment are user/Unity Editor decisions.
 10. Automation-side check: run `.\Tools\Automation\Invoke-IncrementalDiabloChecks.ps1` from the repo root. The harness should pass the required scene-contract checks and warn about optional overlays until those GameObjects are authored.
+
+2026-05-27 playable overlay button handoff:
+
+1. `PlayableLoopHud` now has optional slots named `Open Inventory Overlay Button`, `Open Crafting Overlay Button`, `Open Reward Overlay Button`, and `Close Overlay Button`.
+2. These buttons call `OpenInventoryOverlay`, `OpenCraftingOverlay`, `OpenRewardOverlay`, and `CloseOverlay` on `PlayableLoopHud`.
+3. If `PlayableScreenLayoutController` has no matching overlay GameObject reference, the open button stays disabled and the controller will report that the overlay is not wired instead of entering an invisible overlay state.
+4. Keep `Panel_InventoryOverlay`, `Panel_CraftingOverlay`, and `Panel_RewardOverlay` inactive by default after wiring them to the controller. The controller activates only the selected overlay.
+5. Starting visual intent: overlays sit above the current defense/dungeon focus and return to the previous gameplay focus when closed. Exact overlay size, item-list density, tooltip placement, and ornamentation remain Unity-authored values.
 
 2026-05-17 first real dungeon-room bridge:
 

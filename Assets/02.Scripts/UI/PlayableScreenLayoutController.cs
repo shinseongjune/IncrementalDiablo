@@ -40,6 +40,9 @@ public class PlayableScreenLayoutController : MonoBehaviour
     public float TransitionProgress => transitionProgress;
     public string LastLayoutMessage => lastLayoutMessage;
     public bool IsOverlayOpen => IsOverlayFocus(currentFocus);
+    public bool CanOpenInventoryOverlay => inventoryOverlay != null;
+    public bool CanOpenCraftingOverlay => craftingOverlay != null;
+    public bool CanOpenRewardOverlay => rewardOverlay != null;
 
     private void Reset()
     {
@@ -100,17 +103,52 @@ public class PlayableScreenLayoutController : MonoBehaviour
 
     public void OpenInventoryOverlay()
     {
-        SetFocus(PlayableScreenFocus.InventoryOverlay);
+        TryOpenInventoryOverlay();
     }
 
     public void OpenCraftingOverlay()
     {
-        SetFocus(PlayableScreenFocus.CraftingOverlay);
+        TryOpenCraftingOverlay();
     }
 
     public void OpenRewardOverlay()
     {
-        SetFocus(PlayableScreenFocus.RewardOverlay);
+        TryOpenRewardOverlay();
+    }
+
+    public bool TryOpenInventoryOverlay()
+    {
+        return TryOpenOverlay(PlayableScreenFocus.InventoryOverlay);
+    }
+
+    public bool TryOpenCraftingOverlay()
+    {
+        return TryOpenOverlay(PlayableScreenFocus.CraftingOverlay);
+    }
+
+    public bool TryOpenRewardOverlay()
+    {
+        return TryOpenOverlay(PlayableScreenFocus.RewardOverlay);
+    }
+
+    public bool TryOpenOverlay(PlayableScreenFocus overlayFocus)
+    {
+        if (!IsOverlayFocus(overlayFocus))
+        {
+            lastLayoutMessage = $"{overlayFocus} is not an overlay focus.";
+            FocusChanged?.Invoke(currentFocus);
+            return false;
+        }
+
+        if (!IsOverlayWired(overlayFocus))
+        {
+            lastLayoutMessage = $"{GetOverlayDisplayName(overlayFocus)} overlay is not wired.";
+            FocusChanged?.Invoke(currentFocus);
+            return false;
+        }
+
+        OpenOverlay(overlayFocus);
+        return true;
     }
 
     public void CloseOverlay()
@@ -118,6 +156,8 @@ public class PlayableScreenLayoutController : MonoBehaviour
         if (!IsOverlayFocus(currentFocus))
         {
             SetOverlayObjects(false, false, false);
+            lastLayoutMessage = "No overlay is open.";
+            FocusChanged?.Invoke(currentFocus);
             return;
         }
 
@@ -132,7 +172,7 @@ public class PlayableScreenLayoutController : MonoBehaviour
     {
         if (IsOverlayFocus(focus))
         {
-            OpenOverlay(focus);
+            TryOpenOverlay(focus);
             return;
         }
 
@@ -313,6 +353,33 @@ public class PlayableScreenLayoutController : MonoBehaviour
         return focus == PlayableScreenFocus.InventoryOverlay ||
                focus == PlayableScreenFocus.CraftingOverlay ||
                focus == PlayableScreenFocus.RewardOverlay;
+    }
+
+    private bool IsOverlayWired(PlayableScreenFocus focus)
+    {
+        return GetOverlayObject(focus) != null;
+    }
+
+    private GameObject GetOverlayObject(PlayableScreenFocus focus)
+    {
+        return focus switch
+        {
+            PlayableScreenFocus.InventoryOverlay => inventoryOverlay,
+            PlayableScreenFocus.CraftingOverlay => craftingOverlay,
+            PlayableScreenFocus.RewardOverlay => rewardOverlay,
+            _ => null
+        };
+    }
+
+    private static string GetOverlayDisplayName(PlayableScreenFocus focus)
+    {
+        return focus switch
+        {
+            PlayableScreenFocus.InventoryOverlay => "Inventory",
+            PlayableScreenFocus.CraftingOverlay => "Crafting",
+            PlayableScreenFocus.RewardOverlay => "Reward",
+            _ => focus.ToString()
+        };
     }
 
     private static float Smooth(float value)

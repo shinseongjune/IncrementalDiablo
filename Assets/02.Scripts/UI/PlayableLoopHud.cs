@@ -44,6 +44,10 @@ public class PlayableLoopHud : MonoBehaviour
     [SerializeField] private Button salvageLatestButton;
     [SerializeField] private Button saveButton;
     [SerializeField] private Button loadButton;
+    [SerializeField] private Button openInventoryOverlayButton;
+    [SerializeField] private Button openCraftingOverlayButton;
+    [SerializeField] private Button openRewardOverlayButton;
+    [SerializeField] private Button closeOverlayButton;
 
     [Header("Refresh")]
     [SerializeField] private float refreshIntervalSeconds = 0.2f;
@@ -312,6 +316,34 @@ public class PlayableLoopHud : MonoBehaviour
         SetMessage(saveManager.TryLoad() ? "Game loaded." : "Load failed.");
     }
 
+    public void OpenInventoryOverlay()
+    {
+        TryOpenScreenOverlay(PlayableScreenFocus.InventoryOverlay);
+    }
+
+    public void OpenCraftingOverlay()
+    {
+        TryOpenScreenOverlay(PlayableScreenFocus.CraftingOverlay);
+    }
+
+    public void OpenRewardOverlay()
+    {
+        TryOpenScreenOverlay(PlayableScreenFocus.RewardOverlay);
+    }
+
+    public void CloseOverlay()
+    {
+        ResolveReferences();
+        if (screenLayout == null)
+        {
+            SetMessage("Screen overlays are not available.");
+            return;
+        }
+
+        screenLayout.CloseOverlay();
+        SetMessage(screenLayout.LastLayoutMessage);
+    }
+
     public void Refresh()
     {
         ResolveReferences();
@@ -341,7 +373,8 @@ public class PlayableLoopHud : MonoBehaviour
             : $"Wall Lv.{defense.Upgrades.WallLevel} / Tower Lv.{defense.Upgrades.TowerLevel} / Defenders Lv.{defense.Upgrades.DefenderLevel}";
 
         string groundCombatText = groundCombatPresenter == null ? string.Empty : $"\n{groundCombatPresenter.LastCombatMessage}";
-        return $"Frontline Lv.{runtime.FrontlineLevel} / {runtime.State} / {runtime.Mode} / Wall {Mathf.CeilToInt(runtime.WallHealth)}/{Mathf.CeilToInt(runtime.WallMaxHealth)}\nPressure {pressureText} / Progress {progressText}\n{upgradeText}{groundCombatText}";
+        string screenText = screenLayout == null ? string.Empty : $"\n{BuildScreenLayoutText()}";
+        return $"Frontline Lv.{runtime.FrontlineLevel} / {runtime.State} / {runtime.Mode} / Wall {Mathf.CeilToInt(runtime.WallHealth)}/{Mathf.CeilToInt(runtime.WallMaxHealth)}\nPressure {pressureText} / Progress {progressText}\n{upgradeText}{groundCombatText}{screenText}";
     }
 
     private string BuildDungeonText()
@@ -463,11 +496,28 @@ public class PlayableLoopHud : MonoBehaviour
         return $"Hero: ATK {characterStats.GetValue(StatId.AttackDamage):0.#} / HP {healthText} / APS {characterStats.GetValue(StatId.AttackSpeed):0.##}";
     }
 
+    private string BuildScreenLayoutText()
+    {
+        if (screenLayout == null)
+        {
+            return "Screen: layout unavailable";
+        }
+
+        string overlayText = screenLayout.IsOverlayOpen ? $" / over {screenLayout.PreviousGameplayFocus}" : string.Empty;
+        string transitionText = screenLayout.IsTransitioning ? $" / transition {Mathf.RoundToInt(screenLayout.TransitionProgress * 100f)}%" : string.Empty;
+        return $"Screen: {screenLayout.CurrentFocus}{overlayText}{transitionText}";
+    }
+
     private string BuildActionHintText()
     {
         if (defense == null)
         {
             return "Next: connect DefenseDirector so frontline rewards and upgrades are visible.";
+        }
+
+        if (screenLayout != null && screenLayout.IsOverlayOpen)
+        {
+            return $"Next: close the overlay to return to {screenLayout.PreviousGameplayFocus}.";
         }
 
         DefenseRuntimeState runtime = defense.Runtime;
@@ -560,6 +610,30 @@ public class PlayableLoopHud : MonoBehaviour
         SetInteractable(salvageLatestButton, latest != null && salvageService != null);
         SetInteractable(saveButton, saveManager != null);
         SetInteractable(loadButton, saveManager != null && saveManager.HasSaveFile);
+        SetInteractable(openInventoryOverlayButton, screenLayout != null && screenLayout.CanOpenInventoryOverlay);
+        SetInteractable(openCraftingOverlayButton, screenLayout != null && screenLayout.CanOpenCraftingOverlay);
+        SetInteractable(openRewardOverlayButton, screenLayout != null && screenLayout.CanOpenRewardOverlay);
+        SetInteractable(closeOverlayButton, screenLayout != null && screenLayout.IsOverlayOpen);
+    }
+
+    private void TryOpenScreenOverlay(PlayableScreenFocus overlayFocus)
+    {
+        ResolveReferences();
+        if (screenLayout == null)
+        {
+            SetMessage("Screen overlays are not available.");
+            return;
+        }
+
+        _ = overlayFocus switch
+        {
+            PlayableScreenFocus.InventoryOverlay => screenLayout.TryOpenInventoryOverlay(),
+            PlayableScreenFocus.CraftingOverlay => screenLayout.TryOpenCraftingOverlay(),
+            PlayableScreenFocus.RewardOverlay => screenLayout.TryOpenRewardOverlay(),
+            _ => false
+        };
+
+        SetMessage(screenLayout.LastLayoutMessage);
     }
 
     private void TryUpgradeDefense(string label, Func<DefenseUpgradeModel, ResourceAmount[]> costSelector, Func<bool> upgradeAction)
@@ -769,6 +843,10 @@ public class PlayableLoopHud : MonoBehaviour
         AddListener(salvageLatestButton, SalvageLatest);
         AddListener(saveButton, SaveGame);
         AddListener(loadButton, LoadGame);
+        AddListener(openInventoryOverlayButton, OpenInventoryOverlay);
+        AddListener(openCraftingOverlayButton, OpenCraftingOverlay);
+        AddListener(openRewardOverlayButton, OpenRewardOverlay);
+        AddListener(closeOverlayButton, CloseOverlay);
         buttonsWired = true;
     }
 
@@ -791,6 +869,10 @@ public class PlayableLoopHud : MonoBehaviour
         RemoveListener(salvageLatestButton, SalvageLatest);
         RemoveListener(saveButton, SaveGame);
         RemoveListener(loadButton, LoadGame);
+        RemoveListener(openInventoryOverlayButton, OpenInventoryOverlay);
+        RemoveListener(openCraftingOverlayButton, OpenCraftingOverlay);
+        RemoveListener(openRewardOverlayButton, OpenRewardOverlay);
+        RemoveListener(closeOverlayButton, CloseOverlay);
         buttonsWired = false;
     }
 
@@ -835,6 +917,11 @@ public class PlayableLoopHud : MonoBehaviour
         if (characterStats != null)
         {
             characterStats.Changed += Refresh;
+        }
+
+        if (screenLayout != null)
+        {
+            screenLayout.FocusChanged += HandleScreenFocusChanged;
         }
 
         subscribed = true;
@@ -883,6 +970,11 @@ public class PlayableLoopHud : MonoBehaviour
             characterStats.Changed -= Refresh;
         }
 
+        if (screenLayout != null)
+        {
+            screenLayout.FocusChanged -= HandleScreenFocusChanged;
+        }
+
         subscribed = false;
     }
 
@@ -913,6 +1005,11 @@ public class PlayableLoopHud : MonoBehaviour
         {
             SetMessage("Room failed. Prepare, then try again.");
         }
+    }
+
+    private void HandleScreenFocusChanged(PlayableScreenFocus focus)
+    {
+        Refresh();
     }
 
     private static string FormatRewards(ResourceAmount[] rewards)

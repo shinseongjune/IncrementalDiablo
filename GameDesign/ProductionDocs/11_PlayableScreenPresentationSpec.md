@@ -185,6 +185,7 @@ Suggested names:
 - `Panel_DefenseSide`
 - `Panel_InventoryOverlay`
 - `Panel_CraftingOverlay`
+- `Panel_RewardOverlay`
 
 2026-05-26 implementation bridge:
 
@@ -192,6 +193,13 @@ Suggested names:
 - `PlayableScreenLayoutController` now exists as the first code bridge for this spec. It expects authored RectTransforms for defense and dungeon panels, applies the MVP 70/30 dungeon-focus split by normalized anchors, and toggles overlay GameObjects without reloading scenes.
 - `PlayableLoopHud` can auto-find the layout controller. With `Sync Screen Focus With Dungeon` enabled, starting a dungeon requests `DungeonFocus`, and room clear/fail requests `DefenseFocus`.
 - This bridge intentionally leaves final panel art, camera framing, split-ratio review, overlay content, and text density to Unity Editor authoring.
+
+2026-05-27 overlay-control bridge:
+
+- `PlayableScreenLayoutController` now reports whether each optional overlay object is wired and will not enter an overlay state when the target GameObject is missing.
+- `PlayableLoopHud` now exposes optional button slots for inventory, crafting, reward, and close-overlay actions. It disables those buttons until the corresponding overlay references are present.
+- The HUD summary can show the current screen focus and transition progress, giving Play Mode validation a visible text checkpoint alongside the panel movement.
+- This still does not author the actual overlay panel contents, tooltip positions, item-list density, or final UI art.
 
 ## 10. MVP Acceptance Check
 

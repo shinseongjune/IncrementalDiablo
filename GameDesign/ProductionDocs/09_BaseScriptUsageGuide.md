@@ -45,6 +45,8 @@
 
 2026-05-26 Phase C playable-screen focus scope: `PlayableScreenFocus` and `PlayableScreenLayoutController` add the first reusable code bridge for the MVP screen states from `11_PlayableScreenPresentationSpec.md`. The controller changes authored RectTransform anchors for DefenseFocus/DungeonFocus, toggles inventory/crafting/reward overlay GameObjects, and exposes button-safe methods for opening/closing overlays. `PlayableLoopHud` can auto-find it and request DungeonFocus on dungeon start, then DefenseFocus when the room resolves. This does not author final layout, camera crop, overlay content, or art style.
 
+2026-05-27 Phase C overlay-control scope: `PlayableScreenLayoutController` now blocks overlay focus changes when the matching overlay GameObject is not wired, reports overlay availability, and keeps the previous gameplay focus intact. `PlayableLoopHud` now exposes optional inventory/crafting/reward/close overlay button slots, shows current screen focus in the summary line, and refreshes when screen focus changes. This gives the normal HUD a player-facing entry path for overlays once the panels are authored in Unity.
+
 2026-05-26 automation verification scope: `Tools/Automation/Invoke-IncrementalDiabloChecks.ps1` is the safe daily verification harness while Unity batchmode remains avoided. It checks the solution build, `git diff --check`, required `Gameplay.unity` scene-contract tokens, missing script references, optional overlay wiring, automation-plan freshness, and local automation TOML health before the Korean handoff report.
 
 목표는 다음 한 문장이 Unity Play 모드에서 돌아가는 것이다.
@@ -99,8 +101,8 @@
 | `DefenseHud` | `Assets/02.Scripts/GroundDefense/UI/DefenseHud.cs` | TMP 텍스트와 버튼을 연결해서 현재 상태와 강화 버튼을 보여준다 | Canvas 안의 HUD 오브젝트에 붙이고 Text/Button 슬롯을 연결한다. | 화면에 보이는 문구가 충분히 직관적인지 |
 | `GroundDefenseCombatPresenter` | `Assets/02.Scripts/GroundDefense/UI/GroundDefenseCombatPresenter.cs` | `DefenseDirector.Runtime`을 읽어 압박 적, 벽 피격 flash, 타워/수비대 공격 pulse를 scene-authored 오브젝트로 보여주고, 최근 압박/방어/벽 피해율을 `LastCombatMessage`로 노출한다. | `Gameplay > DefenseRoot` 또는 `GroundDefenseLane` 오브젝트에 붙인다. `EnemySpawnAnchor`, `WallAnchor`, `AttackOrigin`, `Pressure Actors`, `Wall Contact Object`, `Attack Pulses`를 연결한다. 첫 패스는 `Auto Find Defense`를 켜 둔다. `Gameplay > DefenseRoot`에는 현재 이 경로가 이미 연결되어 있다. | 적 압박이 정말 성벽으로 몰리는지, 벽 피해가 보이는지, 공격 pulse가 타워/수비대 대응처럼 읽히는지, HUD의 `pressure +/-/s`와 `wall /s`가 전투 감각과 맞는지 |
 | `PlayableScreenFocus` | `Assets/02.Scripts/UI/PlayableScreenFocus.cs` | DefenseFocus, DungeonFocus, InventoryOverlay, CraftingOverlay, RewardOverlay screen states. | Not attached directly. `PlayableScreenLayoutController` uses it. | Whether the state names match the visible screen shape the player expects. |
-| `PlayableScreenLayoutController` | `Assets/02.Scripts/UI/PlayableScreenLayoutController.cs` | Switches authored UI RectTransforms between the MVP defense-focused and dungeon-focused layouts, and opens/closes inventory/crafting/reward overlay GameObjects. | Attach to a UI controller object on the main gameplay Canvas. Wire `Panel_DefenseSide`, `Panel_DungeonViewport`, and optional overlay objects. Use `OpenInventoryOverlay`, `OpenCraftingOverlay`, `OpenRewardOverlay`, and `CloseOverlay` from buttons. | Dungeon start should make dungeon dominant while defense remains visible; room clear/fail should return to DefenseFocus; overlays should close back to the previous gameplay focus. |
-| `PlayableLoopHud` | `Assets/02.Scripts/UI/PlayableLoopHud.cs` | 최소 플레이어 HUD. 지상/던전/아이템/저장 상태를 한 패널에서 보여주고 핵심 버튼을 실행한다. | Canvas 안의 오브젝트에 붙이고 TMP 텍스트 6-7개와 Button 12개를 연결한다. 첫 패스는 `Auto Find References`를 켜 둔다. | 디버그 도구처럼 보이지 않는지, 다음 행동과 전투 결과가 버튼 상태/현재 HP/메시지로 충분히 드러나는지 |
+| `PlayableScreenLayoutController` | `Assets/02.Scripts/UI/PlayableScreenLayoutController.cs` | Switches authored UI RectTransforms between the MVP defense-focused and dungeon-focused layouts, and opens/closes inventory/crafting/reward overlay GameObjects. It refuses missing-overlay focus changes. | Attach to a UI controller object on the main gameplay Canvas. Wire `Panel_DefenseSide`, `Panel_DungeonViewport`, and optional overlay objects. Use `OpenInventoryOverlay`, `OpenCraftingOverlay`, `OpenRewardOverlay`, and `CloseOverlay` from buttons or through `PlayableLoopHud`. | Dungeon start should make dungeon dominant while defense remains visible; room clear/fail should return to DefenseFocus; overlays should close back to the previous gameplay focus and should not open invisibly when unwired. |
+| `PlayableLoopHud` | `Assets/02.Scripts/UI/PlayableLoopHud.cs` | 최소 플레이어 HUD. 지상/던전/아이템/저장/화면 포커스 상태를 한 패널에서 보여주고 핵심 버튼을 실행한다. | Canvas 안의 오브젝트에 붙이고 TMP 텍스트 6-7개와 Button 12개를 먼저 연결한다. Overlay 버튼을 만들 때는 `Open Inventory Overlay`, `Open Crafting Overlay`, `Open Reward Overlay`, `Close Overlay` 슬롯을 추가로 연결한다. 첫 패스는 `Auto Find References`를 켜 둔다. | 디버그 도구처럼 보이지 않는지, 다음 행동과 전투 결과가 버튼 상태/현재 HP/메시지/화면 포커스로 충분히 드러나는지 |
 
 아이템 경제 테스트 시 `ItemDefinition.SalvageRewards`는 분해 보상 미리보기이고, `ItemDefinition.AffixRerollCost`는 Rare 장비 옵션 변형 비용 미리보기다. Normal/Magic은 변형 비용을 반환하지 않는다. Rare도 낮은 `baseTier`에서는 `AlterStone` 분해 보상이 없으므로, 초반 장비가 너무 빨리 재굴림 루프로 들어가지 않는지 확인해야 한다.
 
@@ -148,7 +150,8 @@ Phase B의 전체 루프 HUD를 보고 싶다면:
 3. TMP Text 6-7개를 `Summary`, `Resources`, `Dungeon`, `Latest Item`, `Hero Stats`, `Message`, 선택 사항인 `Action Hint` 슬롯에 연결한다.
 4. Ground Button 6개를 `Start Defense`, `Repair Wall`, `Toggle Hold/Push`, `Upgrade Wall`, `Upgrade Tower`, `Upgrade Defenders` 슬롯에 연결한다.
 5. Dungeon/Item/Save Button 6개를 `Start Dungeon`, `Claim Reward`, `Equip Latest`, `Salvage Latest`, `Save`, `Load` 슬롯에 연결한다.
-6. 첫 연결에서는 `Auto Find References`를 켜 둔다. 나중에 여러 영웅/인벤토리가 생기면 참조를 직접 연결한다.
+6. Overlay 버튼을 추가할 때는 `Open Inventory Overlay`, `Open Crafting Overlay`, `Open Reward Overlay`, `Close Overlay` 슬롯에 연결한다. 이 버튼들은 `PlayableScreenLayoutController`의 해당 overlay GameObject가 연결되어야 활성화된다.
+7. 첫 연결에서는 `Auto Find References`를 켜 둔다. 나중에 여러 영웅/인벤토리가 생기면 참조를 직접 연결한다.
 
 ## 4. 현재 규칙의 의미
 
