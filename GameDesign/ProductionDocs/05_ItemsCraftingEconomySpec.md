@@ -267,3 +267,9 @@ MVP에서 하지 않는다.
 
 - `LootDropper` now records `LastRewardSource` so Play Mode can tell authored weighted-table rewards apart from legacy-list and prototype-fallback rewards.
 - No item weight, rarity, salvage, crafting, or economy value changed in this run. The current 78/20/2 tier-1 table remains a prototype per-clear bridge until a real Unity drop-balance export exists.
+
+## 13. 2026-05-28 Inventory Overlay Note
+
+- `InventoryOverlayPresenter` now gives the authored inventory overlay a normal-player path for reviewing item instances, selecting a row, equipping the selected item, salvaging the selected item, and previewing salvage/reroll material values already defined by `ItemEconomyModel`.
+- No item weight, rarity, salvage, reroll, or drop-balance value changed in this run. This is UI/content exposure for the existing economy model, not a new economy rule.
+- The next item-economy production gap remains full item-definition registry/drop-table export tooling and real crafting/reroll behavior after the visible inventory overlay is wired and validated in Play Mode.

@@ -277,12 +277,12 @@ Canvas_Dungeon
 2. If rebuilding the scene from scratch, create a parent main-play-area object between the global top bar and bottom action bar. Suggested name: `Panel_MainPlayArea`. Under it, create or assign `Panel_DefenseSide` and `Panel_DungeonViewport` as RectTransforms, attach `PlayableScreenLayoutController` to a nearby UI controller object, then wire those two RectTransforms.
 3. Starting values: keep `Starting Focus` as `DefenseFocus`, `Dungeon Focus Dungeon Width` at `0.70`, `Defense Panel On Right` enabled, `Entry Duration Seconds` at `0.38`, and `Exit Duration Seconds` at `0.32`. These are MVP temporary values from `11_PlayableScreenPresentationSpec.md`, not final art direction.
 4. Fixed intent: `DefenseFocus` should make the defense panel fill the main play area; `DungeonFocus` should make the dungeon panel fill the left 70% and compress defense to the right 30%. The controller only changes anchors and active overlay objects. It does not choose final camera angle, ornate frame density, object scale, or panel art.
-5. Optional overlays are not wired yet in the current `Gameplay` scene: create `Panel_InventoryOverlay`, `Panel_CraftingOverlay`, and `Panel_RewardOverlay`, keep them inactive by default, and wire them into the controller. Their exact content, item list density, tooltip placement, and art treatment are adjustable in Unity.
+5. The current `Gameplay` scene already has `Panel_InventoryOverlay`, `Panel_CraftingOverlay`, and `Panel_RewardOverlay` wired into `PlayableScreenLayoutController`. If rebuilding the scene from scratch, create those panels, keep them inactive by default, and wire them into the controller. Their exact content, item list density, tooltip placement, and art treatment are adjustable in Unity.
 6. If `PlayableLoopHud > Sync Screen Focus With Dungeon` is enabled, the HUD auto-finds `PlayableScreenLayoutController`: `Start Dungeon` requests `DungeonFocus`, and room clear/fail requests `DefenseFocus`.
 7. Add bottom-action-bar buttons for `OpenInventoryOverlay`, `OpenCraftingOverlay`, `OpenRewardOverlay`, and `CloseOverlay` if the bottom action bar has room. Prefer wiring these to the matching `PlayableLoopHud` button slots so interactability follows the controller's overlay wiring state; the same methods also exist on `PlayableScreenLayoutController` for direct scene tests.
 8. Play Mode check: start in `DefenseFocus`, press `Start Dungeon`, confirm the dungeon panel becomes dominant and defense stays visible, clear or fail the room, confirm the view returns to `DefenseFocus`, then open/close any wired overlay and confirm it returns to the previous gameplay focus.
 9. Manual visual review required: split ratio, side-panel crop, camera framing, overlay size, text density, and final Diablo-like UI treatment are user/Unity Editor decisions.
-10. Automation-side check: run `.\Tools\Automation\Invoke-IncrementalDiabloChecks.ps1` from the repo root. The harness should pass the required scene-contract checks and warn about optional overlays until those GameObjects are authored.
+10. Automation-side check: run `.\Tools\Automation\Invoke-IncrementalDiabloChecks.ps1` from the repo root. The current `Gameplay` scene should pass the required scene-contract checks and the optional overlay wiring check; future scenes may warn about optional overlays until those GameObjects are authored.
 
 2026-05-27 playable overlay button handoff:
 
@@ -291,6 +291,16 @@ Canvas_Dungeon
 3. If `PlayableScreenLayoutController` has no matching overlay GameObject reference, the open button stays disabled and the controller will report that the overlay is not wired instead of entering an invisible overlay state.
 4. Keep `Panel_InventoryOverlay`, `Panel_CraftingOverlay`, and `Panel_RewardOverlay` inactive by default after wiring them to the controller. The controller activates only the selected overlay.
 5. Starting visual intent: overlays sit above the current defense/dungeon focus and return to the previous gameplay focus when closed. Exact overlay size, item-list density, tooltip placement, and ornamentation remain Unity-authored values.
+
+2026-05-28 inventory overlay content handoff:
+
+1. Use the existing `Gameplay` `Panel_InventoryOverlay`, or create one as an inactive child above the current focus panels when rebuilding the scene. Attach `InventoryOverlayPresenter` to that panel or a child controller object.
+2. Assign TMP labels for `Header Text`, `Item List Text`, `Selected Item Text`, `Materials Text`, and `Message Text`. The script only fills text; exact list density, font size, scroll treatment, icon art, and tooltip placement remain Unity-authored.
+3. Add buttons for `Previous Item`, `Next Item`, `Select Latest`, `Equip Selected`, `Salvage Selected`, and `Close Overlay`, then assign them to the matching presenter fields. The presenter also wires listeners automatically at runtime.
+4. Leave `Auto Find References` enabled for the first pass. For production scenes with multiple inventories or heroes, explicitly assign `SimpleInventory`, `ItemSalvageService`, `EquipmentSlots`, `CurrencyWallet`, and `PlayableScreenLayoutController`.
+5. Wire `Panel_InventoryOverlay` into `PlayableScreenLayoutController > Inventory Overlay`, then wire a bottom-action-bar button to `PlayableLoopHud.OpenInventoryOverlay` and a close button to either `InventoryOverlayPresenter.CloseOverlay` or `PlayableLoopHud.CloseOverlay`.
+6. Play Mode check: clear a dungeon room, open the inventory overlay, confirm the latest reward appears in the list, select it, equip or salvage it, confirm hero stats or wallet/materials update, then close the overlay and confirm focus returns to the previous gameplay state.
+7. This completes the code/content side for the first inventory overlay only. `Panel_CraftingOverlay` and `Panel_RewardOverlay` still need authored panels and content presenters later.
 
 2026-05-17 first real dungeon-room bridge:
 
@@ -472,6 +482,8 @@ MVP 숫자 검증은 `PF_GameSystems`와 `PF_DefenseHud`만으로 시작한다.
 | EquipmentService | 장착/해제 |
 | CraftingService | 제작/강화/분해/변형 |
 | ItemRoller | 옵션 굴림 |
+
+| InventoryOverlayPresenter | Player-facing inventory overlay content, item selection, equip selected, salvage selected, material preview, and close-overlay handoff |
 
 ### Save
 

@@ -201,6 +201,13 @@ Suggested names:
 - The HUD summary can show the current screen focus and transition progress, giving Play Mode validation a visible text checkpoint alongside the panel movement.
 - This still does not author the actual overlay panel contents, tooltip positions, item-list density, or final UI art.
 
+2026-05-28 inventory overlay content bridge:
+
+- `InventoryOverlayPresenter` now provides the first content script for `Panel_InventoryOverlay`.
+- It can show item rows, selected-item details, wallet/materials, salvage preview, Rare affix-reroll cost preview when supported by the item definition, and action messages.
+- It exposes button-safe Previous/Next/Latest/Equip/Salvage/Close methods and can close through `PlayableScreenLayoutController`, so the overlay returns to the previous gameplay focus.
+- This still leaves RectTransform composition, list density, tooltip placement, scroll behavior, icon art, and ornate frame treatment to Unity Editor authoring. Crafting and reward overlays still need their own content pass.
+
 ## 10. MVP Acceptance Check
 
 The presentation slice is acceptable for MVP when:
