@@ -208,6 +208,26 @@ Suggested names:
 - It exposes button-safe Previous/Next/Latest/Equip/Salvage/Close methods and can close through `PlayableScreenLayoutController`, so the overlay returns to the previous gameplay focus.
 - This still leaves RectTransform composition, list density, tooltip placement, scroll behavior, icon art, and ornate frame treatment to Unity Editor authoring. Crafting and reward overlays still need their own content pass.
 
+2026-05-28 scene layout cleanup pass:
+
+- `Gameplay` now uses the reference-image screen bands as the first deterministic layout pass: top global bar `y 0.925-0.99`, main play area `y 0.18-0.92`, and bottom action bar `y 0.04-0.175`.
+- `PlayableScreenLayoutController` is constrained to the main play area (`x 0-1`, `y 0.18-0.92`) so the dungeon/defense split no longer sits under the global bar or action bar.
+- `DungeonFocus` still uses the controller's `70%` dungeon / `30%` defense split. In editor defaults, `Panel_DungeonViewport` occupies `x 0-0.7`, and `Panel_DefenseSide` occupies `x 0.7-1` inside the main play area.
+- `Panel_PlayableLoopHud` is a transparent full-screen overlay. Its labels and buttons are anchored into the same reference bands instead of using loose center positions.
+- `Panel_InventoryOverlay` uses a centered overlay frame (`x 0.18-0.82`, `y 0.18-0.86`), with item list on the left, selected item/material details in the middle, and action buttons on the right.
+- Dark bronze gameplay buttons must use bright TMP label colors (white or near-white) so the text remains readable in Play Mode.
+
+## 10.1 Layout Handoff Rule
+
+Whenever future work changes visible UI placement, the handoff must include:
+
+- The target screen state: `DefenseFocus`, `DungeonFocus`, or a named overlay.
+- The parent object and child objects changed.
+- Anchor ranges as normalized `x min-max` and `y min-max` values, plus any fixed offsets.
+- The placement order: parent panel first, text regions second, buttons third, content wiring fourth.
+- Which values are fixed by design versus which values are meant for Unity Editor visual tuning.
+- The Play Mode path used to judge it.
+
 ## 10. MVP Acceptance Check
 
 The presentation slice is acceptable for MVP when:

@@ -302,6 +302,18 @@ Canvas_Dungeon
 6. Play Mode check: clear a dungeon room, open the inventory overlay, confirm the latest reward appears in the list, select it, equip or salvage it, confirm hero stats or wallet/materials update, then close the overlay and confirm focus returns to the previous gameplay state.
 7. This completes the code/content side for the first inventory overlay only. `Panel_CraftingOverlay` and `Panel_RewardOverlay` still need authored panels and content presenters later.
 
+2026-05-28 reference-layout cleanup handoff:
+
+1. `Gameplay > Canvas_Gameplay > PlayableScreenLayoutController` is the main play area, not the full screen. Its anchors are `x 0-1`, `y 0.18-0.92`.
+2. In the controller's child space, `Panel_DungeonViewport` starts at `x 0-0.7`, `y 0-1`; `Panel_DefenseSide` starts at `x 0.7-1`, `y 0-1`. Runtime focus changes still come from `PlayableScreenLayoutController`.
+3. `Panel_PlayableLoopHud` is a transparent full-screen overlay (`x 0-1`, `y 0-1`) that only positions text/buttons into the reference bands.
+4. Top global/status band: `Text_Resources` uses `x 0.08-0.42`, `y 0.925-0.99`; `Text_Dungeon` uses `x 0.20-0.50`, `y 0.825-0.90` as the dungeon title/status block.
+5. Defense status/control band: `Text_Summary` uses `x 0.715-0.985`, `y 0.705-0.905`; defense buttons use two columns around `x 0.735-0.967`, `y 0.485-0.675`.
+6. Bottom action bar: hero stats at `x 0.025-0.165`, latest loot at `x 0.555-0.715`, action messages at `x 0.275-0.530`, dungeon/item/save buttons from `x 0.18-0.633`, and inventory/crafting/reward buttons from `x 0.735-0.959`.
+7. Inventory overlay frame: `Panel_InventoryOverlay` uses `x 0.18-0.82`, `y 0.18-0.86`; item list on the left (`x 0.04-0.43`), selected/material details in the middle (`x 0.465-0.965`), and item action buttons on the right (`x 0.785-0.965`).
+8. Dark bronze button backgrounds need bright TMP label colors, preferably white or near-white, before the layout is considered ready for Play Mode review.
+9. If a future automation or manual pass changes layout, report the exact parent, anchor ranges, button order, and Play Mode validation path rather than saying only that the UI was adjusted.
+
 2026-05-17 first real dungeon-room bridge:
 
 1. `Gameplay`의 `Enemy`에는 `EnemyAIController`를 붙여 실제 플레이어를 추적/공격하게 한다.
