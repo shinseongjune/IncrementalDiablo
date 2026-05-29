@@ -206,7 +206,15 @@ Suggested names:
 - `InventoryOverlayPresenter` now provides the first content script for `Panel_InventoryOverlay`.
 - It can show item rows, selected-item details, wallet/materials, salvage preview, Rare affix-reroll cost preview when supported by the item definition, and action messages.
 - It exposes button-safe Previous/Next/Latest/Equip/Salvage/Close methods and can close through `PlayableScreenLayoutController`, so the overlay returns to the previous gameplay focus.
-- This still leaves RectTransform composition, list density, tooltip placement, scroll behavior, icon art, and ornate frame treatment to Unity Editor authoring. Crafting and reward overlays still need their own content pass.
+- This still leaves RectTransform composition, list density, tooltip placement, scroll behavior, icon art, and ornate frame treatment to Unity Editor authoring.
+
+2026-05-29 reward overlay content bridge:
+
+- `RewardOverlayPresenter` now provides the first content script for `Panel_RewardOverlay`.
+- It can show pending/claimed dungeon reward state, loot source, latest reward item details, wallet/material preview, claim pending reward, open inventory, equip reward, salvage reward, and close-overlay actions.
+- It exposes button-safe Claim Reward/Open Inventory/Equip Reward/Salvage Reward/Close methods and can close through `PlayableScreenLayoutController`, so the overlay returns to the previous gameplay focus.
+- `Gameplay` now has a first deterministic RectTransform pass for this overlay: the frame uses `x 0.18-0.82`, `y 0.18-0.86`; summary content occupies the left column, item/material preview occupies the middle, and reward actions occupy a right-side button stack.
+- This still leaves reveal animation, icon art, rare-item treatment, and ornate frame density to Unity Editor authoring. Crafting overlay content still needs its own pass.
 
 2026-05-28 scene layout cleanup pass:
 
@@ -215,6 +223,7 @@ Suggested names:
 - `DungeonFocus` still uses the controller's `70%` dungeon / `30%` defense split. In editor defaults, `Panel_DungeonViewport` occupies `x 0-0.7`, and `Panel_DefenseSide` occupies `x 0.7-1` inside the main play area.
 - `Panel_PlayableLoopHud` is a transparent full-screen overlay. Its labels and buttons are anchored into the same reference bands instead of using loose center positions.
 - `Panel_InventoryOverlay` uses a centered overlay frame (`x 0.18-0.82`, `y 0.18-0.86`), with item list on the left, selected item/material details in the middle, and action buttons on the right.
+- `Panel_RewardOverlay` now follows the same centered frame (`x 0.18-0.82`, `y 0.18-0.86`): header `x 0.04-0.42`, `y 0.885-0.965`; reward summary `x 0.04-0.43`, `y 0.205-0.84`; item detail `x 0.465-0.755`, `y 0.62-0.84`; materials `x 0.465-0.965`, `y 0.355-0.585`; message `x 0.04-0.755`, `y 0.06-0.17`; actions `x 0.785-0.965`.
 - Dark bronze gameplay buttons must use bright TMP label colors (white or near-white) so the text remains readable in Play Mode.
 
 ## 10.1 Layout Handoff Rule

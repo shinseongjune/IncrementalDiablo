@@ -300,7 +300,18 @@ Canvas_Dungeon
 4. Leave `Auto Find References` enabled for the first pass. For production scenes with multiple inventories or heroes, explicitly assign `SimpleInventory`, `ItemSalvageService`, `EquipmentSlots`, `CurrencyWallet`, and `PlayableScreenLayoutController`.
 5. Wire `Panel_InventoryOverlay` into `PlayableScreenLayoutController > Inventory Overlay`, then wire a bottom-action-bar button to `PlayableLoopHud.OpenInventoryOverlay` and a close button to either `InventoryOverlayPresenter.CloseOverlay` or `PlayableLoopHud.CloseOverlay`.
 6. Play Mode check: clear a dungeon room, open the inventory overlay, confirm the latest reward appears in the list, select it, equip or salvage it, confirm hero stats or wallet/materials update, then close the overlay and confirm focus returns to the previous gameplay state.
-7. This completes the code/content side for the first inventory overlay only. `Panel_CraftingOverlay` and `Panel_RewardOverlay` still need authored panels and content presenters later.
+7. This completes the code/content side for the first inventory overlay only. `Panel_RewardOverlay` now has its own content presenter below; `Panel_CraftingOverlay` still needs a content presenter later.
+
+2026-05-29 reward overlay content handoff:
+
+1. Use the existing `Gameplay` `Panel_RewardOverlay`, or create one as an inactive child above the current focus panels when rebuilding the scene. Attach `RewardOverlayPresenter` to that panel or a child controller object.
+2. Assign TMP labels for `Header Text`, `Reward Text`, `Item Detail Text`, `Materials Text`, and `Message Text`. The script only fills text; exact reveal animation, icon art, font size, and frame treatment remain Unity-authored.
+3. Add buttons for `Claim Reward`, `Open Inventory`, `Equip Reward`, `Salvage Reward`, and `Close Overlay`, then assign them to the matching presenter fields. The presenter wires listeners automatically at runtime.
+4. Leave `Auto Find References` enabled for the first pass. For production scenes with multiple inventories or heroes, explicitly assign `ExpeditionDirector`, `LootDropper`, `SimpleInventory`, `ItemSalvageService`, `EquipmentSlots`, `CurrencyWallet`, and `PlayableScreenLayoutController`.
+5. Wire `Panel_RewardOverlay` into `PlayableScreenLayoutController > Reward Overlay`, then wire a bottom-action-bar button to `PlayableLoopHud.OpenRewardOverlay`. The presenter can move from reward reveal to `InventoryOverlay` through its `Open Inventory` button.
+6. Play Mode check: clear a dungeon room, open the reward overlay, confirm the reward state and loot source are visible, confirm the latest reward item details appear, equip or salvage the reward, optionally open inventory from the reward overlay, then close the overlay and confirm focus returns to the previous gameplay state.
+7. This completes the code/content side for the first reward overlay only. `Panel_CraftingOverlay` still needs a content presenter later, and final reward reveal animation/art remains Unity-authored.
+8. Current `Gameplay` first-pass placement: `Panel_RewardOverlay` uses the centered overlay frame `x 0.18-0.82`, `y 0.18-0.86`; `Header` uses `x 0.04-0.42`, `y 0.885-0.965`; `Reward` uses `x 0.04-0.43`, `y 0.205-0.84`; `Item Detail` uses `x 0.465-0.755`, `y 0.62-0.84`; `Materials` uses `x 0.465-0.965`, `y 0.355-0.585`; `Message` uses `x 0.04-0.755`, `y 0.06-0.17`; the right action buttons use `x 0.785-0.965` with vertical slots from top to bottom: Claim Reward, Open Inventory, Equip Reward, Salvage, Close.
 
 2026-05-28 reference-layout cleanup handoff:
 
@@ -311,8 +322,9 @@ Canvas_Dungeon
 5. Defense status/control band: `Text_Summary` uses `x 0.715-0.985`, `y 0.705-0.905`; defense buttons use two columns around `x 0.735-0.967`, `y 0.485-0.675`.
 6. Bottom action bar: hero stats at `x 0.025-0.165`, latest loot at `x 0.555-0.715`, action messages at `x 0.275-0.530`, dungeon/item/save buttons from `x 0.18-0.633`, and inventory/crafting/reward buttons from `x 0.735-0.959`.
 7. Inventory overlay frame: `Panel_InventoryOverlay` uses `x 0.18-0.82`, `y 0.18-0.86`; item list on the left (`x 0.04-0.43`), selected/material details in the middle (`x 0.465-0.965`), and item action buttons on the right (`x 0.785-0.965`).
-8. Dark bronze button backgrounds need bright TMP label colors, preferably white or near-white, before the layout is considered ready for Play Mode review.
-9. If a future automation or manual pass changes layout, report the exact parent, anchor ranges, button order, and Play Mode validation path rather than saying only that the UI was adjusted.
+8. Reward overlay frame: `Panel_RewardOverlay` uses `x 0.18-0.82`, `y 0.18-0.86`; reward summary on the left (`x 0.04-0.43`), item/material preview in the middle (`x 0.465-0.965`), and reward action buttons on the right (`x 0.785-0.965`).
+9. Dark bronze button backgrounds need bright TMP label colors, preferably white or near-white, before the layout is considered ready for Play Mode review.
+10. If a future automation or manual pass changes layout, report the exact parent, anchor ranges, button order, and Play Mode validation path rather than saying only that the UI was adjusted.
 
 2026-05-17 first real dungeon-room bridge:
 
@@ -496,6 +508,7 @@ MVP 숫자 검증은 `PF_GameSystems`와 `PF_DefenseHud`만으로 시작한다.
 | ItemRoller | 옵션 굴림 |
 
 | InventoryOverlayPresenter | Player-facing inventory overlay content, item selection, equip selected, salvage selected, material preview, and close-overlay handoff |
+| RewardOverlayPresenter | Player-facing reward overlay content, pending/claimed reward state, loot source, reward item details, claim/open-inventory/equip/salvage controls, and close-overlay handoff |
 
 ### Save
 
