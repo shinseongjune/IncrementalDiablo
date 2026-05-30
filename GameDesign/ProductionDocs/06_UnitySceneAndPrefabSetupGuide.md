@@ -300,7 +300,7 @@ Canvas_Dungeon
 4. Leave `Auto Find References` enabled for the first pass. For production scenes with multiple inventories or heroes, explicitly assign `SimpleInventory`, `ItemSalvageService`, `EquipmentSlots`, `CurrencyWallet`, and `PlayableScreenLayoutController`.
 5. Wire `Panel_InventoryOverlay` into `PlayableScreenLayoutController > Inventory Overlay`, then wire a bottom-action-bar button to `PlayableLoopHud.OpenInventoryOverlay` and a close button to either `InventoryOverlayPresenter.CloseOverlay` or `PlayableLoopHud.CloseOverlay`.
 6. Play Mode check: clear a dungeon room, open the inventory overlay, confirm the latest reward appears in the list, select it, equip or salvage it, confirm hero stats or wallet/materials update, then close the overlay and confirm focus returns to the previous gameplay state.
-7. This completes the code/content side for the first inventory overlay only. `Panel_RewardOverlay` now has its own content presenter below; `Panel_CraftingOverlay` still needs a content presenter later.
+7. This completes the code/content side for the first inventory overlay only. `Panel_RewardOverlay` and `Panel_CraftingOverlay` now have their own content presenter notes below.
 
 2026-05-29 reward overlay content handoff:
 
@@ -310,8 +310,19 @@ Canvas_Dungeon
 4. Leave `Auto Find References` enabled for the first pass. For production scenes with multiple inventories or heroes, explicitly assign `ExpeditionDirector`, `LootDropper`, `SimpleInventory`, `ItemSalvageService`, `EquipmentSlots`, `CurrencyWallet`, and `PlayableScreenLayoutController`.
 5. Wire `Panel_RewardOverlay` into `PlayableScreenLayoutController > Reward Overlay`, then wire a bottom-action-bar button to `PlayableLoopHud.OpenRewardOverlay`. The presenter can move from reward reveal to `InventoryOverlay` through its `Open Inventory` button.
 6. Play Mode check: clear a dungeon room, open the reward overlay, confirm the reward state and loot source are visible, confirm the latest reward item details appear, equip or salvage the reward, optionally open inventory from the reward overlay, then close the overlay and confirm focus returns to the previous gameplay state.
-7. This completes the code/content side for the first reward overlay only. `Panel_CraftingOverlay` still needs a content presenter later, and final reward reveal animation/art remains Unity-authored.
+7. This completes the code/content side for the first reward overlay only. `Panel_CraftingOverlay` now has its own content presenter below, and final reward reveal animation/art remains Unity-authored.
 8. Current `Gameplay` first-pass placement: `Panel_RewardOverlay` uses the centered overlay frame `x 0.18-0.82`, `y 0.18-0.86`; `Header` uses `x 0.04-0.42`, `y 0.885-0.965`; `Reward` uses `x 0.04-0.43`, `y 0.205-0.84`; `Item Detail` uses `x 0.465-0.755`, `y 0.62-0.84`; `Materials` uses `x 0.465-0.965`, `y 0.355-0.585`; `Message` uses `x 0.04-0.755`, `y 0.06-0.17`; the right action buttons use `x 0.785-0.965` with vertical slots from top to bottom: Claim Reward, Open Inventory, Equip Reward, Salvage, Close.
+
+2026-05-30 crafting overlay content handoff:
+
+1. The current `Gameplay` `Panel_CraftingOverlay` already has `CraftingOverlayPresenter`, first-pass TMP labels, and first-pass buttons attached. If rebuilding the scene, create an inactive `Panel_CraftingOverlay` above the current focus panels and attach `CraftingOverlayPresenter` to that panel or a child controller object.
+2. Assign TMP labels for `Header Text`, `Item List Text`, `Selected Item Text`, `Materials Text`, `Result Text`, and `Message Text`. The script only fills text; exact text density, scroll treatment, icon art, and frame treatment remain Unity-authored.
+3. Add buttons for `Previous Item`, `Next Item`, `Select Latest`, `Reroll Affix`, `Salvage Selected`, and `Close Overlay`, then assign them to the matching presenter fields. The presenter wires listeners automatically at runtime.
+4. Leave `Auto Find References` enabled for the first pass. For production scenes with multiple inventories or heroes, explicitly assign `SimpleInventory`, `ItemSalvageService`, `EquipmentSlots`, `CurrencyWallet`, and `PlayableScreenLayoutController`.
+5. Wire `Panel_CraftingOverlay` into `PlayableScreenLayoutController > Crafting Overlay`, then wire a bottom-action-bar button to `PlayableLoopHud.OpenCraftingOverlay` and a close button to either `CraftingOverlayPresenter.CloseOverlay` or `PlayableLoopHud.CloseOverlay`.
+6. Current `Gameplay` first layout pass: use the same centered overlay frame as inventory/reward, `x 0.18-0.82`, `y 0.18-0.86`. `Header` uses `x 0.04-0.96`, `y 0.88-0.965`; item rows use `x 0.04-0.47`, `y 0.27-0.84`; selected item details use `x 0.51-0.96`, `y 0.57-0.84`; materials/reroll cost uses `x 0.51-0.96`, `y 0.38-0.55`; current affixes/result uses `x 0.51-0.96`, `y 0.20-0.36`; message uses `x 0.04-0.96`, `y 0.145-0.19`; bottom actions from left to right are Previous, Next, Latest, Reroll, Salvage, Close. Fixed intent: reroll must read as a Rare item material sink; adjustable values are font size, row count, icon art, button positions, and ornate frame density.
+7. Play Mode check: if the inventory has no Rare item, the current `Gameplay > DungeonRoot > LootDropper` should give the next authored reward as a Rare through its first-Rare pacing rule. Salvage one Rare first if `AlterStone` is still missing, claim the next Rare, open crafting, select the Rare item, confirm reroll cost is shown, press `Reroll Affix`, confirm `Gold + Essence + AlterStone` are spent, confirm a new affix appears, equip the item if needed and confirm hero stats refresh, salvage a spare item, close the overlay, and confirm focus returns to the previous gameplay state.
+8. This completes the code/content side for the first crafting overlay only. Full affix pools, affix locking, item-level upgrades, scroll/icon polish, and final itemization balance remain future work.
 
 2026-05-28 reference-layout cleanup handoff:
 
@@ -323,8 +334,9 @@ Canvas_Dungeon
 6. Bottom action bar: hero stats at `x 0.025-0.165`, latest loot at `x 0.555-0.715`, action messages at `x 0.275-0.530`, dungeon/item/save buttons from `x 0.18-0.633`, and inventory/crafting/reward buttons from `x 0.735-0.959`.
 7. Inventory overlay frame: `Panel_InventoryOverlay` uses `x 0.18-0.82`, `y 0.18-0.86`; item list on the left (`x 0.04-0.43`), selected/material details in the middle (`x 0.465-0.965`), and item action buttons on the right (`x 0.785-0.965`).
 8. Reward overlay frame: `Panel_RewardOverlay` uses `x 0.18-0.82`, `y 0.18-0.86`; reward summary on the left (`x 0.04-0.43`), item/material preview in the middle (`x 0.465-0.965`), and reward action buttons on the right (`x 0.785-0.965`).
-9. Dark bronze button backgrounds need bright TMP label colors, preferably white or near-white, before the layout is considered ready for Play Mode review.
-10. If a future automation or manual pass changes layout, report the exact parent, anchor ranges, button order, and Play Mode validation path rather than saying only that the UI was adjusted.
+9. Crafting overlay frame now starts from the same centered frame, `x 0.18-0.82`, `y 0.18-0.86`; item rows are on the left, selected item/current affixes/materials are on the right, and item actions are in the bottom row. Final row density and icon treatment remain Unity-authored.
+10. Dark bronze button backgrounds need bright TMP label colors, preferably white or near-white, before the layout is considered ready for Play Mode review.
+11. If a future automation or manual pass changes layout, report the exact parent, anchor ranges, button order, and Play Mode validation path rather than saying only that the UI was adjusted.
 
 2026-05-17 first real dungeon-room bridge:
 
@@ -371,7 +383,7 @@ Canvas_Dungeon
 
 1. `Assets/05.ScriptableObjects/Items` now contains the first six authored dungeon reward definitions: three Normal items, two Magic items, and one Rare ring.
 2. `LootDropper` now reads `Reward Table` before the legacy uniform `Reward Definitions` array. Use `Reward Table` for normal authored rewards so rarity pacing does not require duplicate asset references.
-3. `Gameplay > DungeonRoot > LootDropper` is wired to a prototype per-clear split of 78% Normal, 20% Magic, and 2% Rare. This is a short-term authored-reward bridge, not final long-term drop pacing.
+3. `Gameplay > DungeonRoot > LootDropper` is wired to a prototype per-clear split of 78% Normal, 20% Magic, and 2% Rare. This is a short-term authored-reward bridge, not final long-term drop pacing. To keep crafting validation reachable, the current scene also enables `Guarantee Rare When Inventory Has No Rare` and sets `Max Weighted Non Rare Rewards Before Rare` to `6`.
 4. Keep `Create Prototype Reward When Table Empty` enabled only as a safety fallback. The normal Phase C path should grant one of the authored `ItemDefinition` assets.
 5. Play Mode check: clear the first room, confirm the HUD/latest item line shows one of the authored item names, equip or salvage it, then save/load and confirm the saved item reconnects through `SimpleInventory` known definitions.
 6. D2 pacing note: this split is intentionally more conservative than the D2-derived `lp_n_act1_tier1` table because the current Unity room grants one guaranteed item per clear. Revisit it when per-kill/material/no-drop lanes exist.
@@ -509,6 +521,7 @@ MVP 숫자 검증은 `PF_GameSystems`와 `PF_DefenseHud`만으로 시작한다.
 
 | InventoryOverlayPresenter | Player-facing inventory overlay content, item selection, equip selected, salvage selected, material preview, and close-overlay handoff |
 | RewardOverlayPresenter | Player-facing reward overlay content, pending/claimed reward state, loot source, reward item details, claim/open-inventory/equip/salvage controls, and close-overlay handoff |
+| CraftingOverlayPresenter | Player-facing crafting overlay content, item selection, salvage selected, Rare affix reroll material sink, current-affix preview, and close-overlay handoff |
 
 ### Save
 

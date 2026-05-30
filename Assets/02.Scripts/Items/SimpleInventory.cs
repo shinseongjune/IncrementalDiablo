@@ -186,6 +186,12 @@ public class SimpleInventory : MonoBehaviour
         return true;
     }
 
+    public void NotifyItemsChanged()
+    {
+        EnsureInitialized();
+        Changed?.Invoke();
+    }
+
     public bool TryEquip(long instanceId, EquipmentSlots equipmentSlots, out string failureReason)
     {
         failureReason = string.Empty;

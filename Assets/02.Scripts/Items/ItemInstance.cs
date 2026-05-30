@@ -148,6 +148,24 @@ public class ItemInstance
         equipped = value;
     }
 
+    public bool TryApplyPrototypeAffixReroll(out ItemAffixRoll affixRoll)
+    {
+        affixRoll = null;
+        if (Rarity != ItemRarity.Rare)
+        {
+            return false;
+        }
+
+        if (!TryCreatePrototypeAffixModifier(out string affixId, out StatMod modifier))
+        {
+            return false;
+        }
+
+        affixRoll = new ItemAffixRoll(affixId, modifier);
+        affixRolls = new[] { affixRoll };
+        return true;
+    }
+
     public void AppendModifiers(StatId statId, List<StatMod> results)
     {
         if (results == null)
@@ -237,6 +255,59 @@ public class ItemInstance
                 }
 
                 modifier = new StatMod(statId, StatMod.StatModType.PercentAdd, Mathf.Ceil(scaledPower * 1.5f));
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private bool TryCreatePrototypeAffixModifier(out string affixId, out StatMod modifier)
+    {
+        affixId = string.Empty;
+        modifier = null;
+
+        int roll = UnityEngine.Random.Range(0, 2);
+        float scaledPower = Mathf.Max(1f, Level + RolledPower * 0.25f);
+        switch (Slot)
+        {
+            case ItemSlot.Weapon:
+                if (roll == 0)
+                {
+                    affixId = "prototype_attack_damage";
+                    modifier = new StatMod(StatId.AttackDamage, StatMod.StatModType.Flat, Mathf.Ceil(scaledPower * 1.15f));
+                }
+                else
+                {
+                    affixId = "prototype_attack_speed";
+                    modifier = new StatMod(StatId.AttackSpeed, StatMod.StatModType.PercentAdd, Mathf.Ceil(3f + scaledPower * 0.4f));
+                }
+
+                return true;
+            case ItemSlot.Armor:
+                if (roll == 0)
+                {
+                    affixId = "prototype_max_health";
+                    modifier = new StatMod(StatId.MaxHealth, StatMod.StatModType.Flat, Mathf.Ceil(6f + scaledPower * 4f));
+                }
+                else
+                {
+                    affixId = "prototype_move_speed";
+                    modifier = new StatMod(StatId.MoveSpeed, StatMod.StatModType.PercentAdd, Mathf.Ceil(2f + scaledPower * 0.25f));
+                }
+
+                return true;
+            case ItemSlot.Ring:
+                if (roll == 0)
+                {
+                    affixId = "prototype_attack_speed";
+                    modifier = new StatMod(StatId.AttackSpeed, StatMod.StatModType.PercentAdd, Mathf.Ceil(4f + scaledPower * 0.55f));
+                }
+                else
+                {
+                    affixId = "prototype_move_speed";
+                    modifier = new StatMod(StatId.MoveSpeed, StatMod.StatModType.PercentAdd, Mathf.Ceil(3f + scaledPower * 0.45f));
+                }
+
                 return true;
             default:
                 return false;

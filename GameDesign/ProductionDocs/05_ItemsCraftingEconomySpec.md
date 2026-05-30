@@ -181,12 +181,12 @@ Scrap
 ```text
 Normal 장비 -> Scrap
 Magic 장비 -> Scrap + 소량 Essence
-Rare 장비 -> 더 많은 Scrap + Essence
+Rare 장비 -> 더 많은 Scrap + Essence + 소량 AlterStone
 ```
 
 이 값은 장기 밸런스 확정값이 아니라 프로토타입 기준이다. D2 참고 자료에서는 아이템 품질 판정이 Normal/Magic/Rare 이상으로 나뉘고, 큐브 조합이 Magic/Rare 아이템과 보석/룬을 다시 성장 재료로 순환시킨다. 이 게임은 거래가 없으므로 중복 장비가 죽은 드랍이 되지 않게 분해를 먼저 열어 둔다. 다만 `AlterStone`은 옵션 변형의 핵심 재료라서 초반 분해에서 쉽게 풀지 않는다.
 
-2026-05-06 구현 메모: `ItemEconomyModel`은 `AlterStone`을 Normal/Magic 분해에서는 지급하지 않고, Rare 장비도 `baseTier >= 4`부터만 소량 지급한다. 이 값은 장기 밸런스 목표가 아니라 프로토타입 페이싱 규칙이다. D2 참고 자료의 Magic/Rare 아이템과 보석/룬 순환 구조를 그대로 복제하지 않고, 거래가 없는 싱글 플레이에서 중복 Rare가 느린 옵션 변형 재료가 되도록 축약했다.
+2026-05-30 구현 메모: `ItemEconomyModel`은 `AlterStone`을 Normal/Magic 분해에서는 지급하지 않고, Rare 장비 분해에서 최소 1개부터 소량 지급한다. 이 값은 장기 밸런스 목표가 아니라 프로토타입 페이싱 규칙이다. D2 참고 자료의 Magic/Rare 아이템과 보석/룬 순환 구조를 그대로 복제하지 않고, 거래가 없는 싱글 플레이에서 중복 Rare가 느린 옵션 변형 재료가 되도록 축약했다. 2026-05-30부터 tier 1 Rare도 reroll 재료를 낼 수 있게 바꾼 이유는 `CraftingOverlayPresenter`의 실제 reroll 비용 루프가 현재 보장 방 클리어 보상 안에서 닫혀야 하기 때문이다.
 
 2026-05-07 implementation note: `ItemInstance` and `SimpleInventory` now cover the first runtime inventory slice. An item can be rolled from an `ItemDefinition`, receive a stable instance id, carry rarity/level/power/durability/affix-roll placeholders, and be exported through `InventorySaveData`. This is still a foundation, not the final loot loop: drop tables, item-definition lookup after loading, affix mutation, crafting UI, and inventory UI remain future work.
 
@@ -210,7 +210,7 @@ Gold
 
 MVP에서는 플레이어가 변형할 옵션을 직접 고르는 기능은 보류해도 된다. 처음에는 마지막 옵션 1개 재굴림으로 충분하다.
 
-현재 코드에서는 `ItemDefinition.CanRerollAffix`와 `ItemDefinition.AffixRerollCost`로 Rare 장비의 변형 가능 여부와 비용을 미리 계산한다. 비용은 `Gold + Essence + AlterStone`이고 `baseTier`에 따라 증가한다. 실제 옵션 1개를 바꾸는 런타임 `ItemInstance` 변형은 인벤토리/아이템 인스턴스 구현 이후에 연결한다.
+현재 코드에서는 `ItemDefinition.CanRerollAffix`와 `ItemDefinition.AffixRerollCost`로 Rare 장비의 변형 가능 여부와 비용을 계산한다. 비용은 `Gold + Essence + AlterStone`이고 `baseTier`에 따라 증가한다. `CraftingOverlayPresenter`는 이 비용을 실제로 소비한 뒤 선택된 Rare `ItemInstance`의 saved `ItemAffixRoll` 1개를 프로토타입 stat affix로 교체한다. 이 규칙은 첫 material sink이며, 최종 affix pool/lock/upgrade crafting은 아직 별도 작업이다.
 
 ## 8. 지상과 지하 연결 방식
 
@@ -272,4 +272,18 @@ MVP에서 하지 않는다.
 
 - `InventoryOverlayPresenter` now gives the authored inventory overlay a normal-player path for reviewing item instances, selecting a row, equipping the selected item, salvaging the selected item, and previewing salvage/reroll material values already defined by `ItemEconomyModel`.
 - No item weight, rarity, salvage, reroll, or drop-balance value changed in this run. This is UI/content exposure for the existing economy model, not a new economy rule.
-- The next item-economy production gap remains full item-definition registry/drop-table export tooling and real crafting/reroll behavior after the visible inventory overlay is wired and validated in Play Mode.
+- The next item-economy production gap remains full item-definition registry/drop-table export tooling plus production-grade crafting rules after the visible inventory/crafting overlays are wired and validated in Play Mode.
+
+## 14. 2026-05-30 Crafting Overlay And Rare Reroll Note
+
+- `CraftingOverlayPresenter` now exposes the first crafting overlay path for item selection, salvage preview, current affix preview, selected-item salvage, and Rare affix reroll.
+- The reroll path spends `ItemDefinition.AffixRerollCost` from `CurrencyWallet` and calls `ItemInstance.TryApplyPrototypeAffixReroll(...)`, replacing the item's saved affix roll with one prototype stat modifier.
+- `SimpleInventory.NotifyItemsChanged()` and `EquipmentSlots.RefreshEquippedModifiers()` keep UI and equipped-stat subscribers current after the live item mutation.
+- This uses the existing D2-inspired resource idea of turning rare/duplicate gear into reroll pressure, but it is not a D2 cube clone. It is a small single-player sink for the current guaranteed per-clear reward loop.
+- Remaining economy gaps: authored affix pools, affix tags/weights, affix locking, item-level upgrades, full item-definition registry, drop-balance export/import, and Play Mode tuning of whether early Rare reroll costs are too expensive or too cheap.
+
+## 15. 2026-05-30 Rare Access Pacing Note
+
+- The baseline tier-1 authored table remains 78% Normal, 20% Magic, and 2% Rare per clear, but that raw rate is too slow for validating the first crafting overlay.
+- `LootDropper` now adds an early-slice access rule: if the current inventory has no Rare item, a valid Rare entry in the authored weighted table is selected before the normal weighted roll. The current `Gameplay` scene also forces a Rare after 6 weighted non-Rare rewards.
+- This is not the final long-term economy target. It is a small pity/milestone rule so the first Rare and the first duplicate-Rare salvage/reroll loop can be tested without debug-only item seeding.

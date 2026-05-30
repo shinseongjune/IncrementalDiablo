@@ -106,7 +106,7 @@ public static class ItemEconomyModel
 
     private static int GetAlterStoneReward(ItemRarity rarity, int tier)
     {
-        if (rarity != ItemRarity.Rare || tier < 4)
+        if (rarity != ItemRarity.Rare)
         {
             return 0;
         }

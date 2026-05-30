@@ -214,7 +214,15 @@ Suggested names:
 - It can show pending/claimed dungeon reward state, loot source, latest reward item details, wallet/material preview, claim pending reward, open inventory, equip reward, salvage reward, and close-overlay actions.
 - It exposes button-safe Claim Reward/Open Inventory/Equip Reward/Salvage Reward/Close methods and can close through `PlayableScreenLayoutController`, so the overlay returns to the previous gameplay focus.
 - `Gameplay` now has a first deterministic RectTransform pass for this overlay: the frame uses `x 0.18-0.82`, `y 0.18-0.86`; summary content occupies the left column, item/material preview occupies the middle, and reward actions occupy a right-side button stack.
-- This still leaves reveal animation, icon art, rare-item treatment, and ornate frame density to Unity Editor authoring. Crafting overlay content still needs its own pass.
+- This still leaves reveal animation, icon art, rare-item treatment, and ornate frame density to Unity Editor authoring. Crafting overlay scene content still needs its own Unity Editor wiring pass.
+
+2026-05-30 crafting overlay content bridge:
+
+- `CraftingOverlayPresenter` now provides the first content script for `Panel_CraftingOverlay`.
+- It can show item rows, selected item details, wallet/materials, current affixes, salvage preview, Rare reroll cost, salvage selected, reroll selected Rare affix, and close-overlay actions.
+- The reroll path spends `ItemDefinition.AffixRerollCost` and replaces the selected Rare item's saved prototype affix roll. This is the first real material sink behind the crafting overlay, not just a preview.
+- `Gameplay` now has a first deterministic RectTransform pass for this overlay: the frame uses `x 0.18-0.82`, `y 0.18-0.86`; item rows occupy the left column, selected/material/affix details occupy the right column, and Previous/Next/Latest/Reroll/Salvage/Close actions occupy a bottom button row.
+- This still leaves exact text density, scroll behavior, icon art, ornate frame treatment, and Play Mode validation to Unity Editor authoring.
 
 2026-05-28 scene layout cleanup pass:
 
@@ -224,6 +232,7 @@ Suggested names:
 - `Panel_PlayableLoopHud` is a transparent full-screen overlay. Its labels and buttons are anchored into the same reference bands instead of using loose center positions.
 - `Panel_InventoryOverlay` uses a centered overlay frame (`x 0.18-0.82`, `y 0.18-0.86`), with item list on the left, selected item/material details in the middle, and action buttons on the right.
 - `Panel_RewardOverlay` now follows the same centered frame (`x 0.18-0.82`, `y 0.18-0.86`): header `x 0.04-0.42`, `y 0.885-0.965`; reward summary `x 0.04-0.43`, `y 0.205-0.84`; item detail `x 0.465-0.755`, `y 0.62-0.84`; materials `x 0.465-0.965`, `y 0.355-0.585`; message `x 0.04-0.755`, `y 0.06-0.17`; actions `x 0.785-0.965`.
+- `Panel_CraftingOverlay` now follows the same centered frame (`x 0.18-0.82`, `y 0.18-0.86`): header `x 0.04-0.96`, `y 0.88-0.965`; item list `x 0.04-0.47`, `y 0.27-0.84`; selected item `x 0.51-0.96`, `y 0.57-0.84`; materials `x 0.51-0.96`, `y 0.38-0.55`; affix/result `x 0.51-0.96`, `y 0.20-0.36`; message `x 0.04-0.96`, `y 0.145-0.19`; actions `y 0.045-0.115` from left to right: Previous, Next, Latest, Reroll, Salvage, Close.
 - Dark bronze gameplay buttons must use bright TMP label colors (white or near-white) so the text remains readable in Play Mode.
 
 ## 10.1 Layout Handoff Rule

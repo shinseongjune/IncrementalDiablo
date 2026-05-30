@@ -21,6 +21,11 @@ public class LootDropper : MonoBehaviour
     [SerializeField] private RewardEntry[] rewardTable = new RewardEntry[0];
     [SerializeField] private ItemDefinition[] rewardDefinitions = new ItemDefinition[0];
 
+    [Header("Rarity Pacing")]
+    [SerializeField] private bool guaranteeRareWhenInventoryHasNoRare = true;
+    [SerializeField, Min(0)] private int maxWeightedNonRareRewardsBeforeRare = 6;
+    [SerializeField] private int weightedNonRareRewardsSinceLastRare;
+
     [Header("Prototype Fallback")]
     [SerializeField] private bool createPrototypeRewardWhenTableEmpty = true;
     [SerializeField] private string prototypeIdPrefix = "prototype_crypt";
@@ -53,6 +58,8 @@ public class LootDropper : MonoBehaviour
     {
         rewardTable ??= new RewardEntry[0];
         rewardDefinitions ??= new ItemDefinition[0];
+        maxWeightedNonRareRewardsBeforeRare = Mathf.Max(0, maxWeightedNonRareRewardsBeforeRare);
+        weightedNonRareRewardsSinceLastRare = Mathf.Max(0, weightedNonRareRewardsSinceLastRare);
         prototypeTier = Mathf.Max(1, prototypeTier);
         prototypeLevel = Mathf.Max(1, prototypeLevel);
         prototypeMinPower = Mathf.Max(0, prototypeMinPower);
@@ -159,6 +166,12 @@ public class LootDropper : MonoBehaviour
             return null;
         }
 
+        if (TrySelectRareRewardForPacing(out ItemDefinition pacedRareReward))
+        {
+            weightedNonRareRewardsSinceLastRare = 0;
+            return pacedRareReward;
+        }
+
         float totalWeight = 0f;
         for (int i = 0; i < rewardTable.Length; i++)
         {
@@ -187,11 +200,96 @@ public class LootDropper : MonoBehaviour
             accumulated += entry.Weight;
             if (roll <= accumulated)
             {
+                UpdateWeightedRarityPacing(entry.Definition);
                 return entry.Definition;
             }
         }
 
         return null;
+    }
+
+    private bool TrySelectRareRewardForPacing(out ItemDefinition reward)
+    {
+        reward = null;
+        bool inventoryNeedsFirstRare = guaranteeRareWhenInventoryHasNoRare && !InventoryHasRarity(ItemRarity.Rare);
+        bool pityReached = maxWeightedNonRareRewardsBeforeRare > 0
+            && weightedNonRareRewardsSinceLastRare >= maxWeightedNonRareRewardsBeforeRare;
+
+        if (!inventoryNeedsFirstRare && !pityReached)
+        {
+            return false;
+        }
+
+        return TrySelectWeightedRewardByRarity(ItemRarity.Rare, out reward);
+    }
+
+    private bool TrySelectWeightedRewardByRarity(ItemRarity rarity, out ItemDefinition reward)
+    {
+        reward = null;
+        float totalWeight = 0f;
+        for (int i = 0; i < rewardTable.Length; i++)
+        {
+            RewardEntry entry = rewardTable[i];
+            if (entry?.Definition != null && entry.Definition.Rarity == rarity && entry.Weight > 0f)
+            {
+                totalWeight += entry.Weight;
+            }
+        }
+
+        if (totalWeight <= 0f)
+        {
+            return false;
+        }
+
+        float roll = UnityEngine.Random.Range(0f, totalWeight);
+        float accumulated = 0f;
+        for (int i = 0; i < rewardTable.Length; i++)
+        {
+            RewardEntry entry = rewardTable[i];
+            if (entry?.Definition == null || entry.Definition.Rarity != rarity || entry.Weight <= 0f)
+            {
+                continue;
+            }
+
+            accumulated += entry.Weight;
+            if (roll <= accumulated)
+            {
+                reward = entry.Definition;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void UpdateWeightedRarityPacing(ItemDefinition definition)
+    {
+        if (definition != null && definition.Rarity == ItemRarity.Rare)
+        {
+            weightedNonRareRewardsSinceLastRare = 0;
+            return;
+        }
+
+        weightedNonRareRewardsSinceLastRare++;
+    }
+
+    private bool InventoryHasRarity(ItemRarity rarity)
+    {
+        if (inventory == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < inventory.Items.Count; i++)
+        {
+            ItemInstance item = inventory.Items[i];
+            if (item != null && item.Rarity == rarity)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private float CalculateRewardTableWeight()

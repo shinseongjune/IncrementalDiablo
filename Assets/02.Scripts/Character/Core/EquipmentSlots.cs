@@ -88,6 +88,11 @@ public class EquipmentSlots : MonoBehaviour
         Unequip(ItemSlot.Ring);
     }
 
+    public void RefreshEquippedModifiers()
+    {
+        Changed?.Invoke();
+    }
+
     public long[] GetEquippedItemInstanceIds()
     {
         List<long> results = new List<long>(3);
