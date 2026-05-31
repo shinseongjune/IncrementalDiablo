@@ -21,6 +21,7 @@ public class PlayableLoopHud : MonoBehaviour
     [SerializeField] private PlayableScreenLayoutController screenLayout;
     [SerializeField] private bool autoFindReferences = true;
     [SerializeField] private bool syncScreenFocusWithDungeon = true;
+    [SerializeField] private bool openRewardOverlayOnDungeonClear = true;
 
     [Header("Labels")]
     [SerializeField] private TMP_Text summaryText;
@@ -223,9 +224,15 @@ public class PlayableLoopHud : MonoBehaviour
 
         if (expedition.RewardPending)
         {
-            SetMessage(expedition.TryGrantPendingReward()
-                ? "Claimed dungeon reward."
-                : "Reward claim failed. Check LootDropper and inventory.");
+            if (!expedition.TryGrantPendingReward())
+            {
+                SetMessage("Reward claim failed. Check LootDropper and inventory.");
+                return;
+            }
+
+            SetMessage(TryOpenRewardOverlayAfterClear(out string overlayMessage)
+                ? $"Claimed dungeon reward. {overlayMessage}"
+                : "Claimed dungeon reward.");
             return;
         }
 
@@ -987,24 +994,52 @@ public class PlayableLoopHud : MonoBehaviour
     private void HandleRoomResolved(CombatRoomResult result)
     {
         ResolveReferences();
-        if (syncScreenFocusWithDungeon)
-        {
-            screenLayout?.ShowDefenseFocus();
-        }
 
         if (result.resolution == CombatRoomResolution.Cleared)
         {
             string rewardText = expedition != null && expedition.State == DungeonRunState.Cleared
                 ? "Dungeon cleared."
                 : "Room cleared.";
+            if (TryOpenRewardOverlayAfterClear(out string overlayMessage))
+            {
+                SetMessage($"{rewardText} {overlayMessage}");
+                return;
+            }
+
+            if (syncScreenFocusWithDungeon)
+            {
+                screenLayout?.ShowDefenseFocus();
+            }
+
             SetMessage(rewardText);
             return;
         }
 
         if (result.resolution == CombatRoomResolution.Failed)
         {
+            if (syncScreenFocusWithDungeon)
+            {
+                screenLayout?.ShowDefenseFocus();
+            }
+
             SetMessage("Room failed. Prepare, then try again.");
         }
+    }
+
+    private bool TryOpenRewardOverlayAfterClear(out string overlayMessage)
+    {
+        overlayMessage = string.Empty;
+        if (!openRewardOverlayOnDungeonClear || screenLayout == null || !screenLayout.CanOpenRewardOverlay)
+        {
+            return false;
+        }
+
+        bool opened = syncScreenFocusWithDungeon
+            ? screenLayout.TryOpenOverlayAfterGameplayFocus(PlayableScreenFocus.RewardOverlay, PlayableScreenFocus.DefenseFocus)
+            : screenLayout.TryOpenRewardOverlay();
+
+        overlayMessage = screenLayout.LastLayoutMessage;
+        return opened;
     }
 
     private void HandleScreenFocusChanged(PlayableScreenFocus focus)

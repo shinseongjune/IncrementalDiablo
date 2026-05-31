@@ -131,6 +131,41 @@ public class PlayableScreenLayoutController : MonoBehaviour
         return TryOpenOverlay(PlayableScreenFocus.RewardOverlay);
     }
 
+    public bool TryOpenOverlayAfterGameplayFocus(PlayableScreenFocus overlayFocus, PlayableScreenFocus gameplayFocus)
+    {
+        if (!IsGameplayFocus(gameplayFocus))
+        {
+            lastLayoutMessage = $"{gameplayFocus} is not a gameplay focus.";
+            FocusChanged?.Invoke(currentFocus);
+            return false;
+        }
+
+        if (!IsOverlayFocus(overlayFocus))
+        {
+            lastLayoutMessage = $"{overlayFocus} is not an overlay focus.";
+            FocusChanged?.Invoke(currentFocus);
+            return false;
+        }
+
+        if (!IsOverlayWired(overlayFocus))
+        {
+            lastLayoutMessage = $"{GetOverlayDisplayName(overlayFocus)} overlay is not wired.";
+            FocusChanged?.Invoke(currentFocus);
+            return false;
+        }
+
+        if (transitionRoutine != null)
+        {
+            StopCoroutine(transitionRoutine);
+            transitionRoutine = null;
+        }
+
+        SetOverlayObjects(false, false, false);
+        ApplyGameplayFocus(gameplayFocus);
+        OpenOverlay(overlayFocus);
+        return true;
+    }
+
     public bool TryOpenOverlay(PlayableScreenFocus overlayFocus)
     {
         if (!IsOverlayFocus(overlayFocus))

@@ -308,10 +308,17 @@ Canvas_Dungeon
 2. Assign TMP labels for `Header Text`, `Reward Text`, `Item Detail Text`, `Materials Text`, and `Message Text`. The script only fills text; exact reveal animation, icon art, font size, and frame treatment remain Unity-authored.
 3. Add buttons for `Claim Reward`, `Open Inventory`, `Equip Reward`, `Salvage Reward`, and `Close Overlay`, then assign them to the matching presenter fields. The presenter wires listeners automatically at runtime.
 4. Leave `Auto Find References` enabled for the first pass. For production scenes with multiple inventories or heroes, explicitly assign `ExpeditionDirector`, `LootDropper`, `SimpleInventory`, `ItemSalvageService`, `EquipmentSlots`, `CurrencyWallet`, and `PlayableScreenLayoutController`.
-5. Wire `Panel_RewardOverlay` into `PlayableScreenLayoutController > Reward Overlay`, then wire a bottom-action-bar button to `PlayableLoopHud.OpenRewardOverlay`. The presenter can move from reward reveal to `InventoryOverlay` through its `Open Inventory` button.
-6. Play Mode check: clear a dungeon room, open the reward overlay, confirm the reward state and loot source are visible, confirm the latest reward item details appear, equip or salvage the reward, optionally open inventory from the reward overlay, then close the overlay and confirm focus returns to the previous gameplay state.
+5. Wire `Panel_RewardOverlay` into `PlayableScreenLayoutController > Reward Overlay`, then wire a bottom-action-bar button to `PlayableLoopHud.OpenRewardOverlay`. Keep `PlayableLoopHud > Open Reward Overlay On Dungeon Clear` enabled for the normal player path. The presenter can move from reward reveal to `InventoryOverlay` through its `Open Inventory` button.
+6. Play Mode check: clear a dungeon room and confirm the reward overlay opens automatically. Confirm the reward state and loot source are visible, confirm the latest reward item details appear, equip or salvage the reward, optionally open inventory from the reward overlay, then close the overlay and confirm focus returns to `DefenseFocus`.
 7. This completes the code/content side for the first reward overlay only. `Panel_CraftingOverlay` now has its own content presenter below, and final reward reveal animation/art remains Unity-authored.
 8. Current `Gameplay` first-pass placement: `Panel_RewardOverlay` uses the centered overlay frame `x 0.18-0.82`, `y 0.18-0.86`; `Header` uses `x 0.04-0.42`, `y 0.885-0.965`; `Reward` uses `x 0.04-0.43`, `y 0.205-0.84`; `Item Detail` uses `x 0.465-0.755`, `y 0.62-0.84`; `Materials` uses `x 0.465-0.965`, `y 0.355-0.585`; `Message` uses `x 0.04-0.755`, `y 0.06-0.17`; the right action buttons use `x 0.785-0.965` with vertical slots from top to bottom: Claim Reward, Open Inventory, Equip Reward, Salvage, Close.
+
+2026-05-31 automatic reward-overlay flow handoff:
+
+1. `PlayableLoopHud` now opens `RewardOverlay` automatically after a cleared room when the overlay is wired and `Open Reward Overlay On Dungeon Clear` is enabled.
+2. The HUD uses `PlayableScreenLayoutController.TryOpenOverlayAfterGameplayFocus(RewardOverlay, DefenseFocus)` for the room-clear path. This applies the post-run defense layout before the overlay opens, so closing the reward overlay returns to `DefenseFocus`.
+3. Manual reward claiming from `PlayableLoopHud.ClaimPendingReward()` uses the same overlay handoff after a successful claim.
+4. Fixed intent: clear reward review should be a normal player-facing flow, not a debug-only follow-up. Adjustable values remain reward reveal animation, item icon treatment, text density, button art, and ornate frame style.
 
 2026-05-30 crafting overlay content handoff:
 

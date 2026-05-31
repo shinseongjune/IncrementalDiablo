@@ -224,6 +224,13 @@ Suggested names:
 - `Gameplay` now has a first deterministic RectTransform pass for this overlay: the frame uses `x 0.18-0.82`, `y 0.18-0.86`; item rows occupy the left column, selected/material/affix details occupy the right column, and Previous/Next/Latest/Reroll/Salvage/Close actions occupy a bottom button row.
 - This still leaves exact text density, scroll behavior, icon art, ornate frame treatment, and Play Mode validation to Unity Editor authoring.
 
+2026-05-31 automatic reward-overlay bridge:
+
+- `PlayableLoopHud` now opens the wired `RewardOverlay` automatically when a dungeon room resolves as cleared and `openRewardOverlayOnDungeonClear` is enabled.
+- `PlayableScreenLayoutController.TryOpenOverlayAfterGameplayFocus(...)` applies the intended return gameplay focus before showing an overlay. The reward-clear path opens over `DefenseFocus`, so closing the reward overlay returns to the post-run defense screen instead of a partial dungeon transition.
+- Manual reward claims through the normal HUD also open the reward overlay after a successful claim when possible.
+- This changes presentation flow only. It does not choose final reward animation, icon art, rare-item treatment, panel density, or ornate frame style.
+
 2026-05-28 scene layout cleanup pass:
 
 - `Gameplay` now uses the reference-image screen bands as the first deterministic layout pass: top global bar `y 0.925-0.99`, main play area `y 0.18-0.92`, and bottom action bar `y 0.04-0.175`.
