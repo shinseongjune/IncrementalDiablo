@@ -231,6 +231,18 @@ Suggested names:
 - Manual reward claims through the normal HUD also open the reward overlay after a successful claim when possible.
 - This changes presentation flow only. It does not choose final reward animation, icon art, rare-item treatment, panel density, or ornate frame style.
 
+2026-05-31 crafting overlay usability bridge:
+
+- `CraftingOverlayPresenter` now prefers the newest rerollable Rare item when opened.
+- The crafting overlay now exposes a reroll-ready count, reroll status, and material guidance so the first Rare reroll path can be validated without relying on external notes.
+- This still leaves final text density, scroll behavior, item icons, ornate frame treatment, and long-term crafting UX to Unity Editor authoring.
+
+2026-06-01 crafting reroll result feedback:
+
+- After a successful Rare affix reroll, the Result region now keeps a last-reroll line for the selected item.
+- The line includes the spent material cost and a `before -> after` affix summary, giving Play Mode validation a local proof that the material sink fired and the item changed.
+- This does not change final panel layout, icon treatment, reveal animation, affix pools, or long-term crafting UX.
+
 2026-05-28 scene layout cleanup pass:
 
 - `Gameplay` now uses the reference-image screen bands as the first deterministic layout pass: top global bar `y 0.925-0.99`, main play area `y 0.18-0.92`, and bottom action bar `y 0.04-0.175`.

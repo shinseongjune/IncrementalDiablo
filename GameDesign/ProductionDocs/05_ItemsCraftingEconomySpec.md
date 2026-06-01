@@ -281,6 +281,7 @@ MVP에서 하지 않는다.
 - `SimpleInventory.NotifyItemsChanged()` and `EquipmentSlots.RefreshEquippedModifiers()` keep UI and equipped-stat subscribers current after the live item mutation.
 - This uses the existing D2-inspired resource idea of turning rare/duplicate gear into reroll pressure, but it is not a D2 cube clone. It is a small single-player sink for the current guaranteed per-clear reward loop.
 - Remaining economy gaps: authored affix pools, affix tags/weights, affix locking, item-level upgrades, full item-definition registry, drop-balance export/import, and Play Mode tuning of whether early Rare reroll costs are too expensive or too cheap.
+- 2026-06-01 validation feedback update: the crafting overlay now records the last successful reroll for the selected item as spent materials plus previous affix state and new affix. This changes only player-facing verification feedback, not reroll cost, salvage return, rarity pacing, or affix generation rules.
 
 ## 15. 2026-05-30 Rare Access Pacing Note
 

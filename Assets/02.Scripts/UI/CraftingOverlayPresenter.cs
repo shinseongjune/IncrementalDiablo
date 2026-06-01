@@ -33,6 +33,7 @@ public class CraftingOverlayPresenter : MonoBehaviour
     [Header("Presentation")]
     [SerializeField, Min(3)] private int maxVisibleRows = 8;
     [SerializeField] private bool selectNewestOnEnable = true;
+    [SerializeField] private bool preferRerollCandidateOnEnable = true;
     [SerializeField, Min(0.05f)] private float refreshIntervalSeconds = 0.2f;
 
     private bool buttonsWired;
@@ -40,6 +41,8 @@ public class CraftingOverlayPresenter : MonoBehaviour
     private int selectedIndex = -1;
     private float nextRefreshTime;
     private string lastMessage = "Crafting ready.";
+    private long lastRerollItemInstanceId = -1;
+    private string lastRerollSummary = string.Empty;
 
     private void Reset()
     {
@@ -58,11 +61,12 @@ public class CraftingOverlayPresenter : MonoBehaviour
         WireButtons();
         Subscribe();
 
-        if (selectNewestOnEnable)
+        bool selectedRerollCandidate = preferRerollCandidateOnEnable && TrySelectNewestRerollCandidate(false);
+        if (!selectedRerollCandidate && selectNewestOnEnable)
         {
             SelectLatest(false);
         }
-        else
+        else if (!selectedRerollCandidate)
         {
             ClampSelection();
         }
@@ -126,6 +130,17 @@ public class CraftingOverlayPresenter : MonoBehaviour
         SelectLatest(true);
     }
 
+    public void SelectRerollCandidate()
+    {
+        ResolveReferences();
+        if (TrySelectNewestRerollCandidate(true))
+        {
+            return;
+        }
+
+        SetMessage("No rerollable Rare item is available yet.");
+    }
+
     public void RerollSelectedAffix()
     {
         ResolveReferences();
@@ -136,9 +151,11 @@ public class CraftingOverlayPresenter : MonoBehaviour
             return;
         }
 
+        string beforeAffixText = FormatAffixSummary(item.AffixRolls);
+        string costText = FormatRewards(cost);
         if (!wallet.TrySpend(cost))
         {
-            SetMessage($"Reroll needs {FormatRewards(cost)}.");
+            SetMessage($"Reroll needs {costText}.");
             return;
         }
 
@@ -155,7 +172,10 @@ public class CraftingOverlayPresenter : MonoBehaviour
             equipmentSlots?.RefreshEquippedModifiers();
         }
 
-        SetMessage($"Rerolled {item.DisplayName}: {FormatAffix(affixRoll)}.");
+        string afterAffixText = FormatAffix(affixRoll);
+        lastRerollItemInstanceId = item.InstanceId;
+        lastRerollSummary = $"Last reroll spent {costText}: {beforeAffixText} -> {afterAffixText}";
+        SetMessage($"Rerolled {item.DisplayName}: spent {costText}.");
     }
 
     public void SalvageSelected()
@@ -246,7 +266,8 @@ public class CraftingOverlayPresenter : MonoBehaviour
             }
         }
 
-        return $"Crafting {inventory.Count}/{inventory.Capacity} / Rare items {rareCount}";
+        int rerollCandidateCount = CountRerollCandidates();
+        return $"Crafting {inventory.Count}/{inventory.Capacity} / Rare items {rareCount} / Reroll ready {rerollCandidateCount}";
     }
 
     private string BuildItemListText()
@@ -323,7 +344,7 @@ public class CraftingOverlayPresenter : MonoBehaviour
         string rerollText = IsRerollCandidate(item)
             ? $"Rare reroll cost: {FormatRewards(item.Definition.AffixRerollCost)}"
             : "Rare reroll cost: unavailable for this item.";
-        return $"{walletText}\n{salvageText}\n{rerollText}";
+        return $"{walletText}\n{salvageText}\n{rerollText}\n{BuildRerollGuidanceText(item)}";
     }
 
     private string BuildResultText()
@@ -334,13 +355,16 @@ public class CraftingOverlayPresenter : MonoBehaviour
             return "Affixes: none";
         }
 
+        StringBuilder builder = new StringBuilder();
         ItemAffixRoll[] affixes = item.AffixRolls;
         if (affixes.Length == 0)
         {
-            return "Affixes: none";
+            builder.Append("Affixes: none");
+            AppendRerollStatusAndSummary(builder, item);
+            return builder.ToString();
         }
 
-        StringBuilder builder = new StringBuilder("Affixes");
+        builder.Append("Affixes");
         for (int i = 0; i < affixes.Length; i++)
         {
             builder.AppendLine();
@@ -349,7 +373,21 @@ public class CraftingOverlayPresenter : MonoBehaviour
             builder.Append(FormatAffix(affixes[i]));
         }
 
+        AppendRerollStatusAndSummary(builder, item);
         return builder.ToString();
+    }
+
+    private void AppendRerollStatusAndSummary(StringBuilder builder, ItemInstance item)
+    {
+        builder.AppendLine();
+        builder.Append(BuildRerollStatusText(item));
+
+        string lastRerollText = BuildLastRerollText(item);
+        if (!string.IsNullOrWhiteSpace(lastRerollText))
+        {
+            builder.AppendLine();
+            builder.Append(lastRerollText);
+        }
     }
 
     private void RefreshButtons()
@@ -362,6 +400,38 @@ public class CraftingOverlayPresenter : MonoBehaviour
         SetInteractable(rerollAffixButton, CanRerollAffix(selectedItem, out _, out _));
         SetInteractable(salvageSelectedButton, selectedItem != null && salvageService != null);
         SetInteractable(closeOverlayButton, screenLayout != null);
+    }
+
+    private bool TrySelectNewestRerollCandidate(bool updateMessage)
+    {
+        if (inventory == null || inventory.Items.Count == 0)
+        {
+            if (updateMessage)
+            {
+                SetMessage("Inventory is empty.");
+            }
+
+            return false;
+        }
+
+        for (int i = inventory.Items.Count - 1; i >= 0; i--)
+        {
+            ItemInstance item = inventory.Items[i];
+            if (!IsRerollCandidate(item))
+            {
+                continue;
+            }
+
+            selectedIndex = i;
+            if (updateMessage)
+            {
+                SetMessage($"Selected reroll candidate: {item.DisplayName}.");
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     private bool CanRerollAffix(ItemInstance item, out ResourceAmount[] cost, out string failureReason)
@@ -402,6 +472,90 @@ public class CraftingOverlayPresenter : MonoBehaviour
     private static bool IsRerollCandidate(ItemInstance item)
     {
         return item != null && item.Definition != null && item.Definition.CanRerollAffix;
+    }
+
+    private int CountRerollCandidates()
+    {
+        if (inventory == null)
+        {
+            return 0;
+        }
+
+        int count = 0;
+        for (int i = 0; i < inventory.Items.Count; i++)
+        {
+            if (IsRerollCandidate(inventory.Items[i]))
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private string BuildRerollStatusText(ItemInstance item)
+    {
+        return CanRerollAffix(item, out _, out string failureReason)
+            ? "Reroll status: ready."
+            : $"Reroll status: {failureReason}.";
+    }
+
+    private string BuildRerollGuidanceText(ItemInstance item)
+    {
+        if (item == null)
+        {
+            return "Next: clear a dungeon to get a craftable item.";
+        }
+
+        if (!IsRerollCandidate(item))
+        {
+            return item.Rarity == ItemRarity.Rare
+                ? "Next: reconnect the Rare item definition before rerolling."
+                : "Next: select a Rare item or salvage this item for materials.";
+        }
+
+        ResourceAmount[] cost = item.Definition.AffixRerollCost;
+        if (wallet == null)
+        {
+            return "Next: connect CurrencyWallet to spend reroll materials.";
+        }
+
+        if (wallet.CanSpend(cost))
+        {
+            return "Next: press Reroll Affix to spend materials and change the Rare affix.";
+        }
+
+        return HasRerollCost(ResourceId.AlterStone, cost) && wallet.GetAmount(ResourceId.AlterStone) <= 0
+            ? "Next: salvage one spare Rare for AlterStone, then reroll the next Rare."
+            : $"Next: gather reroll materials: {FormatRewards(cost)}.";
+    }
+
+    private string BuildLastRerollText(ItemInstance item)
+    {
+        if (item == null || item.InstanceId != lastRerollItemInstanceId || string.IsNullOrWhiteSpace(lastRerollSummary))
+        {
+            return string.Empty;
+        }
+
+        return lastRerollSummary;
+    }
+
+    private static bool HasRerollCost(ResourceId resource, ResourceAmount[] cost)
+    {
+        if (cost == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < cost.Length; i++)
+        {
+            if (cost[i].Resource == resource && cost[i].Amount > 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void ClampSelection()
@@ -601,6 +755,27 @@ public class CraftingOverlayPresenter : MonoBehaviour
 
         StatMod modifier = affixRoll.Modifier;
         return $"{affixRoll.AffixId}: {modifier.StatId} {modifier.Type} {modifier.Value:0.#}";
+    }
+
+    private static string FormatAffixSummary(ItemAffixRoll[] affixes)
+    {
+        if (affixes == null || affixes.Length == 0)
+        {
+            return "none";
+        }
+
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < affixes.Length; i++)
+        {
+            if (i > 0)
+            {
+                builder.Append("; ");
+            }
+
+            builder.Append(FormatAffix(affixes[i]));
+        }
+
+        return builder.ToString();
     }
 
     private static string FormatRewards(ResourceAmount[] rewards)
