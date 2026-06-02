@@ -243,6 +243,12 @@ Suggested names:
 - The line includes the spent material cost and a `before -> after` affix summary, giving Play Mode validation a local proof that the material sink fired and the item changed.
 - This does not change final panel layout, icon treatment, reveal animation, affix pools, or long-term crafting UX.
 
+2026-06-02 crafting reroll anti-repeat validation:
+
+- The current prototype Rare reroll avoids repeating the selected item's saved affix when another slot-valid candidate exists.
+- This supports the existing Result-region validation: a paid reroll should show both material spend and a changed affix line.
+- This does not change panel layout, icon treatment, reveal animation, authored affix pools, or long-term crafting UX.
+
 2026-05-28 scene layout cleanup pass:
 
 - `Gameplay` now uses the reference-image screen bands as the first deterministic layout pass: top global bar `y 0.925-0.99`, main play area `y 0.18-0.92`, and bottom action bar `y 0.04-0.175`.
