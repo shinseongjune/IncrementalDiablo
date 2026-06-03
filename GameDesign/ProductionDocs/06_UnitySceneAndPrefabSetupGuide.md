@@ -271,6 +271,13 @@ Canvas_Dungeon
 3. Add an optional `Action Hint` TMP text field if the layout has room. The HUD writes the next recommended action there, including repair, upgrade, dungeon reward, equip, salvage, and missing-reference blockers.
 4. Phase B layout should now treat `PlayableLoopHud` as the normal combined loop panel. `DefenseHud`, `DungeonDebugHud`, and `InventoryDebugHud` should remain fallback/debug surfaces only.
 
+2026-06-03 PlayableLoopHud defense-alert update:
+
+1. No new TMP field is required. `PlayableLoopHud` can write `Defense alert: ...` into the existing summary text and can prioritize the alert in the existing action-hint text.
+2. Inspector defaults: keep `Show Defense Alert In Summary` enabled, `Prioritize Defense Alert During Dungeon` enabled, `Low Wall Health Percent` at `0.35`, and `High Pressure Percent` at `0.75` for the first pass.
+3. Fixed intent: breach, low wall health, wall damage per second, high pressure, or damaged-wall state must be visible while the player is in `DungeonFocus` or a dungeon run is active.
+4. Play Mode check: start the frontline, enter a dungeon, then wait or tune pressure until the wall takes damage or pressure passes the threshold. Confirm the summary/action hint names the defense alert without hiding the dungeon state, then repair or recover through the existing defense buttons.
+
 2026-05-26 playable screen focus handoff:
 
 1. The current `Gameplay` scene already has the first screen-focus bridge: `PlayableScreenLayoutController`, `Panel_DefenseSide`, and `Panel_DungeonViewport` are present and wired for the MVP defense/dungeon split.

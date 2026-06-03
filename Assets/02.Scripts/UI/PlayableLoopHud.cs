@@ -23,6 +23,12 @@ public class PlayableLoopHud : MonoBehaviour
     [SerializeField] private bool syncScreenFocusWithDungeon = true;
     [SerializeField] private bool openRewardOverlayOnDungeonClear = true;
 
+    [Header("Defense Alerts")]
+    [SerializeField] private bool showDefenseAlertInSummary = true;
+    [SerializeField] private bool prioritizeDefenseAlertDuringDungeon = true;
+    [SerializeField, Range(0f, 1f)] private float lowWallHealthPercent = 0.35f;
+    [SerializeField, Range(0f, 1f)] private float highPressurePercent = 0.75f;
+
     [Header("Labels")]
     [SerializeField] private TMP_Text summaryText;
     [SerializeField] private TMP_Text resourcesText;
@@ -86,6 +92,8 @@ public class PlayableLoopHud : MonoBehaviour
     private void OnValidate()
     {
         refreshIntervalSeconds = Mathf.Max(0.05f, refreshIntervalSeconds);
+        lowWallHealthPercent = Mathf.Clamp01(lowWallHealthPercent);
+        highPressurePercent = Mathf.Clamp01(highPressurePercent);
     }
 
     private void Update()
@@ -379,9 +387,11 @@ public class PlayableLoopHud : MonoBehaviour
             ? "Upgrades unavailable"
             : $"Wall Lv.{defense.Upgrades.WallLevel} / Tower Lv.{defense.Upgrades.TowerLevel} / Defenders Lv.{defense.Upgrades.DefenderLevel}";
 
+        string defenseAlertText = showDefenseAlertInSummary ? BuildDefenseAlertText(runtime) : string.Empty;
+        string alertText = string.IsNullOrWhiteSpace(defenseAlertText) ? string.Empty : $"\nDefense alert: {defenseAlertText}";
         string groundCombatText = groundCombatPresenter == null ? string.Empty : $"\n{groundCombatPresenter.LastCombatMessage}";
         string screenText = screenLayout == null ? string.Empty : $"\n{BuildScreenLayoutText()}";
-        return $"Frontline Lv.{runtime.FrontlineLevel} / {runtime.State} / {runtime.Mode} / Wall {Mathf.CeilToInt(runtime.WallHealth)}/{Mathf.CeilToInt(runtime.WallMaxHealth)}\nPressure {pressureText} / Progress {progressText}\n{upgradeText}{groundCombatText}{screenText}";
+        return $"Frontline Lv.{runtime.FrontlineLevel} / {runtime.State} / {runtime.Mode} / Wall {Mathf.CeilToInt(runtime.WallHealth)}/{Mathf.CeilToInt(runtime.WallMaxHealth)}\nPressure {pressureText} / Progress {progressText}\n{upgradeText}{alertText}{groundCombatText}{screenText}";
     }
 
     private string BuildDungeonText()
@@ -528,6 +538,12 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         DefenseRuntimeState runtime = defense.Runtime;
+        string defenseAlertText = BuildDefenseAlertText(runtime);
+        if (ShouldPrioritizeDefenseAlert(runtime, defenseAlertText))
+        {
+            return BuildDefenseAlertActionText(runtime, defenseAlertText);
+        }
+
         if (runtime.State == DefenseState.Breached || runtime.WallHealth <= 0f)
         {
             return CanRepairWall()
@@ -579,6 +595,89 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         return "Next: start a dungeon, then use its reward to choose equip or salvage.";
+    }
+
+    private string BuildDefenseAlertText(DefenseRuntimeState runtime)
+    {
+        if (runtime == null)
+        {
+            return string.Empty;
+        }
+
+        if (runtime.State == DefenseState.Breached || runtime.WallHealth <= 0f)
+        {
+            return "wall breached, repair required";
+        }
+
+        if (runtime.WallHealthPercent <= lowWallHealthPercent)
+        {
+            return $"wall low {Mathf.RoundToInt(runtime.WallHealthPercent * 100f)}%";
+        }
+
+        if (runtime.LastWallDamagePerSecond > 0.001f)
+        {
+            return $"wall taking {runtime.LastWallDamagePerSecond:0.##}/s";
+        }
+
+        if (runtime.PressurePercent >= highPressurePercent)
+        {
+            return $"pressure high {Mathf.RoundToInt(runtime.PressurePercent * 100f)}%";
+        }
+
+        if (runtime.WallDamaged)
+        {
+            return $"wall damaged {Mathf.RoundToInt(runtime.WallHealthPercent * 100f)}%";
+        }
+
+        return string.Empty;
+    }
+
+    private bool ShouldPrioritizeDefenseAlert(DefenseRuntimeState runtime, string defenseAlertText)
+    {
+        if (runtime == null || string.IsNullOrWhiteSpace(defenseAlertText))
+        {
+            return false;
+        }
+
+        if (runtime.State == DefenseState.Breached ||
+            runtime.WallHealth <= 0f ||
+            runtime.WallHealthPercent <= lowWallHealthPercent ||
+            runtime.LastWallDamagePerSecond > 0.001f)
+        {
+            return true;
+        }
+
+        if (!prioritizeDefenseAlertDuringDungeon)
+        {
+            return false;
+        }
+
+        bool dungeonFocused = screenLayout != null && screenLayout.CurrentFocus == PlayableScreenFocus.DungeonFocus;
+        bool dungeonRunning = expedition != null && expedition.IsRunning;
+        return (dungeonFocused || dungeonRunning) && runtime.PressurePercent >= highPressurePercent;
+    }
+
+    private string BuildDefenseAlertActionText(DefenseRuntimeState runtime, string defenseAlertText)
+    {
+        string prefix = $"Defense alert: {defenseAlertText}.";
+        if (runtime.State == DefenseState.Breached || runtime.WallHealth <= 0f)
+        {
+            return CanRepairWall()
+                ? $"{prefix} Repair the wall, then restart the frontline."
+                : $"{prefix} Wait for repair Gold, then recover the wall.";
+        }
+
+        if (CanRepairWall())
+        {
+            return $"{prefix} Repair is available now.";
+        }
+
+        if (runtime.LastWallDamagePerSecond > 0.001f || runtime.WallHealthPercent <= lowWallHealthPercent)
+        {
+            return $"{prefix} Save Gold for repair or return to defense after the room.";
+        }
+
+        return $"{prefix} Watch the defense side panel while fighting.";
     }
 
     private string BuildMessageText(string actionHint)

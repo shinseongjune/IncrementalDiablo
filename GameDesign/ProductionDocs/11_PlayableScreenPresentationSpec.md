@@ -249,6 +249,12 @@ Suggested names:
 - This supports the existing Result-region validation: a paid reroll should show both material spend and a changed affix line.
 - This does not change panel layout, icon treatment, reveal animation, authored affix pools, or long-term crafting UX.
 
+2026-06-03 defense alert HUD feedback:
+
+- `PlayableLoopHud` now derives a defense alert from breach, low wall health, wall damage per second, high pressure, or damaged-wall state.
+- The summary line can show `Defense alert: ...` without a new TMP field, and the action hint prioritizes severe alerts plus high pressure during `DungeonFocus` or an active dungeon run.
+- Default first-pass thresholds are low wall at `35%` health and high pressure at `75%` capacity. This does not add final alert animation, icon art, camera changes, or defense-side composition.
+
 2026-05-28 scene layout cleanup pass:
 
 - `Gameplay` now uses the reference-image screen bands as the first deterministic layout pass: top global bar `y 0.925-0.99`, main play area `y 0.18-0.92`, and bottom action bar `y 0.04-0.175`.
@@ -280,7 +286,7 @@ The presentation slice is acceptable for MVP when:
 - The top and bottom HUD bars remain stable during the transition.
 - Dungeon click/control input works after the transition.
 - Defense pressure, wall health, Hold/Push, and breach state remain visible during dungeon play.
-- A defense alert can be noticed while in dungeon focus.
+- A defense alert can be noticed in summary/action-hint feedback while in dungeon focus.
 - Inventory or crafting can open and close without losing the previous focus state.
 - No scene reload is required to move between focus states.
 

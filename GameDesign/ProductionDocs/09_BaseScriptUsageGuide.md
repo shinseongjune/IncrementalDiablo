@@ -65,6 +65,8 @@
 
 2026-06-02 Phase C crafting validation scope: `ItemInstance.TryApplyPrototypeAffixReroll(...)` now avoids repeating the selected item's saved prototype affix when another candidate exists for the slot. This keeps the current paid reroll check visibly changing the affix line without adding final affix pools, locking, or long-term weighting.
 
+2026-06-03 Phase C defense-alert scope: `PlayableLoopHud` now derives a `Defense alert` from breach, low wall health, wall damage per second, high pressure, or damaged-wall state. It can show that alert in the summary and prioritize it in the action hint during `DungeonFocus` or active dungeon runs, using first-pass thresholds of `35%` wall health and `75%` pressure capacity.
+
 2026-05-26 automation verification scope: `Tools/Automation/Invoke-IncrementalDiabloChecks.ps1` is the safe daily verification harness while Unity batchmode remains avoided. It checks the solution build, `git diff --check`, required `Gameplay.unity` scene-contract tokens, missing script references, optional overlay wiring, automation-plan freshness, and local automation TOML health before the Korean handoff report.
 
 목표는 다음 한 문장이 Unity Play 모드에서 돌아가는 것이다.
