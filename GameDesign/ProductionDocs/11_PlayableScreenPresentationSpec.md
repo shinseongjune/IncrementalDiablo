@@ -154,6 +154,8 @@ In `DefenseFocus`:
 In `DungeonFocus`:
 
 - Click movement, targeting, skills, potions, and loot interaction are primary.
+- If the dungeon view is shown through a UI `RawImage` or RenderTexture, clicks inside that image must be routed through the camera that rendered the image, not through `Camera.main`.
+- If a saved or loaded expedition is already `Running`, the playable screen must restore `DungeonFocus` instead of letting dungeon enemies run behind `DefenseFocus`.
 - Defense side panel allows only high-level actions: repair, Hold/Push toggle, and critical upgrade if readable.
 - No RTS-like unit micromanagement is allowed from the defense panel.
 - Defense alert clicks may shift focus or open a compact repair/upgrade prompt, but should not steal combat input unexpectedly.
@@ -172,7 +174,7 @@ Recommended first implementation shape:
 2. Add a UI controller that owns panel anchors/rects and transitions between `DefenseFocus` and `DungeonFocus`.
 3. Keep existing gameplay directors alive. Do not reload scenes to switch focus.
 4. Use authored RectTransform anchors for the top bar, bottom action bar, dungeon viewport, and defense side panel.
-5. Drive MVP transitions through RectTransform sizes/anchors first. Add camera viewport or RenderTexture only when the panel layout is proven.
+5. Drive MVP transitions through RectTransform sizes/anchors first, then bind a gameplay camera into the authored panel through camera viewport, RenderTexture, or `PanelCameraRenderTarget`.
 6. Keep current debug HUDs as fallback only; the normal player path should move toward Canvas/TMP production UI.
 
 Suggested names:
@@ -255,6 +257,25 @@ Suggested names:
 - The summary line can show `Defense alert: ...` without a new TMP field, and the action hint prioritizes severe alerts plus high pressure during `DungeonFocus` or an active dungeon run.
 - Default first-pass thresholds are low wall at `35%` health and high pressure at `75%` capacity. This does not add final alert animation, icon art, camera changes, or defense-side composition.
 
+2026-06-04 overlay event reliability:
+
+- `RewardOverlayPresenter`, `InventoryOverlayPresenter`, and `CraftingOverlayPresenter` now resynchronize their event subscriptions when auto-found references appear or change during refresh.
+- Reward grants, inventory changes, wallet material changes, salvage payouts, and equipped-stat refreshes should update overlay text immediately instead of relying only on the periodic refresh interval.
+- This does not change overlay placement, panel density, item icon treatment, reward reveal art, crafting cost, or item mutation rules.
+
+2026-06-04 camera panel input bridge:
+
+- `PanelCameraRenderTarget` provides the first reusable bridge for rendering a scene camera into a UI `RawImage`. It can use an explicitly assigned `RenderTexture` or create a runtime texture sized from the image rect.
+- `DungeonViewportInputRouter` provides the matching input bridge. It converts a click inside the `RawImage` into normalized viewport coordinates and sends the resulting ray from the assigned dungeon camera into `PlayerController.HandlePrimaryClickRay(...)`.
+- `PlayerController` now ignores duplicate world-click handling when the pointer is over UI, while still allowing explicit routed rays from a UI panel. It also sorts click hits by distance, attacks valid enemy targets, and skips self/friendly/damageable actor colliders as movement surfaces.
+- This is code support only. The visual result still depends on Unity Editor authoring: the dungeon camera angle, culling/layers, `RawImage` placement, split ratio, and panel crop must be judged in Play Mode.
+
+2026-06-04 saved-running and stationary attack validation:
+
+- `PlayableLoopHud` now syncs screen focus from expedition state changes, including load-time restoration. A saved `Running` dungeon should put the screen back into `DungeonFocus` so spawned enemies are visible.
+- Shift-clicking a target is still a stationary attack, not chase movement. If the target is outside attack range, the command remains active and keeps facing/swinging until the target becomes hittable or another command replaces it.
+- These fixes do not decide final save-resume UX. Later production may still add an explicit "resume expedition" prompt, but the MVP rule is that an active dungeon cannot run invisibly behind the wrong focus.
+
 2026-05-28 scene layout cleanup pass:
 
 - `Gameplay` now uses the reference-image screen bands as the first deterministic layout pass: top global bar `y 0.925-0.99`, main play area `y 0.18-0.92`, and bottom action bar `y 0.04-0.175`.
@@ -283,8 +304,9 @@ The presentation slice is acceptable for MVP when:
 
 - The game starts in `DefenseFocus`.
 - Starting a dungeon visibly compresses defense and brings in the dungeon viewport.
+- Restarting Play Mode from a saved `Running` dungeon restores the dungeon viewport instead of leaving enemies active behind the defense screen.
 - The top and bottom HUD bars remain stable during the transition.
-- Dungeon click/control input works after the transition.
+- Dungeon click/control input works after the transition, including clicks routed from a `RawImage`/RenderTexture panel through the dungeon camera.
 - Defense pressure, wall health, Hold/Push, and breach state remain visible during dungeon play.
 - A defense alert can be noticed in summary/action-hint feedback while in dungeon focus.
 - Inventory or crafting can open and close without losing the previous focus state.

@@ -102,6 +102,8 @@ MVP는 세 루프가 작게라도 한 바퀴 도는 상태다.
 
 `10_PlayableLoopMvpAutomationPlan.md` is the current daily automation task queue for the playable loop MVP. Read it before choosing autonomous production work, and update it whenever a task is completed, split, blocked, or newly discovered.
 
+2026-06-04 addendum: `12_PrototypeDebtRegister.md` is the automation-owned register for prototype/debug/fallback/temporary-MVP surfaces. Daily automation should scan with `Tools/Automation/Get-PrototypeDebtInventory.ps1` and keep that register current so MVP bridges are either kept at the edge, promoted, replaced, deleted, or marked as decisions before alpha hardening.
+
 ## 8. Current Progress Assessment
 
 현재 진행 상태를 볼 때는 다음 문서를 함께 읽는다.

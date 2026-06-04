@@ -121,9 +121,11 @@ $requiredPaths = @(
     @{ Name = "Playable HUD script"; Path = "Assets\02.Scripts\UI\PlayableLoopHud.cs" },
     @{ Name = "Screen layout controller script"; Path = "Assets\02.Scripts\UI\PlayableScreenLayoutController.cs" },
     @{ Name = "Automation plan"; Path = "GameDesign\ProductionDocs\10_PlayableLoopMvpAutomationPlan.md" },
+    @{ Name = "Prototype debt register"; Path = "GameDesign\ProductionDocs\12_PrototypeDebtRegister.md" },
     @{ Name = "Scene setup guide"; Path = "GameDesign\ProductionDocs\06_UnitySceneAndPrefabSetupGuide.md" },
     @{ Name = "Script usage guide"; Path = "GameDesign\ProductionDocs\09_BaseScriptUsageGuide.md" },
-    @{ Name = "Script folder map"; Path = "GameDesign\ScriptFolderStructure.md" }
+    @{ Name = "Script folder map"; Path = "GameDesign\ScriptFolderStructure.md" },
+    @{ Name = "Prototype debt inventory script"; Path = "Tools\Automation\Get-PrototypeDebtInventory.ps1" }
 )
 
 foreach ($entry in $requiredPaths) {
@@ -132,6 +134,7 @@ foreach ($entry in $requiredPaths) {
 
 $scenePath = Join-ProjectPath "Assets\01.Scenes\Gameplay.unity"
 $planPath = Join-ProjectPath "GameDesign\ProductionDocs\10_PlayableLoopMvpAutomationPlan.md"
+$debtRegisterPath = Join-ProjectPath "GameDesign\ProductionDocs\12_PrototypeDebtRegister.md"
 
 if (Test-Path -LiteralPath $scenePath) {
     $sceneText = Read-TextFile $scenePath
@@ -173,11 +176,14 @@ if (Test-Path -LiteralPath $planPath) {
     $requiredPlanTokens = @(
         "Phase Promotion Rule",
         "Visible Game Production Rule",
+        "Prototype Debt Sweep Rule",
         "No-Stagnation Rules",
         "Progress Tracker",
         "Current phase | Phase C - First Real Game Slice",
         "Next unlock",
-        "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1"
+        "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
+        "12_PrototypeDebtRegister.md",
+        "Get-PrototypeDebtInventory.ps1"
     )
 
     foreach ($token in $requiredPlanTokens) {
@@ -189,6 +195,26 @@ if (Test-Path -LiteralPath $planPath) {
     } else {
         Add-Result "Automation next-unlock freshness" "PASS" "No stale layout-controller add instruction found."
     }
+}
+
+if (Test-Path -LiteralPath $debtRegisterPath) {
+    $debtText = Read-TextFile $debtRegisterPath
+    $requiredDebtTokens = @(
+        "Automation Contract",
+        "Current Register",
+        "TD-01",
+        "Alpha blocker",
+        "Get-PrototypeDebtInventory.ps1"
+    )
+
+    foreach ($token in $requiredDebtTokens) {
+        [void](Assert-TextContains "Prototype debt register token" $debtText $token)
+    }
+}
+
+$debtScriptPath = Join-ProjectPath "Tools\Automation\Get-PrototypeDebtInventory.ps1"
+if (Test-Path -LiteralPath $debtScriptPath) {
+    Invoke-CheckedCommand "Prototype debt inventory" { powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Automation\Get-PrototypeDebtInventory.ps1 -SummaryOnly }
 }
 
 if (Test-Path -LiteralPath $AutomationTomlPath) {

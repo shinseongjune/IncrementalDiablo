@@ -34,11 +34,15 @@ public class RewardOverlayPresenter : MonoBehaviour
     [SerializeField, Min(0.05f)] private float refreshIntervalSeconds = 0.2f;
 
     private bool buttonsWired;
-    private bool subscribed;
     private float nextRefreshTime;
     private long rewardItemInstanceId;
     private bool rewardItemConsumed;
     private string lastMessage = "Reward ready.";
+    private ExpeditionDirector subscribedExpedition;
+    private LootDropper subscribedLootDropper;
+    private SimpleInventory subscribedInventory;
+    private CurrencyWallet subscribedWallet;
+    private EquipmentSlots subscribedEquipmentSlots;
 
     private void Reset()
     {
@@ -55,7 +59,7 @@ public class RewardOverlayPresenter : MonoBehaviour
     {
         ResolveReferences();
         WireButtons();
-        Subscribe();
+        SynchronizeSubscriptions();
 
         if (selectLatestItemOnEnable)
         {
@@ -67,7 +71,7 @@ public class RewardOverlayPresenter : MonoBehaviour
 
     private void OnDisable()
     {
-        Unsubscribe();
+        ClearSubscriptions();
         UnwireButtons();
     }
 
@@ -218,6 +222,7 @@ public class RewardOverlayPresenter : MonoBehaviour
     public void Refresh()
     {
         ResolveReferences();
+        SynchronizeSubscriptions();
         ItemInstance item = GetRewardItem();
 
         SetText(headerText, BuildHeaderText(item));
@@ -447,74 +452,110 @@ public class RewardOverlayPresenter : MonoBehaviour
         buttonsWired = false;
     }
 
-    private void Subscribe()
+    private void SynchronizeSubscriptions()
     {
-        if (subscribed)
+        if (subscribedExpedition != expedition)
         {
-            return;
+            if (subscribedExpedition != null)
+            {
+                subscribedExpedition.Changed -= Refresh;
+            }
+
+            subscribedExpedition = expedition;
+            if (subscribedExpedition != null)
+            {
+                subscribedExpedition.Changed += Refresh;
+            }
         }
 
-        if (expedition != null)
+        if (subscribedLootDropper != lootDropper)
         {
-            expedition.Changed += Refresh;
+            if (subscribedLootDropper != null)
+            {
+                subscribedLootDropper.RewardGranted -= HandleRewardGranted;
+            }
+
+            subscribedLootDropper = lootDropper;
+            if (subscribedLootDropper != null)
+            {
+                subscribedLootDropper.RewardGranted += HandleRewardGranted;
+            }
         }
 
-        if (lootDropper != null)
+        if (subscribedInventory != inventory)
         {
-            lootDropper.RewardGranted += HandleRewardGranted;
+            if (subscribedInventory != null)
+            {
+                subscribedInventory.Changed -= HandleInventoryChanged;
+            }
+
+            subscribedInventory = inventory;
+            if (subscribedInventory != null)
+            {
+                subscribedInventory.Changed += HandleInventoryChanged;
+            }
         }
 
-        if (inventory != null)
+        if (subscribedWallet != wallet)
         {
-            inventory.Changed += HandleInventoryChanged;
+            if (subscribedWallet != null)
+            {
+                subscribedWallet.Changed -= Refresh;
+            }
+
+            subscribedWallet = wallet;
+            if (subscribedWallet != null)
+            {
+                subscribedWallet.Changed += Refresh;
+            }
         }
 
-        if (wallet != null)
+        if (subscribedEquipmentSlots != equipmentSlots)
         {
-            wallet.Changed += Refresh;
-        }
+            if (subscribedEquipmentSlots != null)
+            {
+                subscribedEquipmentSlots.Changed -= Refresh;
+            }
 
-        if (equipmentSlots != null)
-        {
-            equipmentSlots.Changed += Refresh;
+            subscribedEquipmentSlots = equipmentSlots;
+            if (subscribedEquipmentSlots != null)
+            {
+                subscribedEquipmentSlots.Changed += Refresh;
+            }
         }
-
-        subscribed = true;
     }
 
-    private void Unsubscribe()
+    private void ClearSubscriptions()
     {
-        if (!subscribed)
+        if (subscribedExpedition != null)
         {
-            return;
+            subscribedExpedition.Changed -= Refresh;
+            subscribedExpedition = null;
         }
 
-        if (expedition != null)
+        if (subscribedLootDropper != null)
         {
-            expedition.Changed -= Refresh;
+            subscribedLootDropper.RewardGranted -= HandleRewardGranted;
+            subscribedLootDropper = null;
         }
 
-        if (lootDropper != null)
+        if (subscribedInventory != null)
         {
-            lootDropper.RewardGranted -= HandleRewardGranted;
+            subscribedInventory.Changed -= HandleInventoryChanged;
+            subscribedInventory = null;
         }
 
-        if (inventory != null)
+        if (subscribedWallet != null)
         {
-            inventory.Changed -= HandleInventoryChanged;
+            subscribedWallet.Changed -= Refresh;
+            subscribedWallet = null;
         }
 
-        if (wallet != null)
+        if (subscribedEquipmentSlots != null)
         {
-            wallet.Changed -= Refresh;
+            subscribedEquipmentSlots.Changed -= Refresh;
+            subscribedEquipmentSlots = null;
         }
-
-        if (equipmentSlots != null)
-        {
-            equipmentSlots.Changed -= Refresh;
-        }
-
-        subscribed = false;
     }
 
     private void HandleRewardGranted(ItemInstance item)

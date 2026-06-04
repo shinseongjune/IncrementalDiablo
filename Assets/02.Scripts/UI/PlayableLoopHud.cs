@@ -996,7 +996,7 @@ public class PlayableLoopHud : MonoBehaviour
 
         if (expedition != null)
         {
-            expedition.Changed += Refresh;
+            expedition.Changed += HandleExpeditionChanged;
         }
 
         if (combatRoom != null)
@@ -1047,7 +1047,7 @@ public class PlayableLoopHud : MonoBehaviour
 
         if (expedition != null)
         {
-            expedition.Changed -= Refresh;
+            expedition.Changed -= HandleExpeditionChanged;
         }
 
         if (combatRoom != null)
@@ -1144,6 +1144,33 @@ public class PlayableLoopHud : MonoBehaviour
     private void HandleScreenFocusChanged(PlayableScreenFocus focus)
     {
         Refresh();
+    }
+
+    private void HandleExpeditionChanged()
+    {
+        SyncScreenFocusToExpedition();
+        Refresh();
+    }
+
+    private void SyncScreenFocusToExpedition()
+    {
+        if (!syncScreenFocusWithDungeon || screenLayout == null || expedition == null || screenLayout.IsOverlayOpen)
+        {
+            return;
+        }
+
+        if (expedition.State == DungeonRunState.Running)
+        {
+            screenLayout.ShowDungeonFocus();
+            return;
+        }
+
+        if (expedition.State == DungeonRunState.Ready ||
+            expedition.State == DungeonRunState.Cleared ||
+            expedition.State == DungeonRunState.Failed)
+        {
+            screenLayout.ShowDefenseFocus();
+        }
     }
 
     private static string FormatRewards(ResourceAmount[] rewards)

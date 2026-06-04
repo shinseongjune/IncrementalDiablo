@@ -291,6 +291,28 @@ Canvas_Dungeon
 9. Manual visual review required: split ratio, side-panel crop, camera framing, overlay size, text density, and final Diablo-like UI treatment are user/Unity Editor decisions.
 10. Automation-side check: run `.\Tools\Automation\Invoke-IncrementalDiabloChecks.ps1` from the repo root. The current `Gameplay` scene should pass the required scene-contract checks and the optional overlay wiring check; future scenes may warn about optional overlays until those GameObjects are authored.
 
+2026-06-04 dungeon render-target panel handoff:
+
+1. Under `Gameplay > Canvas_Gameplay > PlayableScreenLayoutController > Panel_DungeonViewport`, create a child `RawImage_DungeonViewport`.
+2. Stretch `RawImage_DungeonViewport` to the full dungeon panel: anchors `x 0-1`, `y 0-1`, offsets all `0`. This value is fixed for the first pass because the click router assumes the whole image is the interactive dungeon view. Later decorative frames can wrap around it, but should not cover it with raycast-enabled UI unless intended.
+3. Add a scene camera named `Camera_DungeonPanel` near the current dungeon room view. Starting intent: it should frame the hero, the first melee enemy, the room floor/clickable surface, and the clear/reward space in one readable shot. Adjustable values are position, rotation, FOV/orthographic size, culling mask, and clipping planes; fixed intent is that this camera is the source for the dungeon panel.
+4. If the project already has a suitable dungeon gameplay camera, it can be reused instead of creating `Camera_DungeonPanel`. Do not reuse a defense-only camera for this field.
+5. Add `PanelCameraRenderTarget` to `RawImage_DungeonViewport` or to a nearby helper object named `DungeonViewportRenderTarget`.
+6. In `PanelCameraRenderTarget`, assign `Source Camera = Camera_DungeonPanel`, `Target Image = RawImage_DungeonViewport`, keep `Create Runtime Texture` enabled, keep `Match Image Rect` enabled, keep `Fallback Size` at `1280 x 720`, keep `Render Scale` at `1.0`, and keep `Depth Buffer Bits` at `24`. Use an explicit `RenderTexture` only if you want a named project asset for profiling or reuse.
+7. Add `DungeonViewportInputRouter` to `RawImage_DungeonViewport`.
+8. In `DungeonViewportInputRouter`, assign `Viewport Image = RawImage_DungeonViewport`, `Viewport Camera = Camera_DungeonPanel`, `Player = Hero` object with `PlayerController`, and `Screen Layout = PlayableScreenLayoutController`. Keep `Require Dungeon Focus` enabled so the dungeon panel does not accept combat clicks while defense or overlays own the screen.
+9. On the hero `PlayerController`, keep `Ignore Clicks Over UI` enabled. Fixed intent: UI clicks should not also run the old `Camera.main` screen-ray path. The `DungeonViewportInputRouter` will send the correct camera ray explicitly.
+10. Make sure the dungeon floor/clickable room surface and enemies are included in `PlayerController > Click Mask`. If self/friendly colliders are hit first, the controller now skips them and can still use a ground hit behind them; if there is no ground/clickable surface behind them, the click is ignored instead of moving onto the hero.
+11. Play Mode check for P0-B: start in `DefenseFocus`, press `Start Dungeon`, confirm the dungeon panel shows the rendered camera view, click the floor inside the panel and confirm the hero moves, click the spawned enemy and confirm attack/chase starts, hold Shift and click inside the panel to confirm stationary attack behavior, click the hero/self collider and confirm it does not create a bad self-target or odd movement command, then open/close reward/inventory/crafting overlays and confirm panel clicks are ignored while overlays own focus.
+12. P0-B can be marked `Done` only after the user confirms readability: dungeon camera framing, defense side-panel crop, 70/30 split, overlay occlusion, routed clicks, and defense-alert text are acceptable for MVP. If the rendered panel is correct but camera framing feels wrong, record the exact camera values and keep the issue as Unity Editor visual tuning, not a code blocker.
+
+2026-06-04 dungeon render-target validation fixes:
+
+1. Saved active dungeon state is allowed, but it must not spawn enemies behind an unrelated screen. If Play Mode is stopped while `ExpeditionDirector.State` is `Running`, the next Play Mode load should restore `DungeonFocus` automatically through `PlayableLoopHud`.
+2. Revalidation path: start a dungeon, wait until the spawned enemy is active, stop Play Mode before the room resolves, start Play Mode again, and confirm the dungeon panel appears instead of leaving the enemy active behind `DefenseFocus`.
+3. Shift-click target behavior: when Shift-clicking an enemy outside attack range, the hero should face and keep a stationary target command alive until the target enters range or the player gives another command. A ground Shift-click with no target still plays one in-place attack and clears.
+4. Revalidation path: with the enemy visible in the dungeon panel, Shift-click the enemy at or just inside attack range and confirm its HP drops. Then Shift-click it from slightly outside range and confirm the command does not disappear after one swing before the enemy can move into range.
+
 2026-05-27 playable overlay button handoff:
 
 1. `PlayableLoopHud` now has optional slots named `Open Inventory Overlay Button`, `Open Crafting Overlay Button`, `Open Reward Overlay Button`, and `Close Overlay Button`.

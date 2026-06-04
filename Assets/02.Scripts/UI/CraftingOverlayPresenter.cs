@@ -37,12 +37,14 @@ public class CraftingOverlayPresenter : MonoBehaviour
     [SerializeField, Min(0.05f)] private float refreshIntervalSeconds = 0.2f;
 
     private bool buttonsWired;
-    private bool subscribed;
     private int selectedIndex = -1;
     private float nextRefreshTime;
     private string lastMessage = "Crafting ready.";
     private long lastRerollItemInstanceId = -1;
     private string lastRerollSummary = string.Empty;
+    private SimpleInventory subscribedInventory;
+    private CurrencyWallet subscribedWallet;
+    private EquipmentSlots subscribedEquipmentSlots;
 
     private void Reset()
     {
@@ -59,7 +61,7 @@ public class CraftingOverlayPresenter : MonoBehaviour
     {
         ResolveReferences();
         WireButtons();
-        Subscribe();
+        SynchronizeSubscriptions();
 
         bool selectedRerollCandidate = preferRerollCandidateOnEnable && TrySelectNewestRerollCandidate(false);
         if (!selectedRerollCandidate && selectNewestOnEnable)
@@ -76,7 +78,7 @@ public class CraftingOverlayPresenter : MonoBehaviour
 
     private void OnDisable()
     {
-        Unsubscribe();
+        ClearSubscriptions();
         UnwireButtons();
     }
 
@@ -228,6 +230,7 @@ public class CraftingOverlayPresenter : MonoBehaviour
     public void Refresh()
     {
         ResolveReferences();
+        SynchronizeSubscriptions();
         ClampSelection();
 
         SetText(headerText, BuildHeaderText());
@@ -679,54 +682,70 @@ public class CraftingOverlayPresenter : MonoBehaviour
         buttonsWired = false;
     }
 
-    private void Subscribe()
+    private void SynchronizeSubscriptions()
     {
-        if (subscribed)
+        if (subscribedInventory != inventory)
         {
-            return;
+            if (subscribedInventory != null)
+            {
+                subscribedInventory.Changed -= HandleInventoryChanged;
+            }
+
+            subscribedInventory = inventory;
+            if (subscribedInventory != null)
+            {
+                subscribedInventory.Changed += HandleInventoryChanged;
+            }
         }
 
-        if (inventory != null)
+        if (subscribedWallet != wallet)
         {
-            inventory.Changed += HandleInventoryChanged;
+            if (subscribedWallet != null)
+            {
+                subscribedWallet.Changed -= Refresh;
+            }
+
+            subscribedWallet = wallet;
+            if (subscribedWallet != null)
+            {
+                subscribedWallet.Changed += Refresh;
+            }
         }
 
-        if (wallet != null)
+        if (subscribedEquipmentSlots != equipmentSlots)
         {
-            wallet.Changed += Refresh;
-        }
+            if (subscribedEquipmentSlots != null)
+            {
+                subscribedEquipmentSlots.Changed -= Refresh;
+            }
 
-        if (equipmentSlots != null)
-        {
-            equipmentSlots.Changed += Refresh;
+            subscribedEquipmentSlots = equipmentSlots;
+            if (subscribedEquipmentSlots != null)
+            {
+                subscribedEquipmentSlots.Changed += Refresh;
+            }
         }
-
-        subscribed = true;
     }
 
-    private void Unsubscribe()
+    private void ClearSubscriptions()
     {
-        if (!subscribed)
+        if (subscribedInventory != null)
         {
-            return;
+            subscribedInventory.Changed -= HandleInventoryChanged;
+            subscribedInventory = null;
         }
 
-        if (inventory != null)
+        if (subscribedWallet != null)
         {
-            inventory.Changed -= HandleInventoryChanged;
+            subscribedWallet.Changed -= Refresh;
+            subscribedWallet = null;
         }
 
-        if (wallet != null)
+        if (subscribedEquipmentSlots != null)
         {
-            wallet.Changed -= Refresh;
+            subscribedEquipmentSlots.Changed -= Refresh;
+            subscribedEquipmentSlots = null;
         }
-
-        if (equipmentSlots != null)
-        {
-            equipmentSlots.Changed -= Refresh;
-        }
-
-        subscribed = false;
     }
 
     private void HandleInventoryChanged()

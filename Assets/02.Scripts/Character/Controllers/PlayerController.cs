@@ -1,4 +1,6 @@
+using System;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -11,6 +13,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private LayerMask clickMask = ~0;
     [SerializeField] private float rayDistance = 200f;
     [SerializeField] private float chaseRefreshInterval = 0.15f;
+    [SerializeField] private bool ignoreClicksOverUi = true;
+    [SerializeField] private string lastClickMessage = "Ready";
 
     private CharacterActor actor;
     private Health pendingAttackTarget;
@@ -24,6 +28,8 @@ public class PlayerController : MonoBehaviour
         ChaseTarget,
         Stationary
     }
+
+    public string LastClickMessage => lastClickMessage;
 
     private void Awake()
     {
@@ -39,7 +45,10 @@ public class PlayerController : MonoBehaviour
     {
         if (WasPrimaryClickPressed())
         {
-            HandlePrimaryClick(GetPointerPosition());
+            if (!ignoreClicksOverUi || !IsPointerOverUi())
+            {
+                HandlePrimaryClick(GetPointerPosition());
+            }
         }
 
         TickPendingAttack();
@@ -49,33 +58,44 @@ public class PlayerController : MonoBehaviour
     {
         if (inputCamera == null)
         {
-            Debug.LogWarning("PlayerController needs a camera to resolve clicks.", this);
+            lastClickMessage = "Click ignored: PlayerController needs a camera.";
+            Debug.LogWarning(lastClickMessage, this);
             return;
         }
 
         Ray ray = inputCamera.ScreenPointToRay(screenPosition);
-        if (!Physics.Raycast(ray, out RaycastHit hit, rayDistance, clickMask, QueryTriggerInteraction.Ignore))
-        {
-            return;
-        }
+        HandlePrimaryClickRay(ray, IsStationaryAttackHeld());
+    }
 
-        Health clickedHealth = hit.collider.GetComponentInParent<Health>();
-        bool stationaryAttack = IsStationaryAttackHeld();
+    public bool HandlePrimaryClickRay(Ray ray, bool stationaryAttack)
+    {
+        if (!TryResolveClick(ray, out RaycastHit hit, out Health clickedHealth))
+        {
+            lastClickMessage = "Click ignored: no valid dungeon surface or enemy hit.";
+            return false;
+        }
 
         if (stationaryAttack)
         {
             SetStationaryAttack(clickedHealth, hit.point);
-            return;
+            lastClickMessage = clickedHealth == null
+                ? $"Stationary attack toward {FormatPoint(hit.point)}."
+                : $"Stationary attack target: {clickedHealth.name}.";
+            return true;
         }
 
         if (IsValidAttackTarget(clickedHealth))
         {
             SetTargetAttack(clickedHealth);
-            return;
+            lastClickMessage = $"Attack target: {clickedHealth.name}.";
+            return true;
         }
 
         ClearAttackCommand();
-        actor.Motor.TryMoveTo(hit.point);
+        lastClickMessage = actor.Motor.TryMoveTo(hit.point)
+            ? $"Move to {FormatPoint(hit.point)}."
+            : $"Move failed: no NavMesh point near {FormatPoint(hit.point)}.";
+        return true;
     }
 
     private void TickPendingAttack()
@@ -133,7 +153,18 @@ public class PlayerController : MonoBehaviour
         {
             if (actor.Combat.TryBasicAttack(pendingAttackTarget))
             {
+                lastClickMessage = $"Stationary attack hit: {pendingAttackTarget.name}.";
                 ClearAttackCommand();
+            }
+
+            return;
+        }
+
+        if (IsValidAttackTarget(pendingAttackTarget))
+        {
+            if (actor.Combat.TryPlayBasicAttackInPlace())
+            {
+                lastClickMessage = $"Stationary attack waiting for range: {pendingAttackTarget.name}.";
             }
 
             return;
@@ -141,6 +172,7 @@ public class PlayerController : MonoBehaviour
 
         if (actor.Combat.TryPlayBasicAttackInPlace())
         {
+            lastClickMessage = $"Stationary attack toward {FormatPoint(stationaryAttackPoint)}.";
             ClearAttackCommand();
         }
     }
@@ -185,6 +217,55 @@ public class PlayerController : MonoBehaviour
         return targetActor.Team != actor.Team;
     }
 
+    private bool TryResolveClick(Ray ray, out RaycastHit resolvedHit, out Health attackTarget)
+    {
+        resolvedHit = default(RaycastHit);
+        attackTarget = null;
+
+        RaycastHit[] hits = Physics.RaycastAll(ray, rayDistance, clickMask, QueryTriggerInteraction.Ignore);
+        if (hits == null || hits.Length == 0)
+        {
+            return false;
+        }
+
+        Array.Sort(hits, CompareRaycastHitsByDistance);
+
+        bool hasMovementHit = false;
+        RaycastHit movementHit = default(RaycastHit);
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            RaycastHit hit = hits[i];
+            Health clickedHealth = hit.collider.GetComponentInParent<Health>();
+
+            if (IsValidAttackTarget(clickedHealth))
+            {
+                resolvedHit = hit;
+                attackTarget = clickedHealth;
+                return true;
+            }
+
+            if (!hasMovementHit && clickedHealth == null)
+            {
+                movementHit = hit;
+                hasMovementHit = true;
+            }
+        }
+
+        if (!hasMovementHit)
+        {
+            return false;
+        }
+
+        resolvedHit = movementHit;
+        return true;
+    }
+
+    private static int CompareRaycastHitsByDistance(RaycastHit left, RaycastHit right)
+    {
+        return left.distance.CompareTo(right.distance);
+    }
+
     private bool WasPrimaryClickPressed()
     {
 #if ENABLE_INPUT_SYSTEM
@@ -211,5 +292,28 @@ public class PlayerController : MonoBehaviour
 #else
         return Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
 #endif
+    }
+
+    private static bool IsPointerOverUi()
+    {
+        if (EventSystem.current == null)
+        {
+            return false;
+        }
+
+#if ENABLE_INPUT_SYSTEM
+        if (Mouse.current != null)
+        {
+            return EventSystem.current.IsPointerOverGameObject(Mouse.current.deviceId) ||
+                   EventSystem.current.IsPointerOverGameObject();
+        }
+#endif
+
+        return EventSystem.current.IsPointerOverGameObject();
+    }
+
+    private static string FormatPoint(Vector3 point)
+    {
+        return $"{point.x:0.0}, {point.y:0.0}, {point.z:0.0}";
     }
 }
