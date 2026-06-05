@@ -4922,6 +4922,7 @@ GameObject:
   m_Component:
   - component: {fileID: 293513594}
   - component: {fileID: 293513595}
+  - component: {fileID: 293513597}
   - component: {fileID: 293513596}
   m_Layer: 0
   m_Name: DefenseRoot
@@ -5005,6 +5006,36 @@ MonoBehaviour:
   wallLabel: {fileID: 0}
   refreshEveryFrame: 1
   lowWallWarningThreshold: 0.35
+--- !u!114 &293513597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 293513593}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9bbad0805306401383572a8e7730afae, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::GroundDefenseActorRuntime
+  defense: {fileID: 1045172322}
+  autoFindDefense: 1
+  actorCapacity: 3
+  actorMaxHealth: 12
+  pressurePerSpawn: 8
+  damagePerHit: 3
+  minimumRunningActors: 1
+  baseAdvancePerSecond: 0.1
+  pressureAdvancePerSecond: 0.12
+  hitFeedbackSeconds: 0.16
+  activeActorCount: 0
+  totalHitCount: 0
+  totalDefeatCount: 0
+  totalWallContactCount: 0
+  recentHitCount: 0
+  recentDefeatCount: 0
+  recentWallContactCount: 0
+  lastRuntimeMessage: "Defense actors: not initialized"
 --- !u!114 &293513596
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5018,7 +5049,9 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::GroundDefenseCombatPresenter
   defense: {fileID: 1045172322}
+  actorRuntime: {fileID: 293513597}
   autoFindDefense: 1
+  autoFindActorRuntime: 1
   enemySpawnAnchor: {fileID: 1912540435}
   wallAnchor: {fileID: 488788905}
   attackOrigin: {fileID: 48257985}

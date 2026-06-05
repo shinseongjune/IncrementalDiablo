@@ -31,8 +31,16 @@ public class PanelCameraRenderTarget : MonoBehaviour
     private RawImage originalImage;
     private Texture originalImageTexture;
 
+    public Camera SourceCamera => sourceCamera;
+    public RawImage TargetImage => targetImage;
     public string LastBindingMessage => lastBindingMessage;
     public RenderTexture ActiveTexture => explicitRenderTexture != null ? explicitRenderTexture : runtimeTexture;
+    public bool HasRequiredReferences => sourceCamera != null && targetImage != null;
+    public bool HasBoundTexture =>
+        HasRequiredReferences &&
+        ActiveTexture != null &&
+        sourceCamera.targetTexture == ActiveTexture &&
+        targetImage.texture == ActiveTexture;
 
     private void Reset()
     {

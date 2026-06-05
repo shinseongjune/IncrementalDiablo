@@ -49,6 +49,13 @@
 
 따라서 이후 Phase C의 기본 우선순위는 실제 디펜스 전투 구현이다. 구체적으로는 적/압박 오브젝트 전진, 성벽 접촉 피해, 자동 공격 피드백, 던전 적 처치 확인, authored item 보상 확인, 인벤토리/장비 UI 순서로 진행한다. 회귀나 빌드 실패가 없는 한, 내부 검증 보조 작업만 연속으로 선택하지 않는다.
 
+### 2026-06-05 Phase C priority correction
+
+- P0-C ground-defense behavior readability is accepted. The fixed three-slot/blockout presentation is a frozen validation bridge, not a production surface to polish.
+- Do not spend additional runs tuning placeholder count, color, speed, spacing, or camera composition.
+- The next production priority is P0-D: complete the authored dungeon enemy prefab path through spawn, chase/attack, player damage, HP/result feedback, death, room clear, and reward continuity without prototype simulation.
+- When ground defense production resumes, replace the fixed-slot bridge with pooled prefabs, archetype data, real targeting/death, and scalable feedback instead of extending the blockout.
+
 ## 2. Phase 0. 문서 기준 고정
 
 목표:

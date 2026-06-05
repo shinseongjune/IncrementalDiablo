@@ -1,5 +1,11 @@
 # Dungeon Expedition System Spec
 
+## 2026-06-05 P0-D Production Priority
+
+- P0-D is the next active Phase C gate after ground-defense behavior readability was accepted.
+- The normal `Gameplay` path must prove `PF_DungeonEnemy_Melee` spawn, `Running` activation, chase/attack, player click attacks, HP/death/result feedback, room clear, and reward continuity without prototype simulation.
+- Prefer production-persistent enemy prefab, combat, and feedback work over another temporary diagnostic or room-tint layer.
+
 작성일: 2026-05-02  
 문서 목적: 지하 던전 크롤링, 자동/직접 전투, 실패/보상 규칙 정의
 

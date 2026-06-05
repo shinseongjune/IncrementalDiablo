@@ -12,6 +12,7 @@ public class DungeonViewportInputRouter : MonoBehaviour, IPointerDownHandler
     [Header("References")]
     [SerializeField] private RawImage viewportImage;
     [SerializeField] private Camera viewportCamera;
+    [SerializeField] private PanelCameraRenderTarget renderTarget;
     [SerializeField] private PlayerController player;
     [SerializeField] private PlayableScreenLayoutController screenLayout;
     [SerializeField] private bool autoFindReferences = true;
@@ -23,6 +24,10 @@ public class DungeonViewportInputRouter : MonoBehaviour, IPointerDownHandler
     [SerializeField] private string lastInputMessage = "Ready";
 
     public string LastInputMessage => lastInputMessage;
+    public RawImage ViewportImage => viewportImage;
+    public Camera ViewportCamera => viewportCamera;
+    public PlayerController Player => player;
+    public bool HasRequiredReferences => viewportImage != null && viewportCamera != null && player != null;
 
     private void Reset()
     {
@@ -44,6 +49,16 @@ public class DungeonViewportInputRouter : MonoBehaviour, IPointerDownHandler
         if (viewportImage == null)
         {
             viewportImage = GetComponent<RawImage>();
+        }
+
+        if (renderTarget == null)
+        {
+            renderTarget = GetComponent<PanelCameraRenderTarget>();
+        }
+
+        if (viewportCamera == null && renderTarget != null)
+        {
+            viewportCamera = renderTarget.SourceCamera;
         }
     }
 
@@ -117,6 +132,16 @@ public class DungeonViewportInputRouter : MonoBehaviour, IPointerDownHandler
         if (viewportImage == null)
         {
             viewportImage = GetComponent<RawImage>();
+        }
+
+        if (renderTarget == null)
+        {
+            renderTarget = GetComponent<PanelCameraRenderTarget>();
+        }
+
+        if (viewportCamera == null && renderTarget != null)
+        {
+            viewportCamera = renderTarget.SourceCamera;
         }
 
         if (!autoFindReferences)

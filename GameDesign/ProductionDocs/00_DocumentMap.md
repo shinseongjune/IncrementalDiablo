@@ -37,7 +37,9 @@
 | 06 | `06_UnitySceneAndPrefabSetupGuide.md` | Unity에서 어떤 씬, 폴더, 프리팹, 컴포넌트를 만들지 단계별로 지시한다. 개발자가 그대로 따라 세팅할 수 있어야 한다. | Unity 세팅 |
 | 07 | `07_DataSaveAndBalanceSpec.md` | ScriptableObject, 런타임 상태, 저장 데이터, 초기 밸런스 값을 분리한다. 하드코딩을 줄이고 테스트를 쉽게 만든다. | 데이터/저장 구현 |
 | 08 | `08_ImplementationRoadmap.md` | 실제 작업 순서와 완료 기준을 제시한다. 지금 당장 무엇부터 만들지 결정한다. | 개발 일정 관리 |
+| 10 | `10_PlayableLoopMvpAutomationPlan.md` | 현재 Phase, canonical P0 queue, 검증 근거, blocker, 다음 production unlock을 관리한다. | Daily automation / production selection |
 | 11 | `11_PlayableScreenPresentationSpec.md` | MVP 임시값 기준의 메인 플레이 화면, 방어/던전 분할 레이아웃, 카메라 소유권, HUD 영역, 포커스 전환 규칙을 저장한다. production UI/viewport/camera 작업 전에 먼저 확인한다. | UI/카메라/프레젠테이션 구현 |
+| 12 | `12_PrototypeDebtRegister.md` | temporary/debug/fallback surface를 promote, replace, delete, keep 결정과 함께 추적한다. | Daily automation / alpha hardening |
 
 ## 3. 기존 문서와의 관계
 
@@ -103,6 +105,8 @@ MVP는 세 루프가 작게라도 한 바퀴 도는 상태다.
 `10_PlayableLoopMvpAutomationPlan.md` is the current daily automation task queue for the playable loop MVP. Read it before choosing autonomous production work, and update it whenever a task is completed, split, blocked, or newly discovered.
 
 2026-06-04 addendum: `12_PrototypeDebtRegister.md` is the automation-owned register for prototype/debug/fallback/temporary-MVP surfaces. Daily automation should scan with `Tools/Automation/Get-PrototypeDebtInventory.ps1` and keep that register current so MVP bridges are either kept at the edge, promoted, replaced, deleted, or marked as decisions before alpha hardening.
+
+2026-06-05 addendum: P0-C ground-defense behavior readability is accepted, but its fixed-slot blockout is registered as TD-08 replacement debt. P0-D authored dungeon prefab combat is the canonical next production target.
 
 ## 8. Current Progress Assessment
 

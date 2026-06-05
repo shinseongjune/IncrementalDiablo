@@ -19,9 +19,14 @@ public class PlayableLoopHud : MonoBehaviour
     [SerializeField] private DefenseSaveManager saveManager;
     [SerializeField] private GroundDefenseCombatPresenter groundCombatPresenter;
     [SerializeField] private PlayableScreenLayoutController screenLayout;
+    [SerializeField] private PanelCameraRenderTarget dungeonPanelRenderTarget;
+    [SerializeField] private DungeonViewportInputRouter dungeonViewportInputRouter;
     [SerializeField] private bool autoFindReferences = true;
     [SerializeField] private bool syncScreenFocusWithDungeon = true;
     [SerializeField] private bool openRewardOverlayOnDungeonClear = true;
+
+    [Header("Dungeon Viewport Diagnostics")]
+    [SerializeField] private bool showDungeonViewportDiagnostics = true;
 
     [Header("Defense Alerts")]
     [SerializeField] private bool showDefenseAlertInSummary = true;
@@ -404,10 +409,11 @@ public class PlayableLoopHud : MonoBehaviour
         string rewardState = BuildRewardStateText();
         string result = string.IsNullOrWhiteSpace(expedition.LastResult) ? "none" : expedition.LastResult;
         string dungeonTextValue = $"Dungeon: {expedition.State} / Room {expedition.RoomsCompleted}/{expedition.TotalRooms} / {expedition.ElapsedSeconds:0.0}s / {rewardState} / Loot {BuildLootSourceText()}\nLast: {result}";
+        string viewportText = BuildDungeonViewportText();
 
         if (combatRoom == null)
         {
-            return $"{dungeonTextValue}\nRoom: unavailable";
+            return $"{dungeonTextValue}\nRoom: unavailable{viewportText}";
         }
 
         CombatRoomResult roomResult = combatRoom.LastResult;
@@ -416,7 +422,7 @@ public class PlayableLoopHud : MonoBehaviour
             ? $"starting in {combatRoom.CountdownRemaining:0.0}s"
             : $"{combatRoom.ElapsedSeconds:0.0}s";
 
-        return $"{dungeonTextValue}\nRoom: {combatRoom.State} / {roomProgress} / Path {BuildCombatPathText()} / Hero {combatRoom.CurrentHeroHealth:0.#} / Enemy {combatRoom.CurrentEnemyHealth:0.#}\nRoom Last: {roomMessage}";
+        return $"{dungeonTextValue}\nRoom: {combatRoom.State} / {roomProgress} / Path {BuildCombatPathText()} / Hero {combatRoom.CurrentHeroHealth:0.#} / Enemy {combatRoom.CurrentEnemyHealth:0.#}\nRoom Last: {roomMessage}{viewportText}";
     }
 
     private string BuildRewardStateText()
@@ -486,6 +492,80 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         return combatRoom.IsPrototypeSimulationAvailable ? "prototype simulation" : "waiting for enemies";
+    }
+
+    private string BuildDungeonViewportText()
+    {
+        if (!showDungeonViewportDiagnostics)
+        {
+            return string.Empty;
+        }
+
+        bool viewportRelevant =
+            expedition != null && expedition.IsRunning ||
+            screenLayout != null && screenLayout.CurrentFocus == PlayableScreenFocus.DungeonFocus;
+        if (!viewportRelevant)
+        {
+            return string.Empty;
+        }
+
+        return $"\nViewport: {BuildDungeonRenderTargetStatus()} / {BuildDungeonInputRouterStatus()}";
+    }
+
+    private string BuildDungeonRenderTargetStatus()
+    {
+        if (dungeonPanelRenderTarget == null)
+        {
+            return "render target missing";
+        }
+
+        if (dungeonPanelRenderTarget.SourceCamera == null)
+        {
+            return "render missing source camera";
+        }
+
+        if (dungeonPanelRenderTarget.TargetImage == null)
+        {
+            return "render missing RawImage";
+        }
+
+        if (dungeonPanelRenderTarget.HasBoundTexture)
+        {
+            return $"render bound {dungeonPanelRenderTarget.SourceCamera.name}->{dungeonPanelRenderTarget.TargetImage.name}";
+        }
+
+        return string.IsNullOrWhiteSpace(dungeonPanelRenderTarget.LastBindingMessage) ||
+               dungeonPanelRenderTarget.LastBindingMessage == "Ready"
+            ? $"render ready {dungeonPanelRenderTarget.SourceCamera.name}->{dungeonPanelRenderTarget.TargetImage.name}"
+            : dungeonPanelRenderTarget.LastBindingMessage;
+    }
+
+    private string BuildDungeonInputRouterStatus()
+    {
+        if (dungeonViewportInputRouter == null)
+        {
+            return "input router missing";
+        }
+
+        if (dungeonViewportInputRouter.ViewportImage == null)
+        {
+            return "input missing RawImage";
+        }
+
+        if (dungeonViewportInputRouter.ViewportCamera == null)
+        {
+            return "input missing camera";
+        }
+
+        if (dungeonViewportInputRouter.Player == null)
+        {
+            return "input missing PlayerController";
+        }
+
+        return string.IsNullOrWhiteSpace(dungeonViewportInputRouter.LastInputMessage) ||
+               dungeonViewportInputRouter.LastInputMessage == "Ready"
+            ? $"input ready {dungeonViewportInputRouter.ViewportCamera.name}->{dungeonViewportInputRouter.Player.name}"
+            : dungeonViewportInputRouter.LastInputMessage;
     }
 
     private string BuildLatestItemText()
@@ -893,6 +973,16 @@ public class PlayableLoopHud : MonoBehaviour
             screenLayout = FindAnyObjectByType<PlayableScreenLayoutController>();
         }
 
+        if (dungeonPanelRenderTarget == null || force)
+        {
+            dungeonPanelRenderTarget = FindDungeonPanelRenderTarget();
+        }
+
+        if (dungeonViewportInputRouter == null || force)
+        {
+            dungeonViewportInputRouter = FindDungeonViewportInputRouter();
+        }
+
         if (equipmentSlots == null || force)
         {
             equipmentSlots = FindEquipmentSlots();
@@ -928,6 +1018,77 @@ public class PlayableLoopHud : MonoBehaviour
     {
         PlayerController player = FindAnyObjectByType<PlayerController>();
         return player == null ? null : player.GetComponent<Health>();
+    }
+
+    private static PanelCameraRenderTarget FindDungeonPanelRenderTarget()
+    {
+        PanelCameraRenderTarget[] candidates = FindObjectsByType<PanelCameraRenderTarget>(FindObjectsInactive.Include);
+        PanelCameraRenderTarget firstCandidate = null;
+
+        for (int i = 0; i < candidates.Length; i++)
+        {
+            PanelCameraRenderTarget candidate = candidates[i];
+            if (candidate == null)
+            {
+                continue;
+            }
+
+            firstCandidate ??= candidate;
+            if (IsDungeonViewportCandidate(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return candidates.Length == 1 ? firstCandidate : null;
+    }
+
+    private static DungeonViewportInputRouter FindDungeonViewportInputRouter()
+    {
+        DungeonViewportInputRouter[] candidates = FindObjectsByType<DungeonViewportInputRouter>(FindObjectsInactive.Include);
+        DungeonViewportInputRouter firstCandidate = null;
+
+        for (int i = 0; i < candidates.Length; i++)
+        {
+            DungeonViewportInputRouter candidate = candidates[i];
+            if (candidate == null)
+            {
+                continue;
+            }
+
+            firstCandidate ??= candidate;
+            if (IsDungeonViewportCandidate(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return candidates.Length == 1 ? firstCandidate : null;
+    }
+
+    private static bool IsDungeonViewportCandidate(PanelCameraRenderTarget candidate)
+    {
+        return HasDungeonName(candidate) ||
+               HasDungeonName(candidate.SourceCamera) ||
+               HasDungeonName(candidate.TargetImage);
+    }
+
+    private static bool IsDungeonViewportCandidate(DungeonViewportInputRouter candidate)
+    {
+        return HasDungeonName(candidate) ||
+               HasDungeonName(candidate.ViewportCamera) ||
+               HasDungeonName(candidate.ViewportImage);
+    }
+
+    private static bool HasDungeonName(Component component)
+    {
+        return component != null && HasDungeonName(component.name);
+    }
+
+    private static bool HasDungeonName(string value)
+    {
+        return !string.IsNullOrWhiteSpace(value) &&
+               value.IndexOf("Dungeon", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
     private void WireButtons()

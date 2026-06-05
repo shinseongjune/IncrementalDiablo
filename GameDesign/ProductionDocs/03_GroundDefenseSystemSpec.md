@@ -18,6 +18,14 @@
 - `GroundDefenseCombatPresenter` uses those values to color pressure actors, scale visible attack-pulse count, and report `pressure +/-/s` plus `wall /s` in `LastCombatMessage`.
 - This improves Play Mode validation of the existing continuous frontline simulation without adding manual waves, hand-authored enemy lists, or final art assumptions.
 
+2026-06-05 Phase C discrete actor runtime note:
+
+- `GroundDefenseActorRuntime` adds three reusable pressure-actor slots with individual health, travel progress, defense-hit events, defeat events, and wall-contact events.
+- It consumes the authoritative `DefenseRuntimeState` pressure/clear/wall-damage rates instead of creating a separate wave list or economy simulation. `GroundDefenseCombatPresenter` maps those runtime slots onto the existing scene-authored pressure actors.
+- The actor slots are a rebuildable combat projection and are not saved. Save/load continues to preserve the formula-driven frontline state, then the actor runtime reconstructs visible combat after load.
+- The user accepted this behavior bridge for P0-C on 2026-06-05. The current fixed three-slot objects are now frozen: do not spend more production runs tuning their count, color, speed, silhouette, or layout.
+- Final enemy archetypes, colliders, animation, pooled prefabs, targeting rules, death handling, and actor-authored stats remain later production replacement work. Preserve the event/telemetry contract where useful; do not promote the blockout composition itself.
+
 작성일: 2026-05-03
 문서 목적: 지상 디펜스를 끊임없는 전선 전투와 자동 단계 상승 구조로 정의한다.
 
@@ -75,6 +83,7 @@ MVP 화면은 한 줄 레인이다.
 | DefenseEnemy | `DefenseEnemy` | 시각 프로토타입 단계에서 실제 적 개체 |
 | TowerBattery | `TowerBattery` | 시각 프로토타입 단계에서 자동 포탑 공격 |
 | DefenseWall | `DefenseWall` | 시각 프로토타입 단계에서 성벽 피격 표현 |
+| GroundDefenseActorRuntime | `GroundDefenseActorRuntime` | 개별 압박 적 체력, 이동, 피격, 처치, 벽 접촉 이벤트 |
 | GroundDefenseCombatPresenter | `GroundDefenseCombatPresenter` | `DefenseDirector.Runtime` 기반 압박 적, 벽 피격, 공격 펄스 피드백 |
 
 ## 5. 상태 구조
@@ -227,7 +236,8 @@ Frontline Lv. 12 유지
 5. 숫자 시뮬레이션에서 단계 상승과 돌파가 이해되는지 확인한다.
 6. `GroundDefenseLanePresenter`를 붙여 숫자 루프가 실제 배치된 앵커/마커/성벽 표시와 함께 움직이는지 확인한다. 이 단계는 시각 전투의 임시 브리지이며, 레인 크기와 카메라 구도는 Unity에서 수동 저작한다.
 7. `GroundDefenseCombatPresenter`를 붙여 scene-authored 압박 적, 벽 피격 flash, 타워/수비대 공격 pulse가 같은 `DefenseDirector.Runtime` 값을 읽는지 검증한다. HUD의 `pressure +/-/s`와 `wall /s` 값이 보이는 전투 피드백과 맞는지도 함께 본다.
-8. 이후 `DefenseEnemy`, `TowerBattery`, `DefenseWall`을 실제 스탯/타겟팅/처치 규칙이 있는 컴포넌트로 분리해 확장한다.
+8. `GroundDefenseActorRuntime`으로 기존 압박 적 슬롯에 개별 체력, 이동률, 자동 방어 피격, 처치, 벽 접촉 상태를 부여한다. 이 상태는 저장하지 않고 권위 있는 연속 전선 상태에서 다시 구성한다. 이 P0-C 검증 브리지는 수용 완료되었으며 추가 블록아웃 폴리시는 하지 않는다.
+9. 이후 지상 전투를 다시 다룰 때는 `DefenseEnemy`, `TowerBattery`, `DefenseWall`을 실제 스탯/타겟팅/처치 규칙이 있는 풀링 프리팹 컴포넌트로 교체한다. 고정 슬롯/기존 placeholder 오브젝트를 최종 구조로 확장하지 않는다.
 
 ## 13. 완료 기준
 

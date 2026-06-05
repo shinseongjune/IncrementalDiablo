@@ -4,7 +4,9 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private DefenseDirector defense;
+    [SerializeField] private GroundDefenseActorRuntime actorRuntime;
     [SerializeField] private bool autoFindDefense = true;
+    [SerializeField] private bool autoFindActorRuntime = true;
 
     [Header("Lane Anchors")]
     [SerializeField] private Transform enemySpawnAnchor;
@@ -45,6 +47,7 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
     private float wallContactFlashRemaining;
     private bool hasWallSnapshot;
     private DefenseState lastState = DefenseState.Idle;
+    private int lastActorWallContactCount;
 
     public int ActivePressureActorCount { get; private set; }
     public int ActiveAttackPulseCount { get; private set; }
@@ -139,6 +142,12 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
             return;
         }
 
+        if (actorRuntime != null && actorRuntime.IsReady)
+        {
+            UpdateRuntimePressureActors(runtime);
+            return;
+        }
+
         int validActorCount = CountAssigned(pressureActors);
         if (validActorCount == 0)
         {
@@ -191,18 +200,51 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
         }
     }
 
+    private void UpdateRuntimePressureActors(DefenseRuntimeState runtime)
+    {
+        for (int i = 0; i < pressureActors.Length; i++)
+        {
+            Transform actor = pressureActors[i];
+            if (actor == null)
+            {
+                continue;
+            }
+
+            bool active = i < actorRuntime.ActorCapacity && actorRuntime.IsActorActive(i);
+            SetActive(actor.gameObject, active);
+            if (!active)
+            {
+                continue;
+            }
+
+            float travelPercent = actorRuntime.GetActorTravelPercent(i);
+            actor.position = Vector3.Lerp(enemySpawnAnchor.position, wallAnchor.position, travelPercent);
+            float healthPercent = actorRuntime.GetActorHealthPercent(i);
+            Color healthColor = Color.Lerp(
+                pressureActorUnderFireColor,
+                GetPressureActorColor(runtime, travelPercent),
+                healthPercent);
+            Color actorColor = actorRuntime.IsActorUnderFire(i) ? pressureActorUnderFireColor : healthColor;
+            SetRendererColor(actor.GetComponentInChildren<Renderer>(), actorColor);
+            ActivePressureActorCount += 1;
+        }
+    }
+
     private void UpdateWallContact(DefenseRuntimeState runtime)
     {
         if (!hasWallSnapshot)
         {
             lastWallHealth = runtime.WallHealth;
             lastState = runtime.State;
+            lastActorWallContactCount = actorRuntime == null ? 0 : actorRuntime.TotalWallContactCount;
             hasWallSnapshot = true;
         }
 
         bool tookWallDamage = runtime.WallHealth < lastWallHealth - 0.001f;
         bool becameBreached = lastState != DefenseState.Breached && runtime.State == DefenseState.Breached;
-        if (tookWallDamage || becameBreached)
+        bool actorReachedWall = actorRuntime != null &&
+                                actorRuntime.TotalWallContactCount > lastActorWallContactCount;
+        if (tookWallDamage || becameBreached || actorReachedWall)
         {
             wallContactFlashRemaining = wallContactFlashSeconds;
             WallContactEventCount += 1;
@@ -224,6 +266,7 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
 
         lastWallHealth = runtime.WallHealth;
         lastState = runtime.State;
+        lastActorWallContactCount = actorRuntime == null ? 0 : actorRuntime.TotalWallContactCount;
     }
 
     private void UpdateWallContactTransform()
@@ -362,7 +405,10 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
             return;
         }
 
-        LastCombatMessage = $"Ground combat visuals: {runtime.State} / actors {ActivePressureActorCount}/{CountAssigned(pressureActors)} / attacks {ActiveAttackPulseCount}/{CountAssigned(attackPulses)} / wall hits {WallContactEventCount} / pressure +{runtime.LastIncomingPressurePerSecond:0.#}/-{runtime.LastPressureClearedPerSecond:0.#}/s / wall {runtime.LastWallDamagePerSecond:0.##}/s";
+        string actorRuntimeText = actorRuntime == null
+            ? "actor runtime missing"
+            : $"lead HP {Mathf.RoundToInt(actorRuntime.LeadingActorHealthPercent * 100f)}% / hits {actorRuntime.TotalHitCount} / defeats {actorRuntime.TotalDefeatCount} / contacts {actorRuntime.TotalWallContactCount}";
+        LastCombatMessage = $"Ground combat: {runtime.State} / actors {ActivePressureActorCount}/{CountAssigned(pressureActors)} / attacks {ActiveAttackPulseCount}/{CountAssigned(attackPulses)} / {actorRuntimeText} / pressure +{runtime.LastIncomingPressurePerSecond:0.#}/-{runtime.LastPressureClearedPerSecond:0.#}/s / wall {runtime.LastWallDamagePerSecond:0.##}/s";
     }
 
     private Color GetPressureActorColor(DefenseRuntimeState runtime, float travelPercent)
@@ -394,6 +440,15 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
         if ((autoFindDefense || force) && (defense == null || force))
         {
             defense = FindAnyObjectByType<DefenseDirector>();
+        }
+
+        if ((autoFindActorRuntime || force) && (actorRuntime == null || force))
+        {
+            actorRuntime = GetComponent<GroundDefenseActorRuntime>();
+            if (actorRuntime == null)
+            {
+                actorRuntime = FindAnyObjectByType<GroundDefenseActorRuntime>();
+            }
         }
     }
 

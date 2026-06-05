@@ -276,6 +276,13 @@ Suggested names:
 - Shift-clicking a target is still a stationary attack, not chase movement. If the target is outside attack range, the command remains active and keeps facing/swinging until the target becomes hittable or another command replaces it.
 - These fixes do not decide final save-resume UX. Later production may still add an explicit "resume expedition" prompt, but the MVP rule is that an active dungeon cannot run invisibly behind the wrong focus.
 
+2026-06-05 dungeon viewport QA bridge:
+
+- The current `Gameplay` scene has the first static dungeon viewport bridge: `RawImage_DungeonViewport`, `Camera_DungeonPanel`, `PanelCameraRenderTarget`, and `DungeonViewportInputRouter`.
+- `PlayableLoopHud` can show `Viewport: render ... / input ...` in the Dungeon line when a dungeon run or `DungeonFocus` makes the panel relevant. P0-B is accepted; this remains regression-only QA copy and must not be treated as final screen text or receive a dedicated polish pass.
+- `DungeonViewportInputRouter` can inherit its viewport camera from a same-object `PanelCameraRenderTarget`, reducing Inspector mismatch risk when the render and click router live on the same `RawImage`.
+- The automation harness checks the static scene bridge and core serialized references. Camera framing, defense side-panel crop, routed click feel, overlay occlusion, and alert readability were accepted for the current MVP checkpoint and should be reopened only for regressions or the later production presentation pass.
+
 2026-05-28 scene layout cleanup pass:
 
 - `Gameplay` now uses the reference-image screen bands as the first deterministic layout pass: top global bar `y 0.925-0.99`, main play area `y 0.18-0.92`, and bottom action bar `y 0.04-0.175`.
@@ -307,6 +314,7 @@ The presentation slice is acceptable for MVP when:
 - Restarting Play Mode from a saved `Running` dungeon restores the dungeon viewport instead of leaving enemies active behind the defense screen.
 - The top and bottom HUD bars remain stable during the transition.
 - Dungeon click/control input works after the transition, including clicks routed from a `RawImage`/RenderTexture panel through the dungeon camera.
+- The HUD Dungeon line can expose whether the dungeon viewport render target and input router are ready while P0-B is under validation.
 - Defense pressure, wall health, Hold/Push, and breach state remain visible during dungeon play.
 - A defense alert can be noticed in summary/action-hint feedback while in dungeon focus.
 - Inventory or crafting can open and close without losing the previous focus state.

@@ -85,6 +85,44 @@ function Assert-TextContains {
     return $false
 }
 
+function Get-SceneBehaviourBlocks {
+    param(
+        [string]$SceneText,
+        [string]$ClassName
+    )
+
+    $escapedClassName = [regex]::Escape($ClassName)
+    $pattern = "(?ms)^--- !u!114 &\d+\r?\nMonoBehaviour:.*?m_EditorClassIdentifier: Assembly-CSharp::${escapedClassName}.*?(?=^--- |\z)"
+    return [regex]::Matches($SceneText, $pattern)
+}
+
+function Assert-SceneBehaviourReference {
+    param(
+        [string]$Name,
+        [string]$SceneText,
+        [string]$ClassName,
+        [string]$FieldName
+    )
+
+    $blocks = @(Get-SceneBehaviourBlocks $SceneText $ClassName)
+    if ($blocks.Count -eq 0) {
+        Add-Result $Name "FAIL" "Missing MonoBehaviour: $ClassName"
+        return $false
+    }
+
+    $escapedFieldName = [regex]::Escape($FieldName)
+    $pattern = "(?m)^\s*${escapedFieldName}:\s+\{fileID:\s+(?!0\})\d+"
+    foreach ($block in $blocks) {
+        if ($block.Value -match $pattern) {
+            Add-Result $Name "PASS" "$ClassName.$FieldName is wired."
+            return $true
+        }
+    }
+
+    Add-Result $Name "FAIL" "$ClassName.$FieldName is not wired."
+    return $false
+}
+
 function Invoke-CheckedCommand {
     param(
         [string]$Name,
@@ -120,6 +158,7 @@ $requiredPaths = @(
     @{ Name = "Gameplay scene"; Path = "Assets\01.Scenes\Gameplay.unity" },
     @{ Name = "Playable HUD script"; Path = "Assets\02.Scripts\UI\PlayableLoopHud.cs" },
     @{ Name = "Screen layout controller script"; Path = "Assets\02.Scripts\UI\PlayableScreenLayoutController.cs" },
+    @{ Name = "Ground defense actor runtime script"; Path = "Assets\02.Scripts\GroundDefense\Runtime\GroundDefenseActorRuntime.cs" },
     @{ Name = "Automation plan"; Path = "GameDesign\ProductionDocs\10_PlayableLoopMvpAutomationPlan.md" },
     @{ Name = "Prototype debt register"; Path = "GameDesign\ProductionDocs\12_PrototypeDebtRegister.md" },
     @{ Name = "Scene setup guide"; Path = "GameDesign\ProductionDocs\06_UnitySceneAndPrefabSetupGuide.md" },
@@ -144,14 +183,28 @@ if (Test-Path -LiteralPath $scenePath) {
         @{ Name = "Scene has dungeon viewport panel"; Token = "m_Name: Panel_DungeonViewport" },
         @{ Name = "HUD syncs screen focus"; Token = "syncScreenFocusWithDungeon: 1" },
         @{ Name = "Scene has ground combat presenter"; Token = "m_EditorClassIdentifier: Assembly-CSharp::GroundDefenseCombatPresenter" },
+        @{ Name = "Scene has ground actor runtime"; Token = "m_EditorClassIdentifier: Assembly-CSharp::GroundDefenseActorRuntime" },
         @{ Name = "Scene has dungeon combat room"; Token = "m_EditorClassIdentifier: Assembly-CSharp::CombatRoom" },
         @{ Name = "Scene has enemy spawner"; Token = "m_EditorClassIdentifier: Assembly-CSharp::EnemySpawner" },
-        @{ Name = "Scene has loot dropper"; Token = "m_EditorClassIdentifier: Assembly-CSharp::LootDropper" }
+        @{ Name = "Scene has loot dropper"; Token = "m_EditorClassIdentifier: Assembly-CSharp::LootDropper" },
+        @{ Name = "Scene has dungeon RawImage viewport"; Token = "m_Name: RawImage_DungeonViewport" },
+        @{ Name = "Scene has dungeon panel camera"; Token = "m_Name: Camera_DungeonPanel" },
+        @{ Name = "Scene has dungeon render target"; Token = "m_EditorClassIdentifier: Assembly-CSharp::PanelCameraRenderTarget" },
+        @{ Name = "Scene has dungeon input router"; Token = "m_EditorClassIdentifier: Assembly-CSharp::DungeonViewportInputRouter" }
     )
 
     foreach ($entry in $requiredSceneTokens) {
         [void](Assert-TextContains $entry.Name $sceneText $entry.Token)
     }
+
+    [void](Assert-SceneBehaviourReference "Dungeon render target source camera" $sceneText "PanelCameraRenderTarget" "sourceCamera")
+    [void](Assert-SceneBehaviourReference "Dungeon render target RawImage" $sceneText "PanelCameraRenderTarget" "targetImage")
+    [void](Assert-SceneBehaviourReference "Dungeon input router RawImage" $sceneText "DungeonViewportInputRouter" "viewportImage")
+    [void](Assert-SceneBehaviourReference "Dungeon input router camera" $sceneText "DungeonViewportInputRouter" "viewportCamera")
+    [void](Assert-SceneBehaviourReference "Dungeon input router player" $sceneText "DungeonViewportInputRouter" "player")
+    [void](Assert-SceneBehaviourReference "Dungeon input router screen layout" $sceneText "DungeonViewportInputRouter" "screenLayout")
+    [void](Assert-SceneBehaviourReference "Ground actor runtime defense" $sceneText "GroundDefenseActorRuntime" "defense")
+    [void](Assert-SceneBehaviourReference "Ground combat presenter actor runtime" $sceneText "GroundDefenseCombatPresenter" "actorRuntime")
 
     if ($sceneText -match "m_Script:\s+\{fileID:\s+0\}") {
         Add-Result "Scene missing-script scan" "FAIL" "Gameplay.unity contains at least one MonoBehaviour with m_Script fileID 0."

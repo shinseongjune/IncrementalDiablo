@@ -293,6 +293,8 @@ Canvas_Dungeon
 
 2026-06-04 dungeon render-target panel handoff:
 
+Current `Gameplay` status as of 2026-06-05: `RawImage_DungeonViewport`, `Camera_DungeonPanel`, `PanelCameraRenderTarget`, and `DungeonViewportInputRouter` are already present and statically wired. The steps below are now rebuild/repair instructions, not the default next production task.
+
 1. Under `Gameplay > Canvas_Gameplay > PlayableScreenLayoutController > Panel_DungeonViewport`, create a child `RawImage_DungeonViewport`.
 2. Stretch `RawImage_DungeonViewport` to the full dungeon panel: anchors `x 0-1`, `y 0-1`, offsets all `0`. This value is fixed for the first pass because the click router assumes the whole image is the interactive dungeon view. Later decorative frames can wrap around it, but should not cover it with raycast-enabled UI unless intended.
 3. Add a scene camera named `Camera_DungeonPanel` near the current dungeon room view. Starting intent: it should frame the hero, the first melee enemy, the room floor/clickable surface, and the clear/reward space in one readable shot. Adjustable values are position, rotation, FOV/orthographic size, culling mask, and clipping planes; fixed intent is that this camera is the source for the dungeon panel.
@@ -300,10 +302,10 @@ Canvas_Dungeon
 5. Add `PanelCameraRenderTarget` to `RawImage_DungeonViewport` or to a nearby helper object named `DungeonViewportRenderTarget`.
 6. In `PanelCameraRenderTarget`, assign `Source Camera = Camera_DungeonPanel`, `Target Image = RawImage_DungeonViewport`, keep `Create Runtime Texture` enabled, keep `Match Image Rect` enabled, keep `Fallback Size` at `1280 x 720`, keep `Render Scale` at `1.0`, and keep `Depth Buffer Bits` at `24`. Use an explicit `RenderTexture` only if you want a named project asset for profiling or reuse.
 7. Add `DungeonViewportInputRouter` to `RawImage_DungeonViewport`.
-8. In `DungeonViewportInputRouter`, assign `Viewport Image = RawImage_DungeonViewport`, `Viewport Camera = Camera_DungeonPanel`, `Player = Hero` object with `PlayerController`, and `Screen Layout = PlayableScreenLayoutController`. Keep `Require Dungeon Focus` enabled so the dungeon panel does not accept combat clicks while defense or overlays own the screen.
+8. In `DungeonViewportInputRouter`, assign `Viewport Image = RawImage_DungeonViewport`, `Viewport Camera = Camera_DungeonPanel`, `Player = Hero` object with `PlayerController`, and `Screen Layout = PlayableScreenLayoutController`. If the router lives on the same object as `PanelCameraRenderTarget`, it can inherit the viewport camera from that render target during reference resolution, but explicit assignment remains clearer in the Inspector. Keep `Require Dungeon Focus` enabled so the dungeon panel does not accept combat clicks while defense or overlays own the screen.
 9. On the hero `PlayerController`, keep `Ignore Clicks Over UI` enabled. Fixed intent: UI clicks should not also run the old `Camera.main` screen-ray path. The `DungeonViewportInputRouter` will send the correct camera ray explicitly.
 10. Make sure the dungeon floor/clickable room surface and enemies are included in `PlayerController > Click Mask`. If self/friendly colliders are hit first, the controller now skips them and can still use a ground hit behind them; if there is no ground/clickable surface behind them, the click is ignored instead of moving onto the hero.
-11. Play Mode check for P0-B: start in `DefenseFocus`, press `Start Dungeon`, confirm the dungeon panel shows the rendered camera view, click the floor inside the panel and confirm the hero moves, click the spawned enemy and confirm attack/chase starts, hold Shift and click inside the panel to confirm stationary attack behavior, click the hero/self collider and confirm it does not create a bad self-target or odd movement command, then open/close reward/inventory/crafting overlays and confirm panel clicks are ignored while overlays own focus.
+11. Play Mode check for P0-B: start in `DefenseFocus`, press `Start Dungeon`, confirm the dungeon panel shows the rendered camera view, and read the HUD Dungeon line `Viewport:` status. It should report a bound or ready render target and ready/routed input instead of missing camera, missing RawImage, or missing PlayerController. Click the floor inside the panel and confirm the hero moves, click the spawned enemy and confirm attack/chase starts, hold Shift and click inside the panel to confirm stationary attack behavior, click the hero/self collider and confirm it does not create a bad self-target or odd movement command, then open/close reward/inventory/crafting overlays and confirm panel clicks are ignored while overlays own focus.
 12. P0-B can be marked `Done` only after the user confirms readability: dungeon camera framing, defense side-panel crop, 70/30 split, overlay occlusion, routed clicks, and defense-alert text are acceptable for MVP. If the rendered panel is correct but camera framing feels wrong, record the exact camera values and keep the issue as Unity Editor visual tuning, not a code blocker.
 
 2026-06-04 dungeon render-target validation fixes:
@@ -312,6 +314,12 @@ Canvas_Dungeon
 2. Revalidation path: start a dungeon, wait until the spawned enemy is active, stop Play Mode before the room resolves, start Play Mode again, and confirm the dungeon panel appears instead of leaving the enemy active behind `DefenseFocus`.
 3. Shift-click target behavior: when Shift-clicking an enemy outside attack range, the hero should face and keep a stationary target command alive until the target enters range or the player gives another command. A ground Shift-click with no target still plays one in-place attack and clears.
 4. Revalidation path: with the enemy visible in the dungeon panel, Shift-click the enemy at or just inside attack range and confirm its HP drops. Then Shift-click it from slightly outside range and confirm the command does not disappear after one swing before the enemy can move into range.
+
+2026-06-05 dungeon viewport diagnostics update:
+
+1. `PlayableLoopHud` can auto-find the dungeon `PanelCameraRenderTarget` and `DungeonViewportInputRouter` by preferring objects whose image, camera, or GameObject name contains `Dungeon`.
+2. When the dungeon viewport is relevant, the Dungeon HUD line includes `Viewport: render ... / input ...`. This is a Play Mode QA aid for P0-B, not final HUD copy.
+3. `Tools/Automation/Invoke-IncrementalDiabloChecks.ps1` now statically checks the `Gameplay` scene for `RawImage_DungeonViewport`, `Camera_DungeonPanel`, `PanelCameraRenderTarget`, `DungeonViewportInputRouter`, and their core serialized references before the manual camera/readability judgment.
 
 2026-05-27 playable overlay button handoff:
 
@@ -478,6 +486,15 @@ Canvas_Dungeon
 8. `PlayableLoopHud` auto-finds `GroundDefenseCombatPresenter` and shows `Ground combat visuals: ...` in the frontline summary when the component is present. If the line says `missing lane anchors` or `anchors only`, the scene wiring is not ready. If wired, the line should include `pressure +incoming/-cleared/s` and `wall damage/s` values.
 9. Play Mode check: start defense, confirm pressure actors advance; toggle Push and confirm actor count changes with pressure; confirm attack pulse count/intensity rises when the `pressure -cleared/s` value is high; tune or wait until wall health drops and confirm a wall flash plus `wall /s` value. This does not judge final art, only that the real runtime state produces visible combat feedback.
 
+2026-06-05 discrete ground actor runtime handoff:
+
+1. Current `Gameplay > DefenseRoot` is already wired with `GroundDefenseActorRuntime` and the existing `GroundDefenseCombatPresenter`.
+2. The actor runtime uses the three existing `Pressure Actors` as reusable slots. Current first-pass values are `Actor Capacity = 3`, `Actor Max Health = 12`, `Pressure Per Spawn = 8`, `Damage Per Hit = 3`, `Minimum Running Actors = 1`, `Base Advance Per Second = 0.10`, `Pressure Advance Per Second = 0.12`, and `Hit Feedback Seconds = 0.16`.
+3. `GroundDefenseCombatPresenter > Actor Runtime` points to the same `DefenseRoot` component. The presenter now uses each runtime slot's active state, hit feedback, and travel percentage instead of looping every pressure actor independently.
+4. Fixed intent: pressure generation creates actor slots, measured defense clearing produces discrete hits and defeats, and measured wall damage allows surviving actors to complete wall-contact events. The continuous `DefenseRuntimeState` remains authoritative for progression, rewards, breach, and save/load.
+5. P0-C acceptance: the user confirmed on 2026-06-05 that the behavior appears to work. The Play Mode path above is now regression-only, not a request for another visual tuning pass.
+6. Freeze rule: do not tune the current placeholder count, colors, movement speed, spacing, silhouette, or camera composition. When ground combat production resumes, replace the fixed scene slots with pooled enemy prefabs, archetype data, real targeting/death handling, and reusable combat feedback.
+
 ## 4. 프리팹 목록
 
 ### 지상 디펜스 프리팹
@@ -535,6 +552,7 @@ MVP 숫자 검증은 `PF_GameSystems`와 `PF_DefenseHud`만으로 시작한다.
 | DefenseHud | 버튼과 표시 갱신 |
 | GroundDefenseLanePresenter | `DefenseDirector.Runtime`을 읽어 scene-authored 지상 전선 앵커, 압박/진행 마커, 자동 marker renderer, 선택 enemy-flow marker, 성벽/압박 fill, 상태 오브젝트, 색상, 라벨을 갱신 |
 | GroundDefenseCombatPresenter | `DefenseDirector.Runtime`을 읽어 scene-authored pressure actors, wall-contact flash, tower/defender attack pulses를 갱신하고 최근 압박/방어/벽 피해율을 포함한 `LastCombatMessage`를 HUD/Inspector에 노출 |
+| GroundDefenseActorRuntime | 연속 전선 압박/방어/벽 피해율을 개별 압박 적 슬롯의 체력, 이동, 피격, 처치, 벽 접촉 이벤트로 변환 |
 | DefenseEnemy | 시각 단계 지상 적 스탯과 피격 |
 | EnemyMover | 시각 단계 성벽 방향 이동 |
 | DefenseWall | 시각 단계 성벽 체력과 손상 |
