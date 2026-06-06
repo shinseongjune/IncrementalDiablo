@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class EnemySpawner : MonoBehaviour
 {
@@ -14,6 +15,8 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private bool spawnOnRoomStart = true;
     [SerializeField] private bool clearPreviousSpawnsOnRoomReset = true;
     [SerializeField] private bool disableSpawnedEnemiesUntilRoomRuns = true;
+    [SerializeField] private bool snapSpawnPointsToNavMesh = true;
+    [SerializeField] private float navMeshSpawnSampleRadius = 2f;
     [SerializeField] private int fallbackSpawnCount = 1;
     [SerializeField] private float fallbackSpawnRadius = 2f;
     [SerializeField] private string spawnedNamePrefix = "SpawnedDungeonEnemy";
@@ -54,6 +57,7 @@ public class EnemySpawner : MonoBehaviour
     {
         spawnPoints ??= new Transform[0];
         spawnedEnemyHealths ??= new List<Health>();
+        navMeshSpawnSampleRadius = Mathf.Max(0f, navMeshSpawnSampleRadius);
         fallbackSpawnCount = Mathf.Max(1, fallbackSpawnCount);
         fallbackSpawnRadius = Mathf.Max(0f, fallbackSpawnRadius);
 
@@ -89,13 +93,29 @@ public class EnemySpawner : MonoBehaviour
             return false;
         }
 
+        if (!TryValidateEnemyPrefab(out NavMeshAgent templateAgent, out string prefabBlocker))
+        {
+            ClearPreviousSpawns();
+            ReportSpawnBlocker(roomIndex, prefabBlocker);
+            Debug.LogWarning(lastSpawnMessage, this);
+            return false;
+        }
+
+        int spawnCount = ResolveSpawnCount();
+        if (!TryResolveSpawnPositions(spawnCount, templateAgent, out List<Vector3> spawnPositions, out string placementBlocker))
+        {
+            ClearPreviousSpawns();
+            ReportSpawnBlocker(roomIndex, placementBlocker);
+            Debug.LogWarning(lastSpawnMessage, this);
+            return false;
+        }
+
         ClearPreviousSpawns();
         spawnedEnemyHealths.Clear();
 
-        int spawnCount = ResolveSpawnCount();
         for (int i = 0; i < spawnCount; i++)
         {
-            Health enemyHealth = SpawnEnemy(i);
+            Health enemyHealth = SpawnEnemy(i, spawnPositions[i]);
             if (enemyHealth != null)
             {
                 spawnedEnemyHealths.Add(enemyHealth);
@@ -114,7 +134,8 @@ public class EnemySpawner : MonoBehaviour
         lastBlockedRoomIndex = int.MinValue;
         combatRoom.RegisterTrackedEnemies(spawnedEnemyHealths, refill: true);
         SyncSpawnedEnemyActivity();
-        SetLastSpawnMessage($"EnemySpawner spawned {spawnedEnemyHealths.Count} tracked enemy record(s) for room {roomIndex + 1}.");
+        string placementText = snapSpawnPointsToNavMesh ? " on NavMesh" : string.Empty;
+        SetLastSpawnMessage($"EnemySpawner spawned {spawnedEnemyHealths.Count} tracked enemy record(s){placementText} for room {roomIndex + 1}.");
         return true;
     }
 
@@ -172,9 +193,8 @@ public class EnemySpawner : MonoBehaviour
                combatRoom.State == CombatRoomState.Failed;
     }
 
-    private Health SpawnEnemy(int spawnIndex)
+    private Health SpawnEnemy(int spawnIndex, Vector3 position)
     {
-        Vector3 position = ResolveSpawnPosition(spawnIndex);
         Quaternion rotation = ResolveSpawnRotation(spawnIndex);
         Transform parent = spawnParent == null ? transform : spawnParent;
         GameObject spawned = Instantiate(enemyPrefab, position, rotation, parent);
@@ -187,32 +207,98 @@ public class EnemySpawner : MonoBehaviour
         }
 
         Health enemyHealth = spawned.GetComponentInChildren<Health>(includeInactive: true);
-        ValidateSpawnedEnemy(spawned, enemyHealth);
         return enemyHealth;
     }
 
-    private void ValidateSpawnedEnemy(GameObject spawned, Health enemyHealth)
+    private bool TryValidateEnemyPrefab(out NavMeshAgent templateAgent, out string blocker)
     {
-        if (enemyHealth == null)
+        templateAgent = enemyPrefab.GetComponentInChildren<NavMeshAgent>(includeInactive: true);
+
+        if (enemyPrefab.GetComponentInChildren<Health>(includeInactive: true) == null)
         {
-            Debug.LogWarning($"{spawned.name} needs a Health component to be tracked by CombatRoom.", spawned);
-            return;
+            blocker = "EnemySpawner blocked the visible combat path: enemy prefab needs a Health component.";
+            return false;
         }
 
-        CharacterActor actor = spawned.GetComponentInChildren<CharacterActor>(includeInactive: true);
+        CharacterActor actor = enemyPrefab.GetComponentInChildren<CharacterActor>(includeInactive: true);
         if (actor == null)
         {
-            Debug.LogWarning($"{spawned.name} should include CharacterActor for dungeon combat.", spawned);
-        }
-        else if (actor.Team != CharacterTeam.Enemy)
-        {
-            Debug.LogWarning($"{spawned.name} should use CharacterTeam.Enemy for dungeon combat.", spawned);
+            blocker = "EnemySpawner blocked the visible combat path: enemy prefab needs CharacterActor.";
+            return false;
         }
 
-        if (spawned.GetComponentInChildren<EnemyAIController>(includeInactive: true) == null)
+        if (actor.Team != CharacterTeam.Enemy)
         {
-            Debug.LogWarning($"{spawned.name} should include EnemyAIController for the Phase C melee-enemy path.", spawned);
+            blocker = "EnemySpawner blocked the visible combat path: enemy prefab CharacterActor must use the Enemy team.";
+            return false;
         }
+
+        if (enemyPrefab.GetComponentInChildren<EnemyAIController>(includeInactive: true) == null)
+        {
+            blocker = "EnemySpawner blocked the visible combat path: melee enemy prefab needs EnemyAIController.";
+            return false;
+        }
+
+        if (templateAgent == null || !templateAgent.enabled)
+        {
+            blocker = "EnemySpawner blocked the visible combat path: melee enemy prefab needs an enabled NavMeshAgent.";
+            return false;
+        }
+
+        Collider[] colliders = enemyPrefab.GetComponentsInChildren<Collider>(includeInactive: true);
+        bool hasEnabledCollider = false;
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            if (colliders[i] != null && colliders[i].enabled)
+            {
+                hasEnabledCollider = true;
+                break;
+            }
+        }
+
+        if (!hasEnabledCollider)
+        {
+            blocker = "EnemySpawner blocked the visible combat path: enemy prefab needs an enabled Collider for player clicks.";
+            return false;
+        }
+
+        blocker = string.Empty;
+        return true;
+    }
+
+    private bool TryResolveSpawnPositions(
+        int spawnCount,
+        NavMeshAgent templateAgent,
+        out List<Vector3> spawnPositions,
+        out string blocker)
+    {
+        spawnPositions = new List<Vector3>(spawnCount);
+
+        for (int i = 0; i < spawnCount; i++)
+        {
+            Vector3 requestedPosition = ResolveSpawnPosition(i);
+            if (!snapSpawnPointsToNavMesh)
+            {
+                spawnPositions.Add(requestedPosition);
+                continue;
+            }
+
+            if (!NavMesh.SamplePosition(
+                    requestedPosition,
+                    out NavMeshHit hit,
+                    navMeshSpawnSampleRadius,
+                    templateAgent.areaMask))
+            {
+                blocker =
+                    $"EnemySpawner blocked the visible combat path: spawn point {i + 1} has no NavMesh within {navMeshSpawnSampleRadius:0.##} units.";
+                return false;
+            }
+
+            spawnPositions.Add(hit.position);
+        }
+
+        blocker = string.Empty;
+        return true;
     }
 
     private int ResolveSpawnCount()

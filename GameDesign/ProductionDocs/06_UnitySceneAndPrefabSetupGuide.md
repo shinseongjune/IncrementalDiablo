@@ -451,6 +451,15 @@ Current `Gameplay` status as of 2026-06-05: `RawImage_DungeonViewport`, `Camera_
 5. Play Mode check for the current gate: press `Start Dungeon`; during `Starting`, the spawned enemy should not attack; during `Running`, the HUD should show `Path tracked enemies`; after clear, the loot line should show authored table and the latest item should be one of the six tier-1 assets.
 6. If the HUD shows `Path setup blocked`, fix the named prefab/spawn/Health setup issue before judging combat feel. Do not accept a prototype-simulation clear as Phase C completion.
 
+2026-06-06 P0-D NavMesh spawn contract:
+
+1. Keep `Gameplay > DungeonRoot > EnemySpawner > Snap Spawn Points To Nav Mesh` enabled. The current starting radius is `2`.
+2. The assigned melee prefab must contain `Health`, `CharacterActor` with Team `Enemy`, `EnemyAIController`, an enabled `NavMeshAgent`, and an enabled collider that receives panel-camera clicks.
+3. Before instantiating the room group, `EnemySpawner` resolves every assigned point onto nearby NavMesh. If one point cannot resolve, it creates no partial encounter and reports `Path setup blocked`.
+4. A placement blocker means the spawn transform is outside the baked walkable area, the NavMesh is stale/missing, or the sample radius is too small. Move the spawn point onto the room floor or rebake the current `NavMesh Surface`; increase the radius only when the intended point is already visually close to the walkable floor.
+5. Focused Play Mode acceptance: press `Start Dungeon`; verify no attack during `Starting`; inspect `EnemySpawner.LastSpawnMessage` for `on NavMesh`; during `Running`, verify `Path tracked enemies`, chase, enemy damage to the hero, routed enemy click and Shift-click damage, HP reaching zero, `All tracked enemies defeated`, authored reward overlay continuity, then press `Start Dungeon` again and repeat the spawn/clear path.
+6. 2026-06-06 accepted result: the user confirmed this path works. `Gameplay > DungeonRoot > CombatRoom > Simulate When No Enemies` is now disabled; a future setup failure must remain visible instead of silently using calculation combat.
+
 2026-05-22 visible ground lane presenter handoff:
 
 1. Add a scene object under `Gameplay > DefenseRoot` named `GroundDefenseLane`.

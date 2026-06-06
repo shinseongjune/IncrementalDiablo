@@ -156,6 +156,8 @@ Write-Host ""
 $requiredPaths = @(
     @{ Name = "Solution file"; Path = "IncrementalDiablo.sln" },
     @{ Name = "Gameplay scene"; Path = "Assets\01.Scenes\Gameplay.unity" },
+    @{ Name = "Dungeon enemy prefab"; Path = "Assets\04.Prefabs\Dungeon\PF_DungeonEnemy_Melee.prefab" },
+    @{ Name = "Enemy spawner script"; Path = "Assets\02.Scripts\Dungeon\EnemySpawner.cs" },
     @{ Name = "Playable HUD script"; Path = "Assets\02.Scripts\UI\PlayableLoopHud.cs" },
     @{ Name = "Screen layout controller script"; Path = "Assets\02.Scripts\UI\PlayableScreenLayoutController.cs" },
     @{ Name = "Ground defense actor runtime script"; Path = "Assets\02.Scripts\GroundDefense\Runtime\GroundDefenseActorRuntime.cs" },
@@ -172,6 +174,8 @@ foreach ($entry in $requiredPaths) {
 }
 
 $scenePath = Join-ProjectPath "Assets\01.Scenes\Gameplay.unity"
+$enemyPrefabPath = Join-ProjectPath "Assets\04.Prefabs\Dungeon\PF_DungeonEnemy_Melee.prefab"
+$enemySpawnerPath = Join-ProjectPath "Assets\02.Scripts\Dungeon\EnemySpawner.cs"
 $planPath = Join-ProjectPath "GameDesign\ProductionDocs\10_PlayableLoopMvpAutomationPlan.md"
 $debtRegisterPath = Join-ProjectPath "GameDesign\ProductionDocs\12_PrototypeDebtRegister.md"
 
@@ -186,6 +190,10 @@ if (Test-Path -LiteralPath $scenePath) {
         @{ Name = "Scene has ground actor runtime"; Token = "m_EditorClassIdentifier: Assembly-CSharp::GroundDefenseActorRuntime" },
         @{ Name = "Scene has dungeon combat room"; Token = "m_EditorClassIdentifier: Assembly-CSharp::CombatRoom" },
         @{ Name = "Scene has enemy spawner"; Token = "m_EditorClassIdentifier: Assembly-CSharp::EnemySpawner" },
+        @{ Name = "Scene has NavMesh surface"; Token = "m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshSurface" },
+        @{ Name = "Scene NavMesh surface has baked data"; Token = "m_NavMeshData: {fileID: 23800000" },
+        @{ Name = "Scene enemy spawns snap to NavMesh"; Token = "snapSpawnPointsToNavMesh: 1" },
+        @{ Name = "Scene normal combat disables prototype simulation"; Token = "simulateWhenNoEnemies: 0" },
         @{ Name = "Scene has loot dropper"; Token = "m_EditorClassIdentifier: Assembly-CSharp::LootDropper" },
         @{ Name = "Scene has dungeon RawImage viewport"; Token = "m_Name: RawImage_DungeonViewport" },
         @{ Name = "Scene has dungeon panel camera"; Token = "m_Name: Camera_DungeonPanel" },
@@ -222,6 +230,28 @@ if (Test-Path -LiteralPath $scenePath) {
     } else {
         Add-Result "Optional playable screen overlays" "PASS" "All overlay references are wired."
     }
+}
+
+if (Test-Path -LiteralPath $enemyPrefabPath) {
+    $enemyPrefabText = Read-TextFile $enemyPrefabPath
+    $requiredEnemyPrefabTokens = @(
+        "m_EditorClassIdentifier: Assembly-CSharp::CharacterActor",
+        "m_EditorClassIdentifier: Assembly-CSharp::Health",
+        "m_EditorClassIdentifier: Assembly-CSharp::EnemyAIController",
+        "NavMeshAgent:",
+        "CapsuleCollider:",
+        "team: 2"
+    )
+
+    foreach ($token in $requiredEnemyPrefabTokens) {
+        [void](Assert-TextContains "Dungeon enemy prefab contract" $enemyPrefabText $token)
+    }
+}
+
+if (Test-Path -LiteralPath $enemySpawnerPath) {
+    $enemySpawnerText = Read-TextFile $enemySpawnerPath
+    [void](Assert-TextContains "Enemy spawner validates prefab contract" $enemySpawnerText "TryValidateEnemyPrefab")
+    [void](Assert-TextContains "Enemy spawner validates NavMesh placement" $enemySpawnerText "NavMesh.SamplePosition")
 }
 
 if (Test-Path -LiteralPath $planPath) {

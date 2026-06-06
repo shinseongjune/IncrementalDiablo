@@ -15700,7 +15700,7 @@ MonoBehaviour:
   refillTrackedCombatantsOnBegin: 1
   manageTrackedEnemyActivity: 1
   blockPrototypeSimulationWhenEnemySetupBlocked: 1
-  simulateWhenNoEnemies: 1
+  simulateWhenNoEnemies: 0
   prototypeHeroHealth: 60
   prototypeHeroDps: 12
   prototypeEnemyHealth: 40
@@ -15863,6 +15863,8 @@ MonoBehaviour:
   spawnOnRoomStart: 1
   clearPreviousSpawnsOnRoomReset: 1
   disableSpawnedEnemiesUntilRoomRuns: 1
+  snapSpawnPointsToNavMesh: 1
+  navMeshSpawnSampleRadius: 2
   fallbackSpawnCount: 1
   fallbackSpawnRadius: 2
   spawnedNamePrefix: SpawnedDungeonEnemy

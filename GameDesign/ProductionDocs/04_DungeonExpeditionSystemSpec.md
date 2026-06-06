@@ -1,10 +1,11 @@
 # Dungeon Expedition System Spec
 
-## 2026-06-05 P0-D Production Priority
+## 2026-06-06 P0-D Accepted Status
 
-- P0-D is the next active Phase C gate after ground-defense behavior readability was accepted.
-- The normal `Gameplay` path must prove `PF_DungeonEnemy_Melee` spawn, `Running` activation, chase/attack, player click attacks, HP/death/result feedback, room clear, and reward continuity without prototype simulation.
-- Prefer production-persistent enemy prefab, combat, and feedback work over another temporary diagnostic or room-tint layer.
+- The user confirmed the normal `Gameplay` path works through `PF_DungeonEnemy_Melee` spawn, `Running` activation, chase/attack, player attacks, HP/death/result feedback, room clear, reward continuity, and retry.
+- `EnemySpawner` now rejects incomplete melee prefabs and spawn points that cannot resolve onto nearby NavMesh, so inert `Health` records cannot be accepted as real tracked combat.
+- Normal `Gameplay` disables `CombatRoom` prototype simulation. Keep calculation combat only as an isolated dev/test fallback, not as a silent production path.
+- P0-E reward/inventory/crafting normal-path acceptance is the next Phase C gate.
 
 작성일: 2026-05-02  
 문서 목적: 지하 던전 크롤링, 자동/직접 전투, 실패/보상 규칙 정의
@@ -248,3 +249,10 @@ MVP 보상:
 - `EnemySpawner` setup blockers stop `CombatRoom` from using prototype simulation, so a missing prefab or missing spawned `Health` cannot silently clear the dungeon.
 - `LootDropper` records whether the clear reward came from the authored weighted table, the legacy definition list, or prototype fallback.
 - The current `Gameplay` scene already wires `PF_DungeonEnemy_Melee`, one spawn point, and the authored tier-1 reward table. The remaining completion gate is Play Mode validation of feel, activation timing, click combat, reward grant, equip/salvage, and save/load.
+
+## 14. 2026-06-06 Prefab Spawn Contract
+
+- The melee prefab path requires `Health`, `CharacterActor` on the Enemy team, `EnemyAIController`, an enabled `NavMeshAgent`, and an enabled collider for player clicks.
+- `EnemySpawner` resolves every intended spawn position with `NavMesh.SamplePosition` before creating any enemies. If one intended point has no valid NavMesh within the configured radius, the room stays setup-blocked instead of spawning an inert tracked target or falling back to prototype simulation.
+- Current `Gameplay` enables `Snap Spawn Points To Nav Mesh` with a `2` unit sample radius. This is a placement safety margin, not a substitute for a correctly baked room NavMesh.
+- P0-D Play Mode confirmation is accepted. Reopen this path only for a regression in activation timing, chase/attack, routed click damage, HP/death/result feedback, authored reward continuity, or clear-then-restart behavior.
