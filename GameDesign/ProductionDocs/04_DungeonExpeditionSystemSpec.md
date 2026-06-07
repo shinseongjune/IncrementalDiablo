@@ -1,11 +1,16 @@
 # Dungeon Expedition System Spec
 
-## 2026-06-06 P0-D Accepted Status
+## 2026-06-06 Phase D Direction
 
 - The user confirmed the normal `Gameplay` path works through `PF_DungeonEnemy_Melee` spawn, `Running` activation, chase/attack, player attacks, HP/death/result feedback, room clear, reward continuity, and retry.
 - `EnemySpawner` now rejects incomplete melee prefabs and spawn points that cannot resolve onto nearby NavMesh, so inert `Health` records cannot be accepted as real tracked combat.
 - Normal `Gameplay` disables `CombatRoom` prototype simulation. Keep calculation combat only as an isolated dev/test fallback, not as a silent production path.
-- P0-E reward/inventory/crafting normal-path acceptance is the next Phase C gate.
+- Phase C is closed from cumulative accepted evidence. Do not run another broad acceptance pass unless a regression changes one of these contracts.
+- D0-A code and scene wiring are implemented. `DungeonSaveData` stores `selectedDepth` and `highestUnlockedDepth`; `ExpeditionDirector` starts the selected depth, unlocks exactly one next depth only when the current highest is cleared, and does not advance on failure.
+- `DefenseSaveManager` writes schema v2 and migrates v1 dungeon data by treating the prior active depth as both selected and highest unlocked. `GameSaveDataDiagnostics` rejects selected/active depths outside the unlocked range.
+- `Gameplay` exposes `Depth -` and `Depth +` buttons through `PlayableLoopHud`, and the Dungeon text shows active depth plus selected/highest unlocked progress.
+- The user confirmed the focused Play Mode path on 2026-06-07: clear -> one-depth unlock -> select/start next depth, failure without further advancement, and save/load restoration all work. D0-A is complete.
+- D0-B is next: selected depth must drive documented formula-based enemy threat, reward power, and material-yield bands.
 
 작성일: 2026-05-02  
 문서 목적: 지하 던전 크롤링, 자동/직접 전투, 실패/보상 규칙 정의

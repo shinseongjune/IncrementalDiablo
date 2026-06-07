@@ -158,6 +158,10 @@ $requiredPaths = @(
     @{ Name = "Gameplay scene"; Path = "Assets\01.Scenes\Gameplay.unity" },
     @{ Name = "Dungeon enemy prefab"; Path = "Assets\04.Prefabs\Dungeon\PF_DungeonEnemy_Melee.prefab" },
     @{ Name = "Enemy spawner script"; Path = "Assets\02.Scripts\Dungeon\EnemySpawner.cs" },
+    @{ Name = "Expedition director script"; Path = "Assets\02.Scripts\Dungeon\ExpeditionDirector.cs" },
+    @{ Name = "Save data script"; Path = "Assets\02.Scripts\Shared\GameSaveData.cs" },
+    @{ Name = "Save diagnostics script"; Path = "Assets\02.Scripts\Shared\GameSaveDataDiagnostics.cs" },
+    @{ Name = "Save manager script"; Path = "Assets\02.Scripts\GroundDefense\Runtime\DefenseSaveManager.cs" },
     @{ Name = "Playable HUD script"; Path = "Assets\02.Scripts\UI\PlayableLoopHud.cs" },
     @{ Name = "Screen layout controller script"; Path = "Assets\02.Scripts\UI\PlayableScreenLayoutController.cs" },
     @{ Name = "Ground defense actor runtime script"; Path = "Assets\02.Scripts\GroundDefense\Runtime\GroundDefenseActorRuntime.cs" },
@@ -176,6 +180,11 @@ foreach ($entry in $requiredPaths) {
 $scenePath = Join-ProjectPath "Assets\01.Scenes\Gameplay.unity"
 $enemyPrefabPath = Join-ProjectPath "Assets\04.Prefabs\Dungeon\PF_DungeonEnemy_Melee.prefab"
 $enemySpawnerPath = Join-ProjectPath "Assets\02.Scripts\Dungeon\EnemySpawner.cs"
+$expeditionDirectorPath = Join-ProjectPath "Assets\02.Scripts\Dungeon\ExpeditionDirector.cs"
+$saveDataPath = Join-ProjectPath "Assets\02.Scripts\Shared\GameSaveData.cs"
+$saveDiagnosticsPath = Join-ProjectPath "Assets\02.Scripts\Shared\GameSaveDataDiagnostics.cs"
+$saveManagerPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\Runtime\DefenseSaveManager.cs"
+$playableHudPath = Join-ProjectPath "Assets\02.Scripts\UI\PlayableLoopHud.cs"
 $planPath = Join-ProjectPath "GameDesign\ProductionDocs\10_PlayableLoopMvpAutomationPlan.md"
 $debtRegisterPath = Join-ProjectPath "GameDesign\ProductionDocs\12_PrototypeDebtRegister.md"
 
@@ -198,7 +207,11 @@ if (Test-Path -LiteralPath $scenePath) {
         @{ Name = "Scene has dungeon RawImage viewport"; Token = "m_Name: RawImage_DungeonViewport" },
         @{ Name = "Scene has dungeon panel camera"; Token = "m_Name: Camera_DungeonPanel" },
         @{ Name = "Scene has dungeon render target"; Token = "m_EditorClassIdentifier: Assembly-CSharp::PanelCameraRenderTarget" },
-        @{ Name = "Scene has dungeon input router"; Token = "m_EditorClassIdentifier: Assembly-CSharp::DungeonViewportInputRouter" }
+        @{ Name = "Scene has dungeon input router"; Token = "m_EditorClassIdentifier: Assembly-CSharp::DungeonViewportInputRouter" },
+        @{ Name = "Scene has previous dungeon depth button"; Token = "m_Name: Button_DungeonDepthPrevious" },
+        @{ Name = "Scene has next dungeon depth button"; Token = "m_Name: Button_DungeonDepthNext" },
+        @{ Name = "Scene initializes selected dungeon depth"; Token = "selectedDepth: 1" },
+        @{ Name = "Scene initializes highest unlocked dungeon depth"; Token = "highestUnlockedDepth: 1" }
     )
 
     foreach ($entry in $requiredSceneTokens) {
@@ -213,6 +226,8 @@ if (Test-Path -LiteralPath $scenePath) {
     [void](Assert-SceneBehaviourReference "Dungeon input router screen layout" $sceneText "DungeonViewportInputRouter" "screenLayout")
     [void](Assert-SceneBehaviourReference "Ground actor runtime defense" $sceneText "GroundDefenseActorRuntime" "defense")
     [void](Assert-SceneBehaviourReference "Ground combat presenter actor runtime" $sceneText "GroundDefenseCombatPresenter" "actorRuntime")
+    [void](Assert-SceneBehaviourReference "Playable HUD previous depth button" $sceneText "PlayableLoopHud" "previousDungeonDepthButton")
+    [void](Assert-SceneBehaviourReference "Playable HUD next depth button" $sceneText "PlayableLoopHud" "nextDungeonDepthButton")
 
     if ($sceneText -match "m_Script:\s+\{fileID:\s+0\}") {
         Add-Result "Scene missing-script scan" "FAIL" "Gameplay.unity contains at least one MonoBehaviour with m_Script fileID 0."
@@ -230,6 +245,30 @@ if (Test-Path -LiteralPath $scenePath) {
     } else {
         Add-Result "Optional playable screen overlays" "PASS" "All overlay references are wired."
     }
+}
+
+if ((Test-Path -LiteralPath $expeditionDirectorPath) -and
+    (Test-Path -LiteralPath $saveDataPath) -and
+    (Test-Path -LiteralPath $saveDiagnosticsPath) -and
+    (Test-Path -LiteralPath $saveManagerPath) -and
+    (Test-Path -LiteralPath $playableHudPath)) {
+    $expeditionDirectorText = Read-TextFile $expeditionDirectorPath
+    $saveDataText = Read-TextFile $saveDataPath
+    $saveDiagnosticsText = Read-TextFile $saveDiagnosticsPath
+    $saveManagerText = Read-TextFile $saveManagerPath
+    $playableHudText = Read-TextFile $playableHudPath
+
+    [void](Assert-TextContains "Expedition exposes selected depth" $expeditionDirectorText "public int SelectedDepth")
+    [void](Assert-TextContains "Expedition exposes highest unlocked depth" $expeditionDirectorText "public int HighestUnlockedDepth")
+    [void](Assert-TextContains "Expedition starts selected depth" $expeditionDirectorText "runtime.depth = SelectedDepth;")
+    [void](Assert-TextContains "Expedition unlocks after clear" $expeditionDirectorText "int unlockedDepth = TryUnlockNextDepth();")
+    [void](Assert-TextContains "Dungeon save stores selected depth" $saveDataText "public int selectedDepth = 1;")
+    [void](Assert-TextContains "Dungeon save stores highest unlocked depth" $saveDataText "public int highestUnlockedDepth = 1;")
+    [void](Assert-TextContains "Save manager writes schema v2" $saveManagerText "private const int CurrentSaveVersion = 2;")
+    [void](Assert-TextContains "Save manager migrates legacy dungeon depth" $saveManagerText "MigrateSaveData(saveData);")
+    [void](Assert-TextContains "Save diagnostics validate selected depth" $saveDiagnosticsText "dungeon selectedDepth must be within the unlocked depth range")
+    [void](Assert-TextContains "Playable HUD exposes previous depth action" $playableHudText "public void SelectPreviousDungeonDepth()")
+    [void](Assert-TextContains "Playable HUD exposes next depth action" $playableHudText "public void SelectNextDungeonDepth()")
 }
 
 if (Test-Path -LiteralPath $enemyPrefabPath) {
@@ -262,8 +301,10 @@ if (Test-Path -LiteralPath $planPath) {
         "Prototype Debt Sweep Rule",
         "No-Stagnation Rules",
         "Progress Tracker",
-        "Current phase | Phase C - First Real Game Slice",
+        "Current phase | Phase D - Long-Horizon Systems Foundation",
         "Next unlock",
+        "D0-A",
+        "D0-B",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
         "12_PrototypeDebtRegister.md",
         "Get-PrototypeDebtInventory.ps1"

@@ -252,7 +252,7 @@ Canvas_Dungeon
 2. Add a child object named `Panel_PlayableLoopHud` and attach `PlayableLoopHud`.
 3. Add TMP text fields for `Summary`, `Resources`, `Dungeon`, `Latest Item`, `Hero Stats`, `Message`, and optionally `Action Hint`, then assign them to the matching `PlayableLoopHud` label slots. If `Action Hint` is not assigned, the next-action hint is appended to `Message`.
 4. Add ground buttons for `Start Defense`, `Repair Wall`, `Toggle Hold/Push`, `Upgrade Wall`, `Upgrade Tower`, and `Upgrade Defenders`, then assign them to the matching button slots.
-5. Add dungeon/item/save buttons for `Start Dungeon`, `Claim Reward`, `Equip Latest`, `Salvage Latest`, `Save`, and `Load`, then assign them to the matching button slots.
+5. Add dungeon/item/save buttons for `Previous Dungeon Depth`, `Next Dungeon Depth`, `Start Dungeon`, `Claim Reward`, `Equip Latest`, `Salvage Latest`, `Save`, and `Load`, then assign them to the matching button slots.
 6. Let `Auto Find References` stay enabled for the first pass. If a scene has multiple heroes or inventories later, wire `DefenseDirector`, `ExpeditionDirector`, `SimpleInventory`, `ItemSalvageService`, `EquipmentSlots`, `CharacterStats`, `CurrencyWallet`, and `DefenseSaveManager` explicitly.
 7. Keep `DungeonDebugHud` and `InventoryDebugHud` in the scene only as smoke-test fallback. Normal Phase B testing should use `PlayableLoopHud` first.
 8. After wiring, Play Mode check: start/repair/toggle the frontline, buy one defense upgrade, start dungeon, wait for clear, claim reward if needed, equip latest or salvage it, save, load, and confirm the message/action-hint lines and button interactability guide the next action.
@@ -263,6 +263,14 @@ Canvas_Dungeon
 2. `Claim Reward` can stay unavailable while a run is active. If the dungeon clears and `ExpeditionDirector > Grant Reward On Expedition Clear` is enabled, the reward is granted automatically and the button is only a status/confirmation action.
 3. If pressing `Start Dungeon` shows `Room: unavailable`, the HUD found `ExpeditionDirector` but did not find `CombatRoom`. In that case keep `CombatRoom` on `DungeonRoot` or wire it directly into `PlayableLoopHud`.
 4. If the dungeon appears to be stuck in `Running`, check the `Room:` line first. `Starting` means countdown, `Running` means prototype combat is ticking, and `Cleared`/`Failed` means the room already resolved.
+
+2026-06-07 Phase D dungeon-depth controls:
+
+1. Current `Gameplay > Canvas_Gameplay > Panel_PlayableLoopHud` already contains `Button_DungeonDepthPrevious` and `Button_DungeonDepthNext`, wired to `PlayableLoopHud.previousDungeonDepthButton` and `nextDungeonDepthButton`.
+2. The first-pass anchors are fixed scene-safe values: previous button `x 0.17-0.215`, next button `x 0.22-0.265`, both `y 0.12-0.165`. They sit above the existing dungeon-start row and left of the action-hint region.
+3. The Dungeon TMP line shows active `Depth` and `Selected/HighestUnlocked`. `Depth -` disables at depth 1; `Depth +` disables at the highest unlocked depth; both disable while a run is active.
+4. Focused Play Mode check: start at selected/highest `1/1`, clear Depth 1, confirm `Depth 2 unlocked`, press `Depth +`, start and confirm active Depth 2, fail once and confirm highest stays 2, then Save/Load and confirm selected/highest remain `2/2`.
+5. Fixed behavior is the saved unlock ladder and one-step clear advancement. Button size, final art, and wording may be refined in Phase E only if readability is poor; do not block D0-B formula work on ornate presentation.
 
 2026-05-15 PlayableLoopHud ground-action update:
 

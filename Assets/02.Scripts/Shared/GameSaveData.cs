@@ -3,7 +3,7 @@ using System;
 [Serializable]
 public class GameSaveData
 {
-    public int version = 1;
+    public int version = 2;
     public string savedAtUtc;
     public float playTimeSeconds;
     public ResourceAmount[] currencies;
@@ -45,6 +45,8 @@ public class DungeonSaveData
     public DungeonRunState state = DungeonRunState.Ready;
     public string dungeonId;
     public int depth = 1;
+    public int selectedDepth = 1;
+    public int highestUnlockedDepth = 1;
     public int totalRooms = 1;
     public int currentRoomIndex;
     public int roomsCompleted;

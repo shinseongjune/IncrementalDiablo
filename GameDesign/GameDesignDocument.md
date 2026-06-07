@@ -1,9 +1,11 @@
 # Incremental Diablo Game Design Document
 
-## 2026-06-05 Implementation Direction Note
+## 2026-06-06 Implementation Direction Note
 
 - The current ground-defense fixed three-slot actor projection has completed its behavior-readability purpose. It is not the final defense design and will not receive further placeholder polish.
-- The immediate Phase C production target is the authored direct-control dungeon combat path: real prefab spawn, chase/attack, player damage, HP/death/result feedback, room clear, and reward continuity.
+- Phase C is complete from accumulated accepted evidence. Do not schedule more broad loop validation unless a regression or changed contract creates a new risk.
+- Phase D D0-A save-backed dungeon depth progression is implemented and accepted in Play Mode: selected depth, highest unlocked depth, clear-based one-step unlock, failure without advancement, normal HUD controls, schema-v2 migration, and save/load persistence.
+- The immediate production target is D0-B: make selected depth drive formula-based enemy threat, reward power, and material-yield bands so the ladder becomes a meaningful long-tail choice.
 - Future ground-defense production must remain automatic and continuous-frontline based, but should move to reusable pooled prefabs, archetype data, real targeting/death, and scalable feedback rather than hand-authored waves or fixed blockout slots.
 
 작성일: 2026-04-30  

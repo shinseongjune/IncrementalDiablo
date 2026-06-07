@@ -56,6 +56,22 @@
 - The next production priority is P0-D: complete the authored dungeon enemy prefab path through spawn, chase/attack, player damage, HP/result feedback, death, room clear, and reward continuity without prototype simulation.
 - When ground defense production resumes, replace the fixed-slot bridge with pooled prefabs, archetype data, real targeting/death, and scalable feedback instead of extending the blockout.
 
+### 2026-06-06 Stagnation audit and Phase D promotion
+
+- The project is not implementation-stalled: after Phase B, most checkpoints added player-facing combat, camera/input, overlays, authored rewards, crafting, or visible defense behavior.
+- The process had reached a checklist stall. The plan had already accepted the broad loop twice and then accepted crafting, camera/input, ground behavior, and dungeon prefab combat separately, but still queued P0-E and P0-F as two more overlapping loop passes.
+- Phase C is therefore closed from cumulative evidence. Optional overlay wording/layout cleanup moves to Phase E usability work and the additional 10-20 minute full-loop rerun is waived unless a regression changes a critical link.
+- Phase D starts with persistent dungeon depth progression because normal play is still structurally fixed to depth 1 and one room. The first production task is selected/highest-unlocked depth with save/load and clear-based unlock; formula-driven threat and reward bands follow.
+- Verification remains required after implementation, but validation-only work is no longer a valid daily default. Reopen an accepted path only for a regression, changed contract, or genuinely uncovered milestone risk.
+
+### 2026-06-07 Phase D D0-A implementation
+
+- Dungeon progression now has separate active, selected, and highest-unlocked depth values instead of reusing one fixed scene depth.
+- Clearing the current highest unlocked depth adds exactly one next depth. Clearing a lower depth or failing a run does not advance the ladder.
+- Save schema v2 persists selected/highest depth and migrates v1 saves from their prior active depth. Save diagnostics now enforce the unlocked range.
+- The normal `Gameplay` HUD has `Depth -` / `Depth +` controls and displays active plus selected/highest depth. The user confirmed unlock, selection/start, non-advancing failure, and save/load restoration on 2026-06-07, closing D0-A.
+- D0-B formula-driven threat/reward bands are now the active production priority.
+
 ## 2. Phase 0. 문서 기준 고정
 
 목표:

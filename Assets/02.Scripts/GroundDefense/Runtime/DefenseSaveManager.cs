@@ -6,6 +6,8 @@ using UnityEngine;
 [DefaultExecutionOrder(1000)]
 public class DefenseSaveManager : MonoBehaviour
 {
+    private const int CurrentSaveVersion = 2;
+
     [SerializeField] private DefenseDirector director;
     [SerializeField] private ExpeditionDirector expedition;
     [SerializeField] private SimpleInventory inventory;
@@ -199,6 +201,7 @@ public class DefenseSaveManager : MonoBehaviour
                 return false;
             }
 
+            MigrateSaveData(saveData);
             return true;
         }
         catch (Exception exception)
@@ -237,7 +240,7 @@ public class DefenseSaveManager : MonoBehaviour
 
         saveData = new GameSaveData
         {
-            version = 1,
+            version = CurrentSaveVersion,
             savedAtUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
             playTimeSeconds = director.Runtime.TotalElapsed,
             currencies = director.Wallet == null ? null : director.Wallet.ExportAmounts(),
@@ -248,6 +251,26 @@ public class DefenseSaveManager : MonoBehaviour
         };
 
         return true;
+    }
+
+    private static void MigrateSaveData(GameSaveData saveData)
+    {
+        if (saveData == null || saveData.version >= CurrentSaveVersion)
+        {
+            return;
+        }
+
+        saveData.dungeon ??= new DungeonSaveData();
+        int activeDepth = Mathf.Max(1, saveData.dungeon.depth);
+        int highestDepth = Mathf.Max(activeDepth, Mathf.Max(1, saveData.dungeon.highestUnlockedDepth));
+        int selectedDepth = saveData.dungeon.selectedDepth > 0
+            ? saveData.dungeon.selectedDepth
+            : activeDepth;
+
+        saveData.dungeon.depth = activeDepth;
+        saveData.dungeon.highestUnlockedDepth = highestDepth;
+        saveData.dungeon.selectedDepth = Mathf.Clamp(selectedDepth, 1, highestDepth);
+        saveData.version = CurrentSaveVersion;
     }
 
     private void RestoreEquipmentState(GameSaveData saveData)

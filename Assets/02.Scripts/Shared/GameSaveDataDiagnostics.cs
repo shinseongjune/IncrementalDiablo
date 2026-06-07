@@ -40,8 +40,11 @@ public static class GameSaveDataDiagnostics
         int equippedCount = saveData.hero?.equippedItemInstanceIds == null ? 0 : saveData.hero.equippedItemInstanceIds.Length;
         int frontlineLevel = saveData.defense == null ? 0 : Math.Max(1, saveData.defense.frontlineLevel);
         DungeonRunState dungeonState = saveData.dungeon == null ? DungeonRunState.Ready : saveData.dungeon.state;
+        int dungeonDepth = saveData.dungeon == null ? 1 : Math.Max(1, saveData.dungeon.depth);
+        int selectedDepth = saveData.dungeon == null ? 1 : Math.Max(1, saveData.dungeon.selectedDepth);
+        int highestDepth = saveData.dungeon == null ? 1 : Math.Max(1, saveData.dungeon.highestUnlockedDepth);
 
-        return $"Save snapshot: currencies {currencyCount}, FL {frontlineLevel}, dungeon {dungeonState}, inventory {itemCount}, equipped {equippedCount}.";
+        return $"Save snapshot: currencies {currencyCount}, FL {frontlineLevel}, dungeon {dungeonState} D{dungeonDepth} selected {selectedDepth}/{highestDepth}, inventory {itemCount}, equipped {equippedCount}.";
     }
 
     private static void ValidateHeader(GameSaveData saveData, List<string> errors, List<string> warnings)
@@ -153,6 +156,21 @@ public static class GameSaveDataDiagnostics
         if (dungeon.depth < 1)
         {
             errors.Add("dungeon depth must be at least 1");
+        }
+
+        if (dungeon.highestUnlockedDepth < 1)
+        {
+            errors.Add("dungeon highestUnlockedDepth must be at least 1");
+        }
+
+        if (dungeon.selectedDepth < 1 || dungeon.selectedDepth > Math.Max(1, dungeon.highestUnlockedDepth))
+        {
+            errors.Add("dungeon selectedDepth must be within the unlocked depth range");
+        }
+
+        if (dungeon.depth > Math.Max(1, dungeon.highestUnlockedDepth))
+        {
+            errors.Add("dungeon active depth cannot exceed highestUnlockedDepth");
         }
 
         if (dungeon.totalRooms < 1)

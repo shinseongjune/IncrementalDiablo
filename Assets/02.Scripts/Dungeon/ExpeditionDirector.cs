@@ -23,6 +23,14 @@ public class ExpeditionDirector : MonoBehaviour
     public bool IsRunning => State == DungeonRunState.Running;
     public string DungeonId => runtime == null || string.IsNullOrWhiteSpace(runtime.dungeonId) ? dungeonId : runtime.dungeonId;
     public int Depth => runtime == null ? Mathf.Max(1, depth) : Mathf.Max(1, runtime.depth);
+    public int SelectedDepth => runtime == null
+        ? Mathf.Max(1, depth)
+        : Mathf.Clamp(Mathf.Max(1, runtime.selectedDepth), 1, HighestUnlockedDepth);
+    public int HighestUnlockedDepth => runtime == null
+        ? Mathf.Max(1, depth)
+        : Mathf.Max(1, runtime.highestUnlockedDepth, Mathf.Max(1, runtime.depth));
+    public bool CanSelectPreviousDepth => !IsRunning && SelectedDepth > 1;
+    public bool CanSelectNextDepth => !IsRunning && SelectedDepth < HighestUnlockedDepth;
     public int TotalRooms => runtime == null ? Mathf.Max(1, totalRooms) : Mathf.Max(1, runtime.totalRooms);
     public int CurrentRoomIndex => runtime == null ? 0 : Mathf.Max(0, runtime.currentRoomIndex);
     public int RoomsCompleted => runtime == null ? 0 : Mathf.Max(0, runtime.roomsCompleted);
@@ -66,7 +74,7 @@ public class ExpeditionDirector : MonoBehaviour
         EnsureRuntime();
         runtime.state = DungeonRunState.Ready;
         runtime.dungeonId = dungeonId;
-        runtime.depth = Mathf.Max(1, depth);
+        runtime.depth = SelectedDepth;
         runtime.totalRooms = Mathf.Max(1, totalRooms);
         runtime.currentRoomIndex = 0;
         runtime.roomsCompleted = 0;
@@ -87,7 +95,7 @@ public class ExpeditionDirector : MonoBehaviour
 
         runtime.state = DungeonRunState.Running;
         runtime.dungeonId = dungeonId;
-        runtime.depth = Mathf.Max(1, depth);
+        runtime.depth = SelectedDepth;
         runtime.totalRooms = Mathf.Max(1, totalRooms);
         runtime.currentRoomIndex = 0;
         runtime.roomsCompleted = 0;
@@ -96,6 +104,32 @@ public class ExpeditionDirector : MonoBehaviour
         runtime.lastResult = "Expedition started";
         NotifyChanged();
         return true;
+    }
+
+    public bool TrySelectDepth(int targetDepth)
+    {
+        EnsureRuntime();
+
+        if (runtime.state == DungeonRunState.Running ||
+            targetDepth < 1 ||
+            targetDepth > runtime.highestUnlockedDepth)
+        {
+            return false;
+        }
+
+        runtime.selectedDepth = targetDepth;
+        NotifyChanged();
+        return true;
+    }
+
+    public bool SelectPreviousDepth()
+    {
+        return TrySelectDepth(SelectedDepth - 1);
+    }
+
+    public bool SelectNextDepth()
+    {
+        return TrySelectDepth(SelectedDepth + 1);
     }
 
     public void StartExpeditionFromButton()
@@ -120,9 +154,15 @@ public class ExpeditionDirector : MonoBehaviour
             runtime.currentRoomIndex = Mathf.Max(0, runtime.totalRooms - 1);
             runtime.rewardPending = true;
             runtime.lastResult = "Expedition cleared";
+            int unlockedDepth = TryUnlockNextDepth();
             if (grantRewardOnExpeditionClear)
             {
                 TryGrantPendingReward();
+            }
+
+            if (unlockedDepth > 0)
+            {
+                runtime.lastResult = $"{runtime.lastResult} / Depth {unlockedDepth} unlocked";
             }
         }
         else
@@ -208,6 +248,8 @@ public class ExpeditionDirector : MonoBehaviour
             state = runtime.state,
             dungeonId = runtime.dungeonId,
             depth = Mathf.Max(1, runtime.depth),
+            selectedDepth = SelectedDepth,
+            highestUnlockedDepth = HighestUnlockedDepth,
             totalRooms = Mathf.Max(1, runtime.totalRooms),
             currentRoomIndex = Mathf.Max(0, runtime.currentRoomIndex),
             roomsCompleted = Mathf.Clamp(runtime.roomsCompleted, 0, Mathf.Max(1, runtime.totalRooms)),
@@ -221,15 +263,26 @@ public class ExpeditionDirector : MonoBehaviour
     {
         if (saveData == null)
         {
+            runtime = new DungeonSaveData
+            {
+                depth = Mathf.Max(1, depth),
+                selectedDepth = Mathf.Max(1, depth),
+                highestUnlockedDepth = Mathf.Max(1, depth)
+            };
             ResetToReady();
             return;
         }
 
+        int activeDepth = Mathf.Max(1, saveData.depth);
+        int highestDepth = Mathf.Max(activeDepth, Mathf.Max(1, saveData.highestUnlockedDepth));
+        int selectedDepth = saveData.selectedDepth > 0 ? saveData.selectedDepth : activeDepth;
         runtime = new DungeonSaveData
         {
             state = saveData.state,
             dungeonId = string.IsNullOrWhiteSpace(saveData.dungeonId) ? dungeonId : saveData.dungeonId,
-            depth = Mathf.Max(1, saveData.depth),
+            depth = Mathf.Clamp(activeDepth, 1, highestDepth),
+            selectedDepth = Mathf.Clamp(selectedDepth, 1, highestDepth),
+            highestUnlockedDepth = highestDepth,
             totalRooms = Mathf.Max(1, saveData.totalRooms),
             currentRoomIndex = Mathf.Max(0, saveData.currentRoomIndex),
             roomsCompleted = Mathf.Max(0, saveData.roomsCompleted),
@@ -254,7 +307,36 @@ public class ExpeditionDirector : MonoBehaviour
 
     private void EnsureRuntime()
     {
-        runtime ??= new DungeonSaveData();
+        if (runtime == null)
+        {
+            int initialDepth = Mathf.Max(1, depth);
+            runtime = new DungeonSaveData
+            {
+                depth = initialDepth,
+                selectedDepth = initialDepth,
+                highestUnlockedDepth = initialDepth
+            };
+            return;
+        }
+
+        int activeDepth = Mathf.Max(1, runtime.depth);
+        runtime.highestUnlockedDepth = Mathf.Max(activeDepth, Mathf.Max(1, runtime.highestUnlockedDepth));
+        int selectedDepth = runtime.selectedDepth > 0 ? runtime.selectedDepth : activeDepth;
+        runtime.selectedDepth = Mathf.Clamp(selectedDepth, 1, runtime.highestUnlockedDepth);
+        runtime.depth = Mathf.Clamp(activeDepth, 1, runtime.highestUnlockedDepth);
+    }
+
+    private int TryUnlockNextDepth()
+    {
+        int clearedDepth = Mathf.Max(1, runtime.depth);
+        if (clearedDepth != runtime.highestUnlockedDepth ||
+            runtime.highestUnlockedDepth == int.MaxValue)
+        {
+            return 0;
+        }
+
+        runtime.highestUnlockedDepth += 1;
+        return runtime.highestUnlockedDepth;
     }
 
     private void ResolveLootDropper()

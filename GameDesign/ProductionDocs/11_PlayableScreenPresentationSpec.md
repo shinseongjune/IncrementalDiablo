@@ -189,6 +189,13 @@ Suggested names:
 - `Panel_CraftingOverlay`
 - `Panel_RewardOverlay`
 
+2026-06-07 Phase D depth-selection addition:
+
+- The normal combined HUD now includes compact `Depth -` and `Depth +` controls near the dungeon-start row.
+- The Dungeon status text exposes active depth plus selected/highest-unlocked depth, so the player can see the ladder without opening a debug HUD or separate menu.
+- Depth selection is disabled while an expedition is running. Clearing the current highest unlocks one next depth; failure does not change the ladder.
+- These are conservative first-pass controls for the progression axis. A later dedicated dungeon-selection panel may replace them when multiple dungeon definitions/themes exist, but the saved progression contract should remain.
+
 2026-05-26 implementation bridge:
 
 - `PlayableScreenFocus` now exists with `DefenseFocus`, `DungeonFocus`, `InventoryOverlay`, `CraftingOverlay`, and `RewardOverlay`.

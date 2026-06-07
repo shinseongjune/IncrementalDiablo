@@ -50,6 +50,8 @@ public class PlayableLoopHud : MonoBehaviour
     [SerializeField] private Button upgradeWallButton;
     [SerializeField] private Button upgradeTowerButton;
     [SerializeField] private Button upgradeDefenderButton;
+    [SerializeField] private Button previousDungeonDepthButton;
+    [SerializeField] private Button nextDungeonDepthButton;
     [SerializeField] private Button startDungeonButton;
     [SerializeField] private Button claimRewardButton;
     [SerializeField] private Button equipLatestButton;
@@ -133,8 +135,18 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         SetMessage(combatRoom == null
-            ? "Dungeon started, but no CombatRoom is linked. Room progress cannot advance yet."
-            : "Dungeon started. Room progress is shown in the Dungeon line.");
+            ? $"Depth {expedition.Depth} started, but no CombatRoom is linked. Room progress cannot advance yet."
+            : $"Depth {expedition.Depth} started. Room progress is shown in the Dungeon line.");
+    }
+
+    public void SelectPreviousDungeonDepth()
+    {
+        SelectDungeonDepth(next: false);
+    }
+
+    public void SelectNextDungeonDepth()
+    {
+        SelectDungeonDepth(next: true);
     }
 
     public void StartDefense()
@@ -408,7 +420,7 @@ public class PlayableLoopHud : MonoBehaviour
 
         string rewardState = BuildRewardStateText();
         string result = string.IsNullOrWhiteSpace(expedition.LastResult) ? "none" : expedition.LastResult;
-        string dungeonTextValue = $"Dungeon: {expedition.State} / Room {expedition.RoomsCompleted}/{expedition.TotalRooms} / {expedition.ElapsedSeconds:0.0}s / {rewardState} / Loot {BuildLootSourceText()}\nLast: {result}";
+        string dungeonTextValue = $"Dungeon: {expedition.State} / Depth {expedition.Depth} / Selected {expedition.SelectedDepth}/{expedition.HighestUnlockedDepth} unlocked\nRoom {expedition.RoomsCompleted}/{expedition.TotalRooms} / {expedition.ElapsedSeconds:0.0}s / {rewardState} / Loot {BuildLootSourceText()}\nLast: {result}";
         string viewportText = BuildDungeonViewportText();
 
         if (combatRoom == null)
@@ -674,7 +686,9 @@ public class PlayableLoopHud : MonoBehaviour
             return "Next: keep the equipped item, salvage spares, or start another dungeon.";
         }
 
-        return "Next: start a dungeon, then use its reward to choose equip or salvage.";
+        return expedition.SelectedDepth < expedition.HighestUnlockedDepth
+            ? $"Next: choose up to Depth {expedition.HighestUnlockedDepth}, then start the selected dungeon."
+            : "Next: start a dungeon, then use its reward to choose equip or salvage.";
     }
 
     private string BuildDefenseAlertText(DefenseRuntimeState runtime)
@@ -790,6 +804,8 @@ public class PlayableLoopHud : MonoBehaviour
         SetInteractable(upgradeWallButton, canUseUpgrades && defenseWallet.CanSpend(upgrades.GetWallUpgradeCost()));
         SetInteractable(upgradeTowerButton, canUseUpgrades && defenseWallet.CanSpend(upgrades.GetTowerUpgradeCost()));
         SetInteractable(upgradeDefenderButton, canUseUpgrades && defenseWallet.CanSpend(upgrades.GetDefenderUpgradeCost()));
+        SetInteractable(previousDungeonDepthButton, expedition != null && expedition.CanSelectPreviousDepth);
+        SetInteractable(nextDungeonDepthButton, expedition != null && expedition.CanSelectNextDepth);
         SetInteractable(startDungeonButton, expedition != null && !expedition.IsRunning);
         SetInteractable(claimRewardButton, expedition != null && (expedition.RewardPending || expedition.State == DungeonRunState.Cleared));
         SetInteractable(equipLatestButton, latest != null && inventory != null && equipmentSlots != null);
@@ -820,6 +836,25 @@ public class PlayableLoopHud : MonoBehaviour
         };
 
         SetMessage(screenLayout.LastLayoutMessage);
+    }
+
+    private void SelectDungeonDepth(bool next)
+    {
+        ResolveReferences();
+        if (expedition == null)
+        {
+            SetMessage("Dungeon is not available.");
+            return;
+        }
+
+        bool changed = next
+            ? expedition.SelectNextDepth()
+            : expedition.SelectPreviousDepth();
+        SetMessage(changed
+            ? $"Selected dungeon Depth {expedition.SelectedDepth} of {expedition.HighestUnlockedDepth} unlocked."
+            : expedition.IsRunning
+                ? "Dungeon depth cannot change while an expedition is running."
+                : $"Dungeon depth stays at {expedition.SelectedDepth}; unlocked range is 1-{expedition.HighestUnlockedDepth}.");
     }
 
     private void TryUpgradeDefense(string label, Func<DefenseUpgradeModel, ResourceAmount[]> costSelector, Func<bool> upgradeAction)
@@ -1104,6 +1139,8 @@ public class PlayableLoopHud : MonoBehaviour
         AddListener(upgradeWallButton, UpgradeWall);
         AddListener(upgradeTowerButton, UpgradeTower);
         AddListener(upgradeDefenderButton, UpgradeDefenders);
+        AddListener(previousDungeonDepthButton, SelectPreviousDungeonDepth);
+        AddListener(nextDungeonDepthButton, SelectNextDungeonDepth);
         AddListener(startDungeonButton, StartDungeon);
         AddListener(claimRewardButton, ClaimPendingReward);
         AddListener(equipLatestButton, EquipLatest);
@@ -1130,6 +1167,8 @@ public class PlayableLoopHud : MonoBehaviour
         RemoveListener(upgradeWallButton, UpgradeWall);
         RemoveListener(upgradeTowerButton, UpgradeTower);
         RemoveListener(upgradeDefenderButton, UpgradeDefenders);
+        RemoveListener(previousDungeonDepthButton, SelectPreviousDungeonDepth);
+        RemoveListener(nextDungeonDepthButton, SelectNextDungeonDepth);
         RemoveListener(startDungeonButton, StartDungeon);
         RemoveListener(claimRewardButton, ClaimPendingReward);
         RemoveListener(equipLatestButton, EquipLatest);

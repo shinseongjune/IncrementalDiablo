@@ -123,6 +123,8 @@ lastOfflineUtc
 state
 dungeonId
 depth
+selectedDepth
+highestUnlockedDepth
 totalRooms
 currentRoomIndex
 roomsCompleted
@@ -172,6 +174,8 @@ equipped
 2026-05-14 implementation note: equipped `ItemInstance` objects now contribute definition modifiers, saved affix-roll modifiers, and a small prototype rolled-power modifier by slot. This lets runtime prototype-only equipment restore a debug-quality stat effect from saved slot/rarity/rolledPower even when its live `ItemDefinition` asset is not available after restart. This is a prototype bridge, not the final production item registry or drop-balance model.
 
 2026-05-14 saved-file validation note: `DefenseSaveManager` can now validate the persisted JSON save file separately from the current runtime snapshot, and `TryLoad()` refuses structurally invalid save files before applying them to the live scene. The debug dungeon HUD exposes both checks as `Validate Snapshot` and `Validate Saved File`, which makes the MVP save/load smoke test cover the actual disk file before requiring a full Play Mode restart.
+
+2026-06-07 Phase D dungeon progression note: save schema v2 adds `DungeonSaveData.selectedDepth` and `highestUnlockedDepth`. `DefenseSaveManager` migrates a v1 save by using its prior active `depth` as the initial selected/highest value, then `GameSaveDataDiagnostics` requires active and selected depth to remain within `1..highestUnlockedDepth`. This is the first explicit save migration hook for long-horizon dungeon progression.
 
 ## 5. 저장 시점
 
