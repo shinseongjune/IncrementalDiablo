@@ -10,11 +10,11 @@
 - `DefenseSaveManager` writes schema v2 and migrates v1 dungeon data by treating the prior active depth as both selected and highest unlocked. `GameSaveDataDiagnostics` rejects selected/active depths outside the unlocked range.
 - `Gameplay` exposes `Depth -` and `Depth +` buttons through `PlayableLoopHud`, and the Dungeon text shows active depth plus selected/highest unlocked progress.
 - The user confirmed the focused Play Mode path on 2026-06-07: clear -> one-depth unlock -> select/start next depth, failure without further advancement, and save/load restoration all work. D0-A is complete.
-- D0-B runtime wiring is implemented and needs a focused Play Mode comparison before acceptance. `DungeonDepthBalanceModel` maps every depth into a ten-depth milestone band.
+- D0-B runtime wiring is implemented and accepted in Play Mode. `DungeonDepthBalanceModel` maps every depth into a ten-depth milestone band.
 - For depth `d`, let `b = floor((d - 1) / 10)` and `s = (d - 1) % 10`. Spawned enemy health uses `1.8^b * (1 + 0.08s)` and attack damage uses `1.5^b * (1 + 0.05s)`.
 - `EnemySpawner` applies those multipliers to the spawned prefab's `CharacterStats` before `CombatRoom` refills and activates it. Movement speed, attack range, and cooldown remain unchanged so depth scaling does not silently rewrite combat feel.
 - The isolated prototype simulation uses the same health/damage profile, but normal `Gameplay` still disables that fallback.
-- The normal Dungeon HUD line shows the selected or active band plus threat, reward-power, and material-yield multipliers. Focused validation: compare Depth 1 and Depth 2 enemy starting HP/damage, then confirm the Depth 2 reward records level 2 and the scaled rolled power.
+- The normal Dungeon HUD line shows the selected or active band plus threat, reward-power, and material-yield multipliers. The user confirmed the focused Depth 1/2 enemy HP/damage and Depth 2 reward level/power comparison on 2026-06-08.
 
 작성일: 2026-05-02  
 문서 목적: 지하 던전 크롤링, 자동/직접 전투, 실패/보상 규칙 정의

@@ -316,8 +316,9 @@ if (Test-Path -LiteralPath $planPath) {
         "Progress Tracker",
         "Current phase | Phase D - Long-Horizon Systems Foundation",
         "Next unlock",
-        "D0-A",
-        "D0-B",
+        "D0-A | P0 | Save-backed dungeon depth progression | Done",
+        "D0-B | P0 | Formula-driven depth threat and reward bands | Done",
+        "D0-C | P0 | Item registry and save migration | Next",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
         "12_PrototypeDebtRegister.md",
         "Get-PrototypeDebtInventory.ps1"
