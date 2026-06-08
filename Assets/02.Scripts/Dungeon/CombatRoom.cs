@@ -24,7 +24,6 @@ public class CombatRoom : MonoBehaviour
     [SerializeField] private float prototypeHeroDps = 12f;
     [SerializeField] private float prototypeEnemyHealth = 40f;
     [SerializeField] private float prototypeEnemyDps = 4f;
-    [SerializeField] private float threatScalePerDepth = 0.12f;
     [SerializeField] private float maxPrototypeCombatSeconds = 20f;
 
     [Header("Runtime")]
@@ -54,6 +53,8 @@ public class CombatRoom : MonoBehaviour
     public bool HasTrackedEnemySetupBlocker => !string.IsNullOrWhiteSpace(trackedEnemySetupBlocker);
     public string TrackedEnemySetupBlocker => trackedEnemySetupBlocker;
     public bool IsPrototypeSimulationAvailable => simulateWhenNoEnemies && !HasAnyEnemyReference() && (!HasTrackedEnemySetupBlocker || !blockPrototypeSimulationWhenEnemySetupBlocked);
+    public int ActiveDepth => expedition == null ? 1 : expedition.Depth;
+    public DungeonDepthBalanceProfile DepthBalance => DungeonDepthBalanceModel.Evaluate(ActiveDepth);
 
     private void Awake()
     {
@@ -100,7 +101,6 @@ public class CombatRoom : MonoBehaviour
         prototypeHeroDps = Mathf.Max(0.1f, prototypeHeroDps);
         prototypeEnemyHealth = Mathf.Max(1f, prototypeEnemyHealth);
         prototypeEnemyDps = Mathf.Max(0f, prototypeEnemyDps);
-        threatScalePerDepth = Mathf.Max(0f, threatScalePerDepth);
         maxPrototypeCombatSeconds = Mathf.Max(1f, maxPrototypeCombatSeconds);
         enemyHealths ??= new Health[0];
     }
@@ -293,9 +293,9 @@ public class CombatRoom : MonoBehaviour
 
     private void TickPrototypeSimulation()
     {
-        float scale = ResolveThreatScale();
+        DungeonDepthBalanceProfile balance = DepthBalance;
         currentEnemyHealth = Mathf.Max(0f, currentEnemyHealth - prototypeHeroDps * Time.deltaTime);
-        currentHeroHealth = Mathf.Max(0f, currentHeroHealth - prototypeEnemyDps * scale * Time.deltaTime);
+        currentHeroHealth = Mathf.Max(0f, currentHeroHealth - prototypeEnemyDps * balance.EnemyDamageMultiplier * Time.deltaTime);
 
         if (currentEnemyHealth <= 0f)
         {
@@ -428,13 +428,7 @@ public class CombatRoom : MonoBehaviour
             return trackedHealth;
         }
 
-        return prototypeEnemyHealth * ResolveThreatScale();
-    }
-
-    private float ResolveThreatScale()
-    {
-        int depth = expedition == null ? 1 : expedition.Depth;
-        return 1f + Mathf.Max(0, depth - 1) * threatScalePerDepth;
+        return prototypeEnemyHealth * DepthBalance.EnemyHealthMultiplier;
     }
 
     private bool HasAnyEnemyReference()

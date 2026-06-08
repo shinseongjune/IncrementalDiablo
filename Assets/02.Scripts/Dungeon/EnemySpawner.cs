@@ -112,10 +112,11 @@ public class EnemySpawner : MonoBehaviour
 
         ClearPreviousSpawns();
         spawnedEnemyHealths.Clear();
+        DungeonDepthBalanceProfile balance = combatRoom.DepthBalance;
 
         for (int i = 0; i < spawnCount; i++)
         {
-            Health enemyHealth = SpawnEnemy(i, spawnPositions[i]);
+            Health enemyHealth = SpawnEnemy(i, spawnPositions[i], balance);
             if (enemyHealth != null)
             {
                 spawnedEnemyHealths.Add(enemyHealth);
@@ -135,7 +136,9 @@ public class EnemySpawner : MonoBehaviour
         combatRoom.RegisterTrackedEnemies(spawnedEnemyHealths, refill: true);
         SyncSpawnedEnemyActivity();
         string placementText = snapSpawnPointsToNavMesh ? " on NavMesh" : string.Empty;
-        SetLastSpawnMessage($"EnemySpawner spawned {spawnedEnemyHealths.Count} tracked enemy record(s){placementText} for room {roomIndex + 1}.");
+        SetLastSpawnMessage(
+            $"EnemySpawner spawned {spawnedEnemyHealths.Count} tracked enemy record(s){placementText} for room {roomIndex + 1} " +
+            $"at depth {balance.Depth} (HP x{balance.EnemyHealthMultiplier:0.##}, damage x{balance.EnemyDamageMultiplier:0.##}).");
         return true;
     }
 
@@ -193,7 +196,7 @@ public class EnemySpawner : MonoBehaviour
                combatRoom.State == CombatRoomState.Failed;
     }
 
-    private Health SpawnEnemy(int spawnIndex, Vector3 position)
+    private Health SpawnEnemy(int spawnIndex, Vector3 position, DungeonDepthBalanceProfile balance)
     {
         Quaternion rotation = ResolveSpawnRotation(spawnIndex);
         Transform parent = spawnParent == null ? transform : spawnParent;
@@ -207,6 +210,10 @@ public class EnemySpawner : MonoBehaviour
         }
 
         Health enemyHealth = spawned.GetComponentInChildren<Health>(includeInactive: true);
+        CharacterStats enemyStats = enemyHealth == null ? null : enemyHealth.GetComponent<CharacterStats>();
+        enemyStats?.SetRuntimeCombatMultipliers(
+            balance.EnemyHealthMultiplier,
+            balance.EnemyDamageMultiplier);
         return enemyHealth;
     }
 

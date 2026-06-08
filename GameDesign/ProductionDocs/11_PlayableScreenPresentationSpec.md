@@ -1,5 +1,11 @@
 # Playable Screen Presentation Spec
 
+## 2026-06-08 Dungeon Depth Balance Feedback
+
+- The Dungeon HUD line shows the selected depth's balance band while Ready and the active depth's band while Running.
+- The compact line exposes enemy HP, enemy damage, reward power, and material-yield multipliers so depth selection communicates a real risk/reward change before the player presses Start.
+- This is functional progression feedback, not final typography or panel-density authoring. Do not create another HUD field or layout pass for D0-B unless the added line clips or becomes unreadable in Play Mode.
+
 Created: 2026-05-24
 Status: MVP temporary values. This is a production reference for implementation, not final art direction.
 

@@ -49,9 +49,7 @@ public class ItemSalvageService : MonoBehaviour
         }
 
         ItemDefinition definition = item.Definition;
-        rewards = definition == null
-            ? ItemEconomyModel.GetSalvageRewards(item.Slot, item.Rarity, item.Level)
-            : ItemEconomyModel.GetSalvageRewards(definition);
+        rewards = ItemEconomyModel.GetSalvageRewards(item);
 
         ResolveWallet();
         if (wallet == null)

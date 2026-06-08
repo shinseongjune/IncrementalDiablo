@@ -49,6 +49,15 @@ public class ItemInstance
 
     public static ItemInstance CreateFromDefinition(long instanceId, ItemDefinition definition, int level = 1)
     {
+        return CreateFromDefinition(instanceId, definition, level, 1f);
+    }
+
+    public static ItemInstance CreateFromDefinition(
+        long instanceId,
+        ItemDefinition definition,
+        int level,
+        float powerMultiplier)
+    {
         if (definition == null)
         {
             return null;
@@ -56,7 +65,8 @@ public class ItemInstance
 
         int minPower = Mathf.Max(0, definition.BaseMinPower);
         int maxPower = Mathf.Max(minPower, definition.BaseMaxPower);
-        int rolledPower = minPower == maxPower ? minPower : UnityEngine.Random.Range(minPower, maxPower + 1);
+        int basePower = minPower == maxPower ? minPower : UnityEngine.Random.Range(minPower, maxPower + 1);
+        int rolledPower = Mathf.CeilToInt(basePower * Mathf.Max(1f, powerMultiplier));
         return new ItemInstance(instanceId, definition, Mathf.Max(1, level), rolledPower);
     }
 

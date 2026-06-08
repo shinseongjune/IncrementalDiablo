@@ -18,6 +18,8 @@ public class CharacterStats : MonoBehaviour
     private readonly List<StatMod> modifierBuffer = new List<StatMod>(8);
     private EquipmentSlots equipmentSlots;
     private bool subscribedToEquipment;
+    private float runtimeMaxHealthMultiplier = 1f;
+    private float runtimeAttackDamageMultiplier = 1f;
 
     public event Action Changed;
 
@@ -55,14 +57,29 @@ public class CharacterStats : MonoBehaviour
         return ClampStat(statId, ApplyModifiers(statId, GetBaseValue(statId)));
     }
 
+    public void SetRuntimeCombatMultipliers(float maxHealthMultiplier, float attackDamageMultiplier)
+    {
+        float safeMaxHealthMultiplier = Mathf.Max(1f, maxHealthMultiplier);
+        float safeAttackDamageMultiplier = Mathf.Max(1f, attackDamageMultiplier);
+        if (Mathf.Approximately(runtimeMaxHealthMultiplier, safeMaxHealthMultiplier) &&
+            Mathf.Approximately(runtimeAttackDamageMultiplier, safeAttackDamageMultiplier))
+        {
+            return;
+        }
+
+        runtimeMaxHealthMultiplier = safeMaxHealthMultiplier;
+        runtimeAttackDamageMultiplier = safeAttackDamageMultiplier;
+        Changed?.Invoke();
+    }
+
     private float GetBaseValue(StatId statId)
     {
         switch (statId)
         {
             case StatId.MaxHealth:
-                return maxHealth;
+                return maxHealth * runtimeMaxHealthMultiplier;
             case StatId.AttackDamage:
-                return attackDamage;
+                return attackDamage * runtimeAttackDamageMultiplier;
             case StatId.AttackRange:
                 return attackRange;
             case StatId.AttackCooldown:

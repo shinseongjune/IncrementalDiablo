@@ -721,6 +721,13 @@ MVP temporary presentation values:
 
 ## 8. 완료 기준
 
+### 2026-06-08 Dungeon Depth Scaling Setup
+
+- No new scene object or prefab component is required. Keep `PF_DungeonEnemy_Melee` wired with `CharacterStats`, `Health`, `EnemyAIController`, `CombatDriver`, `CharacterActor`, an enabled `NavMeshAgent`, and an enabled collider.
+- `EnemySpawner` reads the active depth from its linked `CombatRoom`, evaluates `DungeonDepthBalanceModel`, and applies runtime max-health and attack-damage multipliers to each instantiated enemy.
+- Do not author separate enemy prefabs or room lists for each depth. Base prefab stats remain the depth-1 baseline; formulas own long-tail scaling.
+- Focused Play Mode check: start Depth 1 and record the Dungeon HUD enemy HP plus one enemy hit, clear/unlock/select Depth 2, then confirm the HUD shows Band 1 with HP `x1.08`, damage `x1.05`, reward `x1.055`, and materials `x1.03`; the Depth 2 enemy should start above the Depth 1 HP baseline.
+
 Unity 세팅 완료 기준:
 
 - `SampleScene`/`Gameplay`에서 지속 전선과 던전 루프가 같은 런타임 안에 있다.

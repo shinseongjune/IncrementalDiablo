@@ -1,5 +1,26 @@
 # Data Save And Balance Spec
 
+## 2026-06-08 Dungeon Depth Balance Model
+
+`DungeonDepthBalanceModel` is the runtime source of truth for D0-B. It uses ten-depth milestone bands instead of authored per-depth rows.
+
+```text
+b = floor((depth - 1) / 10)
+s = (depth - 1) % 10
+
+EnemyHealth = 1.8^b * (1 + 0.08s)
+EnemyDamage = 1.5^b * (1 + 0.05s)
+RewardPower = 1.55^b * (1 + 0.055s)
+MaterialYield = 1.3^b * (1 + 0.03s)
+```
+
+- Depth 1 is exactly `x1` for every lane.
+- Every multiplier is monotonic and clamped to `1..1,000,000,000` to prevent invalid float growth from corrupting runtime values.
+- Enemy movement, range, and cooldown are intentionally excluded from this first balance pass.
+- Reward items store source depth in the existing `ItemInstance.level` field and store the final integer power roll. No save schema migration is required.
+- `Tools/Automation/Export-DungeonDepthBalance.ps1` reads the C# constants directly, validates depth 1 and monotonic growth, and exports depth 1-100 to `GameDesign/Balance/DungeonDepthBalance.csv`.
+- Tuning order: compare survivability first, then reward power, then material yield. Do not change rarity odds in the same pass because one guaranteed reward per clear has a different denominator from D2 per-kill drop math.
+
 작성일: 2026-05-03
 문서 목적: 데이터 구조, 저장 구조, 초기 밸런스 기준 정의
 

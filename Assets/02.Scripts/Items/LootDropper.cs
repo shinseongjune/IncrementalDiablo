@@ -70,10 +70,15 @@ public class LootDropper : MonoBehaviour
 
     public bool TryGrantClearReward()
     {
-        return TryGrantClearReward(out _);
+        return TryGrantClearReward(1, out _);
     }
 
     public bool TryGrantClearReward(out ItemInstance item)
+    {
+        return TryGrantClearReward(1, out item);
+    }
+
+    public bool TryGrantClearReward(int depth, out ItemInstance item)
     {
         item = null;
         ResolveInventory();
@@ -85,6 +90,7 @@ public class LootDropper : MonoBehaviour
             return false;
         }
 
+        DungeonDepthBalanceProfile balance = DungeonDepthBalanceModel.Evaluate(depth);
         ItemDefinition definition = SelectRewardDefinition(out LootRewardSource rewardSource);
         if (definition == null)
         {
@@ -94,7 +100,7 @@ public class LootDropper : MonoBehaviour
             return false;
         }
 
-        if (!inventory.TryAdd(definition, out item))
+        if (!inventory.TryAdd(definition, balance.Depth, balance.RewardPowerMultiplier, out item))
         {
             lastRewardSource = LootRewardSource.None;
             SetLastDropMessage($"Loot reward failed: inventory is full or rejected {definition.DisplayName}.");
@@ -103,7 +109,9 @@ public class LootDropper : MonoBehaviour
         }
 
         lastRewardSource = rewardSource;
-        SetLastDropMessage($"Loot reward granted from {FormatRewardSource(rewardSource)}: {item.DisplayName} ({item.Rarity}, power {item.RolledPower}).");
+        SetLastDropMessage(
+            $"Loot reward granted from {FormatRewardSource(rewardSource)} at depth {balance.Depth}: " +
+            $"{item.DisplayName} ({item.Rarity}, level {item.Level}, power {item.RolledPower}, reward x{balance.RewardPowerMultiplier:0.##}).");
         if (logGrantedRewards)
         {
             Debug.Log(lastDropMessage, this);

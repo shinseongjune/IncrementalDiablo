@@ -72,6 +72,14 @@
 - The normal `Gameplay` HUD has `Depth -` / `Depth +` controls and displays active plus selected/highest depth. The user confirmed unlock, selection/start, non-advancing failure, and save/load restoration on 2026-06-07, closing D0-A.
 - D0-B formula-driven threat/reward bands are now the active production priority.
 
+### 2026-06-08 Phase D D0-B implementation
+
+- Added `DungeonDepthBalanceModel` as the shared formula owner for enemy health, enemy damage, reward power, and salvage material yield.
+- Spawned prefab enemies now receive the active-depth health/damage profile without per-depth prefabs or authored room lists.
+- Dungeon rewards now store source depth as item level and scale rolled power; salvage uses the saved level to restore the matching material-yield profile after load.
+- The normal HUD exposes the selected/active balance band, and `Export-DungeonDepthBalance.ps1` produces a deterministic depth 1-100 CSV plus monotonicity checks.
+- D0-B remains open only for a focused Depth 1 versus Depth 2 Play Mode comparison. After acceptance, D0-C item registry/save migration becomes the next Phase D production task.
+
 ## 2. Phase 0. 문서 기준 고정
 
 목표:

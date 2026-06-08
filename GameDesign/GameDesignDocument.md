@@ -5,7 +5,8 @@
 - The current ground-defense fixed three-slot actor projection has completed its behavior-readability purpose. It is not the final defense design and will not receive further placeholder polish.
 - Phase C is complete from accumulated accepted evidence. Do not schedule more broad loop validation unless a regression or changed contract creates a new risk.
 - Phase D D0-A save-backed dungeon depth progression is implemented and accepted in Play Mode: selected depth, highest unlocked depth, clear-based one-step unlock, failure without advancement, normal HUD controls, schema-v2 migration, and save/load persistence.
-- The immediate production target is D0-B: make selected depth drive formula-based enemy threat, reward power, and material-yield bands so the ladder becomes a meaningful long-tail choice.
+- Phase D D0-B now has a shared formula model and runtime wiring: selected depth scales spawned enemy health/damage, item level/rolled power, and salvage material yield, while the normal HUD exposes the active band multipliers.
+- `Tools/Automation/Export-DungeonDepthBalance.ps1` exports and checks the same C# constants through `GameDesign/Balance/DungeonDepthBalance.csv`; a focused Depth 1 versus Depth 2 Play Mode check remains before D0-B acceptance.
 - Future ground-defense production must remain automatic and continuous-frontline based, but should move to reusable pooled prefabs, archetype data, real targeting/death, and scalable feedback rather than hand-authored waves or fixed blockout slots.
 
 작성일: 2026-04-30  

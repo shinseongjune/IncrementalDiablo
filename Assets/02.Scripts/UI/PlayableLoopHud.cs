@@ -420,7 +420,12 @@ public class PlayableLoopHud : MonoBehaviour
 
         string rewardState = BuildRewardStateText();
         string result = string.IsNullOrWhiteSpace(expedition.LastResult) ? "none" : expedition.LastResult;
-        string dungeonTextValue = $"Dungeon: {expedition.State} / Depth {expedition.Depth} / Selected {expedition.SelectedDepth}/{expedition.HighestUnlockedDepth} unlocked\nRoom {expedition.RoomsCompleted}/{expedition.TotalRooms} / {expedition.ElapsedSeconds:0.0}s / {rewardState} / Loot {BuildLootSourceText()}\nLast: {result}";
+        int balanceDepth = expedition.IsRunning ? expedition.Depth : expedition.SelectedDepth;
+        DungeonDepthBalanceProfile balance = DungeonDepthBalanceModel.Evaluate(balanceDepth);
+        string balanceText =
+            $"Band {balance.BandNumber} / Threat HP x{balance.EnemyHealthMultiplier:0.##} DMG x{balance.EnemyDamageMultiplier:0.##} / " +
+            $"Reward x{balance.RewardPowerMultiplier:0.##} Materials x{balance.MaterialYieldMultiplier:0.##}";
+        string dungeonTextValue = $"Dungeon: {expedition.State} / Depth {expedition.Depth} / Selected {expedition.SelectedDepth}/{expedition.HighestUnlockedDepth} unlocked\n{balanceText}\nRoom {expedition.RoomsCompleted}/{expedition.TotalRooms} / {expedition.ElapsedSeconds:0.0}s / {rewardState} / Loot {BuildLootSourceText()}\nLast: {result}";
         string viewportText = BuildDungeonViewportText();
 
         if (combatRoom == null)

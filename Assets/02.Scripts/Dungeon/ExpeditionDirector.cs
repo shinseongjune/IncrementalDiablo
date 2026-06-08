@@ -219,7 +219,7 @@ public class ExpeditionDirector : MonoBehaviour
             return false;
         }
 
-        if (!lootDropper.TryGrantClearReward(out ItemInstance item))
+        if (!lootDropper.TryGrantClearReward(Depth, out ItemInstance item))
         {
             runtime.lastResult = string.IsNullOrWhiteSpace(lootDropper.LastDropMessage)
                 ? "Reward pending: loot grant failed"

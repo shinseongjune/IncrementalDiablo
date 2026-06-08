@@ -42,6 +42,12 @@ public class SimpleInventory : MonoBehaviour
 
     public bool TryAdd(ItemDefinition definition, out ItemInstance item)
     {
+        int level = definition == null ? 1 : definition.RequiredLevel;
+        return TryAdd(definition, level, 1f, out item);
+    }
+
+    public bool TryAdd(ItemDefinition definition, int level, float powerMultiplier, out ItemInstance item)
+    {
         item = null;
         if (definition == null)
         {
@@ -53,7 +59,11 @@ public class SimpleInventory : MonoBehaviour
             return false;
         }
 
-        item = ItemInstance.CreateFromDefinition(ConsumeNextItemInstanceId(), definition, definition.RequiredLevel);
+        item = ItemInstance.CreateFromDefinition(
+            ConsumeNextItemInstanceId(),
+            definition,
+            Mathf.Max(definition.RequiredLevel, level),
+            powerMultiplier);
         if (item == null || !TryAdd(item))
         {
             item = null;

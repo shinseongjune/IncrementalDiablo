@@ -382,9 +382,7 @@ public class InventoryOverlayPresenter : MonoBehaviour
             return new ResourceAmount[0];
         }
 
-        return item.Definition == null
-            ? ItemEconomyModel.GetSalvageRewards(item.Slot, item.Rarity, item.Level)
-            : ItemEconomyModel.GetSalvageRewards(item.Definition);
+        return ItemEconomyModel.GetSalvageRewards(item);
     }
 
     private void SetMessage(string message)

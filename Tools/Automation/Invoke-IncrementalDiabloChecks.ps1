@@ -158,6 +158,7 @@ $requiredPaths = @(
     @{ Name = "Gameplay scene"; Path = "Assets\01.Scenes\Gameplay.unity" },
     @{ Name = "Dungeon enemy prefab"; Path = "Assets\04.Prefabs\Dungeon\PF_DungeonEnemy_Melee.prefab" },
     @{ Name = "Enemy spawner script"; Path = "Assets\02.Scripts\Dungeon\EnemySpawner.cs" },
+    @{ Name = "Dungeon depth balance model"; Path = "Assets\02.Scripts\Dungeon\DungeonDepthBalanceModel.cs" },
     @{ Name = "Expedition director script"; Path = "Assets\02.Scripts\Dungeon\ExpeditionDirector.cs" },
     @{ Name = "Save data script"; Path = "Assets\02.Scripts\Shared\GameSaveData.cs" },
     @{ Name = "Save diagnostics script"; Path = "Assets\02.Scripts\Shared\GameSaveDataDiagnostics.cs" },
@@ -170,7 +171,9 @@ $requiredPaths = @(
     @{ Name = "Scene setup guide"; Path = "GameDesign\ProductionDocs\06_UnitySceneAndPrefabSetupGuide.md" },
     @{ Name = "Script usage guide"; Path = "GameDesign\ProductionDocs\09_BaseScriptUsageGuide.md" },
     @{ Name = "Script folder map"; Path = "GameDesign\ScriptFolderStructure.md" },
-    @{ Name = "Prototype debt inventory script"; Path = "Tools\Automation\Get-PrototypeDebtInventory.ps1" }
+    @{ Name = "Prototype debt inventory script"; Path = "Tools\Automation\Get-PrototypeDebtInventory.ps1" },
+    @{ Name = "Dungeon depth balance export"; Path = "Tools\Automation\Export-DungeonDepthBalance.ps1" },
+    @{ Name = "Dungeon depth balance CSV"; Path = "GameDesign\Balance\DungeonDepthBalance.csv" }
 )
 
 foreach ($entry in $requiredPaths) {
@@ -180,6 +183,7 @@ foreach ($entry in $requiredPaths) {
 $scenePath = Join-ProjectPath "Assets\01.Scenes\Gameplay.unity"
 $enemyPrefabPath = Join-ProjectPath "Assets\04.Prefabs\Dungeon\PF_DungeonEnemy_Melee.prefab"
 $enemySpawnerPath = Join-ProjectPath "Assets\02.Scripts\Dungeon\EnemySpawner.cs"
+$depthBalanceModelPath = Join-ProjectPath "Assets\02.Scripts\Dungeon\DungeonDepthBalanceModel.cs"
 $expeditionDirectorPath = Join-ProjectPath "Assets\02.Scripts\Dungeon\ExpeditionDirector.cs"
 $saveDataPath = Join-ProjectPath "Assets\02.Scripts\Shared\GameSaveData.cs"
 $saveDiagnosticsPath = Join-ProjectPath "Assets\02.Scripts\Shared\GameSaveDataDiagnostics.cs"
@@ -291,6 +295,15 @@ if (Test-Path -LiteralPath $enemySpawnerPath) {
     $enemySpawnerText = Read-TextFile $enemySpawnerPath
     [void](Assert-TextContains "Enemy spawner validates prefab contract" $enemySpawnerText "TryValidateEnemyPrefab")
     [void](Assert-TextContains "Enemy spawner validates NavMesh placement" $enemySpawnerText "NavMesh.SamplePosition")
+    [void](Assert-TextContains "Enemy spawner applies depth combat scaling" $enemySpawnerText "SetRuntimeCombatMultipliers")
+}
+
+if (Test-Path -LiteralPath $depthBalanceModelPath) {
+    $depthBalanceModelText = Read-TextFile $depthBalanceModelPath
+    [void](Assert-TextContains "Depth balance uses bounded bands" $depthBalanceModelText "public const int DepthsPerBand = 10;")
+    [void](Assert-TextContains "Depth balance exposes enemy health scaling" $depthBalanceModelText "EnemyHealthMultiplier")
+    [void](Assert-TextContains "Depth balance exposes reward power scaling" $depthBalanceModelText "RewardPowerMultiplier")
+    [void](Assert-TextContains "Depth balance exposes material yield scaling" $depthBalanceModelText "MaterialYieldMultiplier")
 }
 
 if (Test-Path -LiteralPath $planPath) {
@@ -339,6 +352,11 @@ if (Test-Path -LiteralPath $debtRegisterPath) {
 $debtScriptPath = Join-ProjectPath "Tools\Automation\Get-PrototypeDebtInventory.ps1"
 if (Test-Path -LiteralPath $debtScriptPath) {
     Invoke-CheckedCommand "Prototype debt inventory" { powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Automation\Get-PrototypeDebtInventory.ps1 -SummaryOnly }
+}
+
+$depthBalanceExportPath = Join-ProjectPath "Tools\Automation\Export-DungeonDepthBalance.ps1"
+if (Test-Path -LiteralPath $depthBalanceExportPath) {
+    Invoke-CheckedCommand "Dungeon depth balance curve" { powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Automation\Export-DungeonDepthBalance.ps1 -CheckOnly }
 }
 
 if (Test-Path -LiteralPath $AutomationTomlPath) {

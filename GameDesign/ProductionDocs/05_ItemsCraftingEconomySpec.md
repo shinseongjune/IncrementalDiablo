@@ -1,5 +1,16 @@
 # Items Crafting Economy Spec
 
+## 2026-06-08 Phase D Depth Reward Bands
+
+- Dungeon depth now changes reward value without changing the existing authored rarity weights. The per-clear 78/20/2 Normal/Magic/Rare table and first-Rare pity behavior remain unchanged.
+- For depth `d`, `DungeonDepthBalanceModel` uses ten-depth bands with `b = floor((d - 1) / 10)` and `s = (d - 1) % 10`.
+- Rolled item power uses `1.55^b * (1 + 0.055s)`. The selected authored definition still controls slot, rarity, and base power range; `ItemInstance` stores `level = depth` and `ceil(base roll * reward multiplier)`.
+- Salvage yield uses `1.3^b * (1 + 0.03s)` and rounds each existing Scrap/Essence/AlterStone result to the nearest integer. This keeps early material changes conservative while making later-depth duplicates progressively more valuable.
+- Inventory, reward, and crafting overlays call the same `ItemEconomyModel.GetSalvageRewards(ItemInstance)` path as the actual salvage service, so previewed materials cannot silently disagree with the payout.
+- Item level and rolled power already persist in `ItemInstanceSaveData`, so this feature adds no save-schema field. Loaded authored items reconnect to their definition and retain their source-depth material multiplier through the saved level.
+- D2 reference principle used: keep content-pool/quality selection separate from item-level progression and keep the Unity denominator explicit as one guaranteed reward per clear. This is not a D2 per-kill drop-rate comparison, and the D2 `drop-balance-check` is not applicable because rarity odds did not change.
+- `GameDesign/Balance/DungeonDepthBalance.csv` is the deterministic depth 1-100 export for threat, reward power, material yield, and sample item/salvage values.
+
 작성일: 2026-05-03
 문서 목적: 재화, 장비, 제작, 강화, 분해 규칙 정의
 

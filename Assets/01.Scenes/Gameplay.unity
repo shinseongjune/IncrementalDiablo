@@ -15709,7 +15709,6 @@ MonoBehaviour:
   prototypeHeroDps: 12
   prototypeEnemyHealth: 40
   prototypeEnemyDps: 4
-  threatScalePerDepth: 0.12
   maxPrototypeCombatSeconds: 20
   state: 0
   activeRoomIndex: -1

@@ -1,5 +1,14 @@
 # Base Script Usage Guide
 
+## 2026-06-08 D0-B Depth Balance Usage
+
+- `DungeonDepthBalanceModel.Evaluate(depth)` returns the shared band number and multipliers for enemy health, enemy damage, reward power, and material yield.
+- `EnemySpawner` applies the combat multipliers automatically. Do not add depth-specific Inspector values to the enemy prefab.
+- `ExpeditionDirector.TryGrantPendingReward()` passes the active depth into `LootDropper`; the resulting item stores `level = depth` and scaled rolled power.
+- `ItemSalvageService` evaluates material yield from the saved item level, so a loaded reward retains its depth-origin salvage value.
+- Inventory, reward, and crafting overlay salvage previews use the same `ItemInstance` calculation as the service.
+- Run `powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Automation\Export-DungeonDepthBalance.ps1` to regenerate `GameDesign/Balance/DungeonDepthBalance.csv`, or add `-CheckOnly` for validation without rewriting the CSV.
+
 작성일: 2026-05-03
 목적: 새로 추가한 기본 스크립트가 무엇을 하는지, Unity에서 어떻게 붙여서 확인하는지, 마음에 안 드는 지점을 어떻게 피드백하면 되는지 정리한다.
 

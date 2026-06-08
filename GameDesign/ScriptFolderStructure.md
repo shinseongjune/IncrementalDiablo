@@ -17,6 +17,7 @@ Current implementation note: `PlayerController` owns direct-control click moveme
 Dungeon code owns room-based expedition flow.
 
 - `DungeonRunState`
+- `DungeonDepthBalanceModel`
 - `ExpeditionDirector`
 - `CombatRoom`
 - `DungeonRoomPresenter`
@@ -31,6 +32,8 @@ Current implementation note: `DungeonRunState`, `ExpeditionDirector`, `CombatRoo
 
 Phase D progression note: `ExpeditionDirector` now owns active, selected, and highest-unlocked dungeon depths. It starts the selected depth, unlocks exactly one next depth after clearing the current highest, keeps failure non-advancing, and exports/imports the ladder through `DungeonSaveData`.
 
+D0-B implementation note: `DungeonDepthBalanceModel` owns ten-depth milestone bands for enemy health, enemy damage, reward power, and material yield. `EnemySpawner` applies the active profile through runtime `CharacterStats` multipliers, `LootDropper` writes depth-scaled item level/power, `ItemEconomyModel.GetSalvageRewards(ItemInstance)` keeps overlay previews and actual payout aligned from saved item level, and `PlayableLoopHud` exposes the selected/active profile.
+
 ## GroundDefense
 
 Ground defense code owns the continuous frontline, defense upgrades, local save support for the defense loop, and the HUD that inspects that loop.
@@ -43,6 +46,8 @@ Current implementation note: `DefenseDirector` and `DefenseRuntimeState` own the
 Automation tool note: `Tools/Automation/Invoke-IncrementalDiabloChecks.ps1` owns the static phase-routing freshness contract for `10_PlayableLoopMvpAutomationPlan.md`. As of 2026-06-07 it requires Phase D, completed D0-A, and D0-B as the next task; update those required tokens whenever the canonical phase/task selector advances.
 
 D0-A automation note: the same harness now checks the `Gameplay` depth-button references and source tokens for selected/highest depth, one-step clear unlock, save schema v2 migration, and save diagnostics.
+
+D0-B automation note: `Tools/Automation/Export-DungeonDepthBalance.ps1` reads the runtime model constants, checks depth 1 plus monotonic growth, and exports `GameDesign/Balance/DungeonDepthBalance.csv`. The main harness runs its `-CheckOnly` path and checks the runtime scaling tokens.
 
 ## UI
 
@@ -86,6 +91,7 @@ Project automation helpers that are not Unity runtime code live outside `Assets`
 
 - `Tools/Automation/Invoke-IncrementalDiabloChecks.ps1`: safe daily verification harness for Codex automation. It runs the solution build, `git diff --check`, required `Gameplay.unity` scene-contract checks, P0-B dungeon panel bridge checks, P0-C ground actor runtime wiring checks, missing-script scan, optional overlay wiring warning, automation-plan freshness checks, and local automation TOML health checks without invoking Unity batchmode.
 - `Tools/Automation/Get-PrototypeDebtInventory.ps1`: scans source files for prototype/debug/fallback/temporary markers so daily automation can keep `GameDesign/ProductionDocs/12_PrototypeDebtRegister.md` current instead of letting MVP bridges harden silently.
+- `Tools/Automation/Export-DungeonDepthBalance.ps1`: exports and validates the shared dungeon depth threat/reward/material curves without invoking Unity batchmode.
 
 ## Rule
 
