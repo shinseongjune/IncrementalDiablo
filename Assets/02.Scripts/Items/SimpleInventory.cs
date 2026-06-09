@@ -6,7 +6,7 @@ public class SimpleInventory : MonoBehaviour
 {
     [SerializeField] private int capacity = 60;
     [SerializeField] private ItemInstance[] startingItems = new ItemInstance[0];
-    [SerializeField] private ItemDefinition[] knownDefinitions = new ItemDefinition[0];
+    [SerializeField] private ItemDefinitionRegistry definitionRegistry;
     [SerializeField] private long nextItemInstanceId = 1;
 
     private readonly List<ItemInstance> items = new List<ItemInstance>();
@@ -24,6 +24,8 @@ public class SimpleInventory : MonoBehaviour
     }
 
     public int Capacity => Mathf.Max(0, capacity);
+    public ItemDefinitionRegistry DefinitionRegistry => definitionRegistry;
+    public string LastRestoreReport { get; private set; } = "Inventory restore has not run.";
     public int Count
     {
         get
@@ -54,6 +56,11 @@ public class SimpleInventory : MonoBehaviour
             return false;
         }
 
+        if (definitionRegistry != null && !definitionRegistry.Contains(definition))
+        {
+            return false;
+        }
+
         if (Count >= Capacity)
         {
             return false;
@@ -73,46 +80,6 @@ public class SimpleInventory : MonoBehaviour
         return true;
     }
 
-    public void RegisterDefinition(ItemDefinition definition)
-    {
-        if (definition == null)
-        {
-            return;
-        }
-
-        knownDefinitions ??= new ItemDefinition[0];
-        for (int i = 0; i < knownDefinitions.Length; i++)
-        {
-            ItemDefinition knownDefinition = knownDefinitions[i];
-            if (knownDefinition == null)
-            {
-                knownDefinitions[i] = definition;
-                return;
-            }
-
-            if (knownDefinition.Id == definition.Id)
-            {
-                return;
-            }
-        }
-
-        Array.Resize(ref knownDefinitions, knownDefinitions.Length + 1);
-        knownDefinitions[knownDefinitions.Length - 1] = definition;
-    }
-
-    public void RegisterDefinitions(ItemDefinition[] definitions)
-    {
-        if (definitions == null)
-        {
-            return;
-        }
-
-        for (int i = 0; i < definitions.Length; i++)
-        {
-            RegisterDefinition(definitions[i]);
-        }
-    }
-
     public bool TryAdd(ItemInstance item)
     {
         EnsureInitialized();
@@ -122,7 +89,11 @@ public class SimpleInventory : MonoBehaviour
             return false;
         }
 
-        RegisterDefinition(item.Definition);
+        if (item.Definition != null && definitionRegistry != null && !definitionRegistry.Contains(item.Definition))
+        {
+            return false;
+        }
+
         item.EnsureIdentity(NextItemInstanceId);
         if (Contains(item.InstanceId))
         {
@@ -218,6 +189,12 @@ public class SimpleInventory : MonoBehaviour
             return false;
         }
 
+        if (!item.IsDefinitionResolved)
+        {
+            failureReason = $"item definition '{item.DefinitionId}' is unresolved";
+            return false;
+        }
+
         if (!equipmentSlots.TryEquip(item))
         {
             failureReason = "EquipmentSlots rejected the item snapshot";
@@ -274,7 +251,7 @@ public class SimpleInventory : MonoBehaviour
         equipmentSlots.UnequipAll();
 
         List<ItemSlot> restoredSlots = new List<ItemSlot>(3);
-        int snapshotDefinitionCount = 0;
+        int unresolvedDefinitionCount = 0;
         for (int i = 0; i < candidates.Count; i++)
         {
             ItemInstance item = candidates[i];
@@ -283,21 +260,22 @@ public class SimpleInventory : MonoBehaviour
                 continue;
             }
 
+            if (!item.IsDefinitionResolved)
+            {
+                unresolvedDefinitionCount++;
+                continue;
+            }
+
             if (equipmentSlots.TryEquip(item))
             {
                 MarkOnlyEquippedInSlot(item);
                 restoredSlots.Add(item.Slot);
                 restoredCount++;
-
-                if (item.Definition == null)
-                {
-                    snapshotDefinitionCount++;
-                }
             }
         }
 
         Changed?.Invoke();
-        return snapshotDefinitionCount;
+        return unresolvedDefinitionCount;
     }
 
     public InventorySaveData CreateSaveData()
@@ -321,6 +299,8 @@ public class SimpleInventory : MonoBehaviour
     {
         items.Clear();
         nextItemInstanceId = Math.Max(1, saveData == null ? 1 : saveData.nextItemInstanceId);
+        int resolvedCount = 0;
+        int unresolvedCount = 0;
 
         if (saveData?.itemInstances != null)
         {
@@ -332,7 +312,17 @@ public class SimpleInventory : MonoBehaviour
                     continue;
                 }
 
-                item.TrySetDefinition(FindKnownDefinition(item.DefinitionId));
+                if (definitionRegistry != null &&
+                    definitionRegistry.TryResolve(item.DefinitionId, out ItemDefinition definition, out _))
+                {
+                    item.ApplyResolvedDefinition(definition);
+                    resolvedCount++;
+                }
+                else
+                {
+                    unresolvedCount++;
+                }
+
                 item.EnsureIdentity(nextItemInstanceId);
                 if (items.Count < Capacity && !ContainsWithoutInitializing(item.InstanceId))
                 {
@@ -342,6 +332,7 @@ public class SimpleInventory : MonoBehaviour
             }
         }
 
+        LastRestoreReport = $"Inventory restore: {items.Count} item(s), {resolvedCount} resolved, {unresolvedCount} unresolved.";
         initialized = true;
         Changed?.Invoke();
     }
@@ -400,25 +391,6 @@ public class SimpleInventory : MonoBehaviour
         }
 
         return false;
-    }
-
-    private ItemDefinition FindKnownDefinition(string definitionId)
-    {
-        if (string.IsNullOrWhiteSpace(definitionId) || knownDefinitions == null)
-        {
-            return null;
-        }
-
-        for (int i = 0; i < knownDefinitions.Length; i++)
-        {
-            ItemDefinition definition = knownDefinitions[i];
-            if (definition != null && definition.Id == definitionId)
-            {
-                return definition;
-            }
-        }
-
-        return null;
     }
 
     private void MarkOnlyEquippedInSlot(ItemInstance equippedItem)

@@ -1,12 +1,14 @@
 # Incremental Diablo Game Design Document
 
-## 2026-06-06 Implementation Direction Note
+## 2026-06-09 Implementation Direction Note
 
 - The current ground-defense fixed three-slot actor projection has completed its behavior-readability purpose. It is not the final defense design and will not receive further placeholder polish.
 - Phase C is complete from accumulated accepted evidence. Do not schedule more broad loop validation unless a regression or changed contract creates a new risk.
 - Phase D D0-A save-backed dungeon depth progression is implemented and accepted in Play Mode: selected depth, highest unlocked depth, clear-based one-step unlock, failure without advancement, normal HUD controls, schema-v2 migration, and save/load persistence.
 - Phase D D0-B is implemented and accepted in Play Mode: selected depth scales spawned enemy health/damage, item level/rolled power, and salvage material yield, while the normal HUD exposes the active band multipliers.
-- `Tools/Automation/Export-DungeonDepthBalance.ps1` exports and checks the same C# constants through `GameDesign/Balance/DungeonDepthBalance.csv`. D0-C production item registry and save migration is the immediate production target.
+- `Tools/Automation/Export-DungeonDepthBalance.ps1` exports and checks the same C# constants through `GameDesign/Balance/DungeonDepthBalance.csv`.
+- Phase D D0-C is complete: the six authored tier-1 items live in a production `ItemDefinitionRegistry`, save schema v3 applies explicit item-id remaps, unknown ids are preserved as unusable quarantined records with visible diagnostics, and normal `Gameplay` cannot silently grant runtime fallback loot.
+- D0-D duplicate/low-value item conversion is the immediate production target because a no-trade single-player economy needs durable value after current equipment slots are filled.
 - Future ground-defense production must remain automatic and continuous-frontline based, but should move to reusable pooled prefabs, archetype data, real targeting/death, and scalable feedback rather than hand-authored waves or fixed blockout slots.
 
 작성일: 2026-04-30  

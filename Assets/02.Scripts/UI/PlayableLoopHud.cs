@@ -345,7 +345,9 @@ public class PlayableLoopHud : MonoBehaviour
             return;
         }
 
-        SetMessage(saveManager.TryLoad() ? "Game loaded." : "Load failed.");
+        SetMessage(saveManager.TryLoad()
+            ? $"Game loaded. {saveManager.LastLoadReport}"
+            : $"Load failed. {saveManager.LastLoadReport}");
     }
 
     public void OpenInventoryOverlay()
@@ -594,7 +596,8 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         string equippedText = item.Equipped ? " / Equipped" : string.Empty;
-        return $"Inventory: {inventory.Count}/{inventory.Capacity} / Latest: {item.DisplayName} / {item.Rarity} {item.Slot} Power {item.RolledPower}{equippedText}";
+        string resolutionText = item.IsDefinitionResolved ? string.Empty : $" / Unresolved {item.DefinitionId}";
+        return $"Inventory: {inventory.Count}/{inventory.Capacity} / Latest: {item.DisplayName} / {item.Rarity} {item.Slot} Power {item.RolledPower}{equippedText}{resolutionText}";
     }
 
     private string BuildHeroStatsText()
@@ -676,6 +679,11 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         ItemInstance latest = GetLatestItem();
+        if (latest != null && !latest.IsDefinitionResolved)
+        {
+            return $"Next: saved item '{latest.DefinitionId}' is quarantined; add an item-id migration before using it.";
+        }
+
         if (latest != null && !latest.Equipped)
         {
             return "Next: equip the latest item or salvage it into upgrade materials.";
@@ -813,8 +821,8 @@ public class PlayableLoopHud : MonoBehaviour
         SetInteractable(nextDungeonDepthButton, expedition != null && expedition.CanSelectNextDepth);
         SetInteractable(startDungeonButton, expedition != null && !expedition.IsRunning);
         SetInteractable(claimRewardButton, expedition != null && (expedition.RewardPending || expedition.State == DungeonRunState.Cleared));
-        SetInteractable(equipLatestButton, latest != null && inventory != null && equipmentSlots != null);
-        SetInteractable(salvageLatestButton, latest != null && salvageService != null);
+        SetInteractable(equipLatestButton, latest != null && latest.IsDefinitionResolved && inventory != null && equipmentSlots != null);
+        SetInteractable(salvageLatestButton, latest != null && latest.IsDefinitionResolved && salvageService != null);
         SetInteractable(saveButton, saveManager != null);
         SetInteractable(loadButton, saveManager != null && saveManager.HasSaveFile);
         SetInteractable(openInventoryOverlayButton, screenLayout != null && screenLayout.CanOpenInventoryOverlay);

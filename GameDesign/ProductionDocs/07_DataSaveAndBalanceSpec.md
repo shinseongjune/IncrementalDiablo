@@ -198,6 +198,8 @@ equipped
 
 2026-06-07 Phase D dungeon progression note: save schema v2 adds `DungeonSaveData.selectedDepth` and `highestUnlockedDepth`. `DefenseSaveManager` migrates a v1 save by using its prior active `depth` as the initial selected/highest value, then `GameSaveDataDiagnostics` requires active and selected depth to remain within `1..highestUnlockedDepth`. This is the first explicit save migration hook for long-horizon dungeon progression.
 
+2026-06-09 Phase D item identity note: save schema v3 adds a production item-id migration stage without changing the serialized `ItemInstanceSaveData` shape. `DefenseSaveManager` asks the scene's `ItemDefinitionRegistry` to remap legacy ids before validation and inventory restore. Canonical ids reconnect to live assets; unknown ids remain serialized and visible but are quarantined from equip/salvage/reroll. `LastLoadReport`, save diagnostics, HUD text, and overlay text expose resolved/remapped/unresolved counts so content deletion or id drift cannot silently become snapshot-based gameplay power.
+
 ## 5. 저장 시점
 
 저장한다:

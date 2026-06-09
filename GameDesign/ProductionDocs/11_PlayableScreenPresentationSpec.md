@@ -296,6 +296,12 @@ Suggested names:
 - `DungeonViewportInputRouter` can inherit its viewport camera from a same-object `PanelCameraRenderTarget`, reducing Inspector mismatch risk when the render and click router live on the same `RawImage`.
 - The automation harness checks the static scene bridge and core serialized references. Camera framing, defense side-panel crop, routed click feel, overlay occlusion, and alert readability were accepted for the current MVP checkpoint and should be reopened only for regressions or the later production presentation pass.
 
+2026-06-09 unresolved item feedback:
+
+- Inventory, reward, crafting, and compact HUD item summaries label an unknown saved definition id as `UNRESOLVED`/`Unresolved`.
+- Equip, salvage, and reroll actions are disabled for that quarantined record. The item remains listed so a content-id migration can recover it without silently deleting player data.
+- Loading through `PlayableLoopHud` includes the schema/item migration summary in the normal message area. This is production error feedback, not a new overlay layout or visual-polish track.
+
 2026-05-28 scene layout cleanup pass:
 
 - `Gameplay` now uses the reference-image screen bands as the first deterministic layout pass: top global bar `y 0.925-0.99`, main play area `y 0.18-0.92`, and bottom action bar `y 0.04-0.175`.

@@ -283,7 +283,7 @@ MVP에서 하지 않는다.
 
 - `InventoryOverlayPresenter` now gives the authored inventory overlay a normal-player path for reviewing item instances, selecting a row, equipping the selected item, salvaging the selected item, and previewing salvage/reroll material values already defined by `ItemEconomyModel`.
 - No item weight, rarity, salvage, reroll, or drop-balance value changed in this run. This is UI/content exposure for the existing economy model, not a new economy rule.
-- The next item-economy production gap remains full item-definition registry/drop-table export tooling plus production-grade crafting rules after the visible inventory/crafting overlays are wired and validated in Play Mode.
+- The next item-economy production gap is a scalable duplicate/low-value conversion sink plus drop-table export tooling and production-grade crafting rules.
 
 ## 14. 2026-05-30 Crafting Overlay And Rare Reroll Note
 
@@ -291,9 +291,17 @@ MVP에서 하지 않는다.
 - The reroll path spends `ItemDefinition.AffixRerollCost` from `CurrencyWallet` and calls `ItemInstance.TryApplyPrototypeAffixReroll(...)`, replacing the item's saved affix roll with one prototype stat modifier.
 - `SimpleInventory.NotifyItemsChanged()` and `EquipmentSlots.RefreshEquippedModifiers()` keep UI and equipped-stat subscribers current after the live item mutation.
 - This uses the existing D2-inspired resource idea of turning rare/duplicate gear into reroll pressure, but it is not a D2 cube clone. It is a small single-player sink for the current guaranteed per-clear reward loop.
-- Remaining economy gaps: authored affix pools, affix tags/weights, affix locking, item-level upgrades, full item-definition registry, drop-balance export/import, and Play Mode tuning of whether early Rare reroll costs are too expensive or too cheap.
+- Remaining economy gaps: duplicate/low-value conversion, authored affix pools, affix tags/weights, affix locking, item-level upgrades, drop-balance export/import, and Play Mode tuning of whether early Rare reroll costs are too expensive or too cheap.
 - 2026-06-01 validation feedback update: the crafting overlay now records the last successful reroll for the selected item as spent materials plus previous affix state and new affix. This changes only player-facing verification feedback, not reroll cost, salvage return, rarity pacing, or affix generation rules.
 - 2026-06-02 validation reliability update: the current prototype reroll now avoids repeating the selected item's saved affix when another slot-valid prototype candidate exists. This is not a final affix-pool or weighting rule; it prevents the first material-spend check from looking unchanged after a paid reroll.
+
+## 16. 2026-06-09 Production Item Registry And Save Migration
+
+- `ItemDefinitionRegistry.asset` is the canonical authored item identity source for the six current tier-1 definitions. Runtime reward tables no longer register definitions opportunistically into each inventory.
+- Optional `ItemDefinitionIdMigration` entries map retired ids to a registered replacement before inventory restoration. Save schema v3 records that this migration stage exists.
+- Unknown ids are not deleted or converted from stale slot/rarity/power snapshots. They remain visible in inventory as unresolved quarantine records, while equip, salvage, and reroll actions stay disabled until an explicit migration is authored.
+- Normal `Gameplay` disables `LootDropper.createPrototypeRewardWhenTableEmpty`; an empty/invalid authored reward table now fails visibly instead of creating production-looking runtime loot.
+- This changes item durability and data safety, not rarity odds, salvage yields, reroll costs, or D2 pacing. D0-D now owns the next economy gain: a scalable use for duplicate and low-value authored drops.
 
 ## 15. 2026-05-30 Rare Access Pacing Note
 

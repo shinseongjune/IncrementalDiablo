@@ -303,7 +303,9 @@ public class InventoryOverlayPresenter : MonoBehaviour
             return inventory == null ? "Selected: unavailable" : "Selected: none";
         }
 
-        string definitionText = string.IsNullOrWhiteSpace(item.DefinitionId) ? "runtime snapshot" : item.DefinitionId;
+        string definitionText = item.IsDefinitionResolved
+            ? item.DefinitionId
+            : $"UNRESOLVED {item.DefinitionId}";
         string equippedText = item.Equipped ? "Equipped" : "Stored";
         int affixCount = item.AffixRolls.Length;
         return $"Selected #{item.InstanceId}\n{item.DisplayName}\n{item.Rarity} {item.Slot} Lv.{item.Level} / Power {item.RolledPower}\n{equippedText} / Durability {item.Durability}% / Affixes {affixCount}\nDefinition: {definitionText}";
@@ -318,7 +320,9 @@ public class InventoryOverlayPresenter : MonoBehaviour
             return walletText;
         }
 
-        string salvageText = $"Salvage returns: {FormatRewards(GetSalvagePreview(item))}";
+        string salvageText = item.IsDefinitionResolved
+            ? $"Salvage returns: {FormatRewards(GetSalvagePreview(item))}"
+            : "Salvage unavailable: item definition is unresolved.";
         string rerollText = item.Definition != null && item.Definition.CanRerollAffix
             ? $"Affix reroll preview: {FormatRewards(item.Definition.AffixRerollCost)}"
             : "Affix reroll preview: unavailable for this item.";
@@ -332,8 +336,8 @@ public class InventoryOverlayPresenter : MonoBehaviour
         SetInteractable(previousItemButton, count > 1);
         SetInteractable(nextItemButton, count > 1);
         SetInteractable(selectLatestButton, count > 0 && selectedIndex != count - 1);
-        SetInteractable(equipSelectedButton, selectedItem != null && !selectedItem.Equipped && inventory != null && equipmentSlots != null);
-        SetInteractable(salvageSelectedButton, selectedItem != null && salvageService != null);
+        SetInteractable(equipSelectedButton, selectedItem != null && selectedItem.IsDefinitionResolved && !selectedItem.Equipped && inventory != null && equipmentSlots != null);
+        SetInteractable(salvageSelectedButton, selectedItem != null && selectedItem.IsDefinitionResolved && salvageService != null);
         SetInteractable(closeOverlayButton, screenLayout != null);
     }
 

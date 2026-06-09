@@ -329,7 +329,9 @@ public class CraftingOverlayPresenter : MonoBehaviour
             return inventory == null ? "Selected: unavailable" : "Selected: none";
         }
 
-        string definitionText = string.IsNullOrWhiteSpace(item.DefinitionId) ? "runtime snapshot" : item.DefinitionId;
+        string definitionText = item.IsDefinitionResolved
+            ? item.DefinitionId
+            : $"UNRESOLVED {item.DefinitionId}";
         string equippedText = item.Equipped ? "Equipped" : "Stored";
         return $"Selected #{item.InstanceId}\n{item.DisplayName}\n{item.Rarity} {item.Slot} Lv.{item.Level} / Power {item.RolledPower}\n{equippedText} / Durability {item.Durability}%\nDefinition: {definitionText}";
     }
@@ -343,7 +345,9 @@ public class CraftingOverlayPresenter : MonoBehaviour
             return walletText;
         }
 
-        string salvageText = $"Salvage returns: {FormatRewards(GetSalvagePreview(item))}";
+        string salvageText = item.IsDefinitionResolved
+            ? $"Salvage returns: {FormatRewards(GetSalvagePreview(item))}"
+            : "Salvage unavailable: item definition is unresolved.";
         string rerollText = IsRerollCandidate(item)
             ? $"Rare reroll cost: {FormatRewards(item.Definition.AffixRerollCost)}"
             : "Rare reroll cost: unavailable for this item.";
@@ -401,7 +405,7 @@ public class CraftingOverlayPresenter : MonoBehaviour
         SetInteractable(nextItemButton, count > 1);
         SetInteractable(selectLatestButton, count > 0 && selectedIndex != count - 1);
         SetInteractable(rerollAffixButton, CanRerollAffix(selectedItem, out _, out _));
-        SetInteractable(salvageSelectedButton, selectedItem != null && salvageService != null);
+        SetInteractable(salvageSelectedButton, selectedItem != null && selectedItem.IsDefinitionResolved && salvageService != null);
         SetInteractable(closeOverlayButton, screenLayout != null);
     }
 

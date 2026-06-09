@@ -49,6 +49,14 @@ public class ItemSalvageService : MonoBehaviour
         }
 
         ItemDefinition definition = item.Definition;
+        if (definition == null)
+        {
+            Debug.LogWarning(
+                $"ItemSalvageService preserved unresolved item {item.InstanceId} ({item.DefinitionId}); add an item-id migration before salvaging it.",
+                this);
+            return false;
+        }
+
         rewards = ItemEconomyModel.GetSalvageRewards(item);
 
         ResolveWallet();

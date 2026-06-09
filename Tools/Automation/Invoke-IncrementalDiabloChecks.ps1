@@ -163,6 +163,9 @@ $requiredPaths = @(
     @{ Name = "Save data script"; Path = "Assets\02.Scripts\Shared\GameSaveData.cs" },
     @{ Name = "Save diagnostics script"; Path = "Assets\02.Scripts\Shared\GameSaveDataDiagnostics.cs" },
     @{ Name = "Save manager script"; Path = "Assets\02.Scripts\GroundDefense\Runtime\DefenseSaveManager.cs" },
+    @{ Name = "Item definition registry script"; Path = "Assets\02.Scripts\Items\ItemDefinitionRegistry.cs" },
+    @{ Name = "Item definition registry asset"; Path = "Assets\05.ScriptableObjects\Items\ItemDefinitionRegistry.asset" },
+    @{ Name = "Simple inventory script"; Path = "Assets\02.Scripts\Items\SimpleInventory.cs" },
     @{ Name = "Playable HUD script"; Path = "Assets\02.Scripts\UI\PlayableLoopHud.cs" },
     @{ Name = "Screen layout controller script"; Path = "Assets\02.Scripts\UI\PlayableScreenLayoutController.cs" },
     @{ Name = "Ground defense actor runtime script"; Path = "Assets\02.Scripts\GroundDefense\Runtime\GroundDefenseActorRuntime.cs" },
@@ -188,6 +191,9 @@ $expeditionDirectorPath = Join-ProjectPath "Assets\02.Scripts\Dungeon\Expedition
 $saveDataPath = Join-ProjectPath "Assets\02.Scripts\Shared\GameSaveData.cs"
 $saveDiagnosticsPath = Join-ProjectPath "Assets\02.Scripts\Shared\GameSaveDataDiagnostics.cs"
 $saveManagerPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\Runtime\DefenseSaveManager.cs"
+$itemRegistryPath = Join-ProjectPath "Assets\02.Scripts\Items\ItemDefinitionRegistry.cs"
+$itemRegistryAssetPath = Join-ProjectPath "Assets\05.ScriptableObjects\Items\ItemDefinitionRegistry.asset"
+$simpleInventoryPath = Join-ProjectPath "Assets\02.Scripts\Items\SimpleInventory.cs"
 $playableHudPath = Join-ProjectPath "Assets\02.Scripts\UI\PlayableLoopHud.cs"
 $planPath = Join-ProjectPath "GameDesign\ProductionDocs\10_PlayableLoopMvpAutomationPlan.md"
 $debtRegisterPath = Join-ProjectPath "GameDesign\ProductionDocs\12_PrototypeDebtRegister.md"
@@ -208,6 +214,7 @@ if (Test-Path -LiteralPath $scenePath) {
         @{ Name = "Scene enemy spawns snap to NavMesh"; Token = "snapSpawnPointsToNavMesh: 1" },
         @{ Name = "Scene normal combat disables prototype simulation"; Token = "simulateWhenNoEnemies: 0" },
         @{ Name = "Scene has loot dropper"; Token = "m_EditorClassIdentifier: Assembly-CSharp::LootDropper" },
+        @{ Name = "Scene disables runtime loot fallback"; Token = "createPrototypeRewardWhenTableEmpty: 0" },
         @{ Name = "Scene has dungeon RawImage viewport"; Token = "m_Name: RawImage_DungeonViewport" },
         @{ Name = "Scene has dungeon panel camera"; Token = "m_Name: Camera_DungeonPanel" },
         @{ Name = "Scene has dungeon render target"; Token = "m_EditorClassIdentifier: Assembly-CSharp::PanelCameraRenderTarget" },
@@ -232,6 +239,7 @@ if (Test-Path -LiteralPath $scenePath) {
     [void](Assert-SceneBehaviourReference "Ground combat presenter actor runtime" $sceneText "GroundDefenseCombatPresenter" "actorRuntime")
     [void](Assert-SceneBehaviourReference "Playable HUD previous depth button" $sceneText "PlayableLoopHud" "previousDungeonDepthButton")
     [void](Assert-SceneBehaviourReference "Playable HUD next depth button" $sceneText "PlayableLoopHud" "nextDungeonDepthButton")
+    [void](Assert-SceneBehaviourReference "Simple inventory item registry" $sceneText "SimpleInventory" "definitionRegistry")
 
     if ($sceneText -match "m_Script:\s+\{fileID:\s+0\}") {
         Add-Result "Scene missing-script scan" "FAIL" "Gameplay.unity contains at least one MonoBehaviour with m_Script fileID 0."
@@ -268,11 +276,40 @@ if ((Test-Path -LiteralPath $expeditionDirectorPath) -and
     [void](Assert-TextContains "Expedition unlocks after clear" $expeditionDirectorText "int unlockedDepth = TryUnlockNextDepth();")
     [void](Assert-TextContains "Dungeon save stores selected depth" $saveDataText "public int selectedDepth = 1;")
     [void](Assert-TextContains "Dungeon save stores highest unlocked depth" $saveDataText "public int highestUnlockedDepth = 1;")
-    [void](Assert-TextContains "Save manager writes schema v2" $saveManagerText "private const int CurrentSaveVersion = 2;")
+    [void](Assert-TextContains "Save manager writes schema v3" $saveManagerText "private const int CurrentSaveVersion = 3;")
     [void](Assert-TextContains "Save manager migrates legacy dungeon depth" $saveManagerText "MigrateSaveData(saveData);")
+    [void](Assert-TextContains "Save manager runs item id migration" $saveManagerText "MigrateInventorySaveData")
+    [void](Assert-TextContains "Save diagnostics use item registry" $saveDiagnosticsText "ItemDefinitionRegistry definitionRegistry")
     [void](Assert-TextContains "Save diagnostics validate selected depth" $saveDiagnosticsText "dungeon selectedDepth must be within the unlocked depth range")
     [void](Assert-TextContains "Playable HUD exposes previous depth action" $playableHudText "public void SelectPreviousDungeonDepth()")
     [void](Assert-TextContains "Playable HUD exposes next depth action" $playableHudText "public void SelectNextDungeonDepth()")
+}
+
+if ((Test-Path -LiteralPath $itemRegistryPath) -and
+    (Test-Path -LiteralPath $itemRegistryAssetPath) -and
+    (Test-Path -LiteralPath $simpleInventoryPath)) {
+    $itemRegistryText = Read-TextFile $itemRegistryPath
+    $itemRegistryAssetText = Read-TextFile $itemRegistryAssetPath
+    $simpleInventoryText = Read-TextFile $simpleInventoryPath
+
+    [void](Assert-TextContains "Item registry resolves canonical ids" $itemRegistryText "ItemDefinitionResolution.Canonical")
+    [void](Assert-TextContains "Item registry supports id migration" $itemRegistryText "ItemDefinitionResolution.Migrated")
+    [void](Assert-TextContains "Item registry reports unresolved ids" $itemRegistryText "AddUnresolved")
+    [void](Assert-TextContains "Inventory resolves saved definitions through registry" $simpleInventoryText "definitionRegistry.TryResolve")
+    [void](Assert-TextContains "Inventory blocks unresolved equipment" $simpleInventoryText "item definition '{item.DefinitionId}' is unresolved")
+
+    $expectedItemDefinitionGuids = @(
+        "5c7ea7142bbf48549d79dd5d1dcb9769",
+        "4710f92715434bb4aecec1a83d521aa9",
+        "f49089b5a6114f4e824cbbb5d8d247a7",
+        "11f6d572f53041b2896866876adc9fa5",
+        "32d9a563a33d4a299ee2be950495bdb2",
+        "0a1eea40b7ab4a30a6653b3db81b6e7c"
+    )
+
+    foreach ($guid in $expectedItemDefinitionGuids) {
+        [void](Assert-TextContains "Item registry authored definition" $itemRegistryAssetText $guid)
+    }
 }
 
 if (Test-Path -LiteralPath $enemyPrefabPath) {
@@ -318,7 +355,8 @@ if (Test-Path -LiteralPath $planPath) {
         "Next unlock",
         "D0-A | P0 | Save-backed dungeon depth progression | Done",
         "D0-B | P0 | Formula-driven depth threat and reward bands | Done",
-        "D0-C | P0 | Item registry and save migration | Next",
+        "D0-C | P0 | Item registry and save migration | Done",
+        "D0-D | P0 | Duplicate-item sink and conversion | Next",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
         "12_PrototypeDebtRegister.md",
         "Get-PrototypeDebtInventory.ps1"

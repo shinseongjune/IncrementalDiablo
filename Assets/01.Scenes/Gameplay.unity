@@ -10161,7 +10161,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SimpleInventory
   capacity: 60
   startingItems: []
-  knownDefinitions: []
+  definitionRegistry: {fileID: 11400000, guid: 65847bd1b65d4995b94a565995f4bbfe, type: 2}
   nextItemInstanceId: 1
 --- !u!114 &1045172327
 MonoBehaviour:
@@ -15802,7 +15802,7 @@ MonoBehaviour:
   guaranteeRareWhenInventoryHasNoRare: 1
   maxWeightedNonRareRewardsBeforeRare: 6
   weightedNonRareRewardsSinceLastRare: 0
-  createPrototypeRewardWhenTableEmpty: 1
+  createPrototypeRewardWhenTableEmpty: 0
   prototypeIdPrefix: prototype_crypt
   prototypeTier: 1
   prototypeLevel: 1

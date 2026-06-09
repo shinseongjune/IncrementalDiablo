@@ -73,7 +73,7 @@ This document must not stop at the first MVP. When the current phase is complete
 | Phase A - Playable Loop MVP | Completed 2026-05-14 after Play Mode smoke-test confirmation. | MVP-01 through MVP-10 are `Done`; Play Mode can show ground reward -> dungeon -> loot -> equip/salvage -> save/load at debug quality. | Closed unless a regression appears. |
 | Phase B - 30-Minute Retention Slice | Completed 2026-05-17 after user confirmation that the normal player HUD slice was already done. | A new player can play about 30 minutes with at least three meaningful upgrade decisions, one failure/recovery moment, and no dev-console-only step. | Closed unless a regression appears. |
 | Phase C - First Real Game Slice | Completed 2026-06-06 from accumulated accepted evidence across P0-A through P0-D. The normal path now has visible defense behavior, direct-control prefab combat, authored rewards, overlays, crafting, and no silent calculation-combat clear. | One player-facing runtime slice contains a visible ground-defense lane, one direct-control dungeon room with at least one real enemy prefab, and authored item assets/definitions feeding the reward loop without relying on debug-only surfaces for the normal path. | Closed unless a regression appears. Residual overlay polish belongs to Phase E, not another Phase C acceptance loop. |
-| Phase D - Long-Horizon Systems Foundation | Current phase. The saved depth ladder and formula-driven threat/reward/material bands are implemented and accepted. | Formula-driven dungeon tiers, ground scaling, item rarity/material sinks, and save migration hooks exist without hand-authored content ladders. | Replace runtime prototype item lookup with the D0-C production item registry and explicit save migration diagnostics. |
+| Phase D - Long-Horizon Systems Foundation | Current phase. The saved depth ladder, formula-driven threat/reward/material bands, and production item registry/save migration path are implemented. | Formula-driven dungeon tiers, ground scaling, item rarity/material sinks, and save migration hooks exist without hand-authored content ladders. | Add the D0-D scalable duplicate/low-value item conversion sink without creating inventory bloat. |
 | Phase E - Early Access Readiness Slice | Phase D is done. Systems scale, but the game is not yet release-shaped. | A 2-4 hour repeatable slice is playable with stable UI, recoverable failure, basic settings, readable onboarding, QA checklist, and no known progression blocker. | Add usability polish, error handling, content breadth, performance checks, settings, and release-scope triage. |
 
 ## Phase Promotion Rule
@@ -130,10 +130,10 @@ Accepted runtime evidence is cumulative. Do not require another full-loop Play M
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase D - Long-Horizon Systems Foundation |
-| Last meaningful movement | 2026-06-08: The user confirmed D0-B in Play Mode. Depth 1 versus Depth 2 shows the expected enemy HP/damage increase, and the Depth 2 authored reward records the scaled level/power path. Formula export/check and salvage-yield preview/payout contracts remain green. |
-| Next unlock | D0-C is `Next`: add a production item-definition registry, reconnect saved authored items through it, and produce explicit migration/diagnostic results for unknown ids instead of relying on runtime prototype restoration. |
-| Loop coverage | Phase A debug loop, Phase B normal HUD loop, and Phase C first real game slice are complete. Phase D now has an accepted persistent depth ladder plus formula-driven risk/reward/material profiles. The next structural gap is durable item identity across save versions and authored content changes. |
-| Known blockers | No current compile, scene-wiring, depth-scaling, reward-scaling, or Play Mode acceptance blocker remains. D0-C must replace the item registry/save migration gap tracked by TD-03 and TD-07. |
+| Last meaningful movement | 2026-06-09: D0-C added a production `ItemDefinitionRegistry` asset for all six authored tier-1 items, schema-v3 item-id migration hooks, explicit unresolved-id diagnostics/quarantine, and normal-scene protection against silent runtime fallback rewards. |
+| Next unlock | D0-D is `Next`: turn duplicate or low-value authored drops into a scalable conversion/sink path that remains useful after the hero's three current equipment slots are filled. |
+| Loop coverage | Phase A debug loop, Phase B normal HUD loop, and Phase C first real game slice are complete. Phase D now has an accepted persistent depth ladder, formula-driven risk/reward/material profiles, and durable authored item identity across save versions. |
+| Known blockers | No current compile, scene-wiring, depth-scaling, reward-scaling, item-registry, or save-migration blocker remains. The next product risk is inventory bloat and dead duplicate drops in a single-player economy without trade/ladder/alt-character demand. |
 
 ## 3.1 Phase C MVP Completion Task List
 
@@ -177,6 +177,7 @@ Run Update Notes:
 - 2026-06-07: User confirmed the D0-A Play Mode path. Accepted evidence covers Depth 1 clear -> Depth 2 unlock, selecting and starting Depth 2, failure without unlocking Depth 3, and save/load restoration of selected/highest depth at 2/2. D0-A is `Done`; D0-B formula-driven depth threat/reward bands are now `Next`.
 - 2026-06-08: Implemented D0-B formula-driven depth bands. `DungeonDepthBalanceModel` owns ten-depth enemy-health, enemy-damage, reward-power, and material-yield curves; `EnemySpawner`, `LootDropper`, `ItemSalvageService`, and `PlayableLoopHud` consume the same profile. `Export-DungeonDepthBalance.ps1` reads the C# constants, validates monotonic depth 1-100 growth, and exports `GameDesign/Balance/DungeonDepthBalance.csv`. At this implementation checkpoint D0-B awaited the focused Play Mode evidence recorded in the following acceptance entry.
 - 2026-06-08: User confirmed the focused D0-B Play Mode comparison was completed successfully. Accepted evidence covers the Depth 1 versus Depth 2 enemy HP/damage increase and the Depth 2 authored reward level/power path. D0-B is `Done`; D0-C item registry and save migration is now `Next`.
+- 2026-06-09: Completed D0-C. `ItemDefinitionRegistry.asset` now owns the six authored tier-1 identities and optional legacy-id remaps; schema v3 runs item-id migration before validation/load; unresolved ids remain preserved but visibly quarantined instead of silently restoring snapshot gameplay power; equip/salvage actions disable for those items; and normal `Gameplay` disables runtime loot fallback. The harness guards the registry asset, scene reference, fallback setting, migration source contracts, and D0-C/D0-D routing. D0-D is now `Next`.
 
 ## 3.2 Phase D Production Task List
 
@@ -186,8 +187,8 @@ This is the canonical work selector after Phase C. A validation-only run is not 
 | --- | --- | --- | --- | --- | --- |
 | D0-A | P0 | Save-backed dungeon depth progression | Done | Normal UI can choose a depth from `1..highestUnlockedDepth`; clearing the highest unlocked depth unlocks exactly one next depth; failure does not advance; selected and highest-unlocked depth survive save/load; starting an expedition uses the selected depth. | No further action unless a regression appears. Keep schema-v2 migration, diagnostics, depth-button wiring, and harness contracts. |
 | D0-B | P0 | Formula-driven depth threat and reward bands | Done | `DungeonDepthBalanceModel` defines bounded ten-depth bands; spawned enemy health/damage, item level/rolled power, and salvage material yield use the active/source depth; the HUD exposes the profile; the depth 1-100 export/check is deterministic; the user confirmed the Depth 1/2 runtime comparison. | No further action unless a regression appears. Keep runtime scaling, HUD feedback, CSV export, and harness contracts. |
-| D0-C | P0 | Item registry and save migration | Next | Saved authored items resolve through a production item-definition registry; unknown ids produce an explicit migration/diagnostic result instead of silently depending on runtime prototype definitions. | Integrate TD-03 and TD-07 replacement with registry and migration work. |
-| D0-D | P0 | Duplicate-item sink and conversion | Pending | Duplicate or low-value drops have at least one scalable use through salvage, reroll materials, collection, defender gear, or conversion without creating inventory bloat. | Use D2 reference pacing, but account for the lack of trading, ladder resets, and alt-character demand. |
+| D0-C | P0 | Item registry and save migration | Done | Saved authored items resolve through a production item-definition registry; unknown ids produce an explicit migration/diagnostic result instead of silently depending on runtime prototype definitions. | No further action unless a registry id changes or a migration regression appears. Keep schema-v3, quarantine, scene registry, and fallback-disable harness contracts. |
+| D0-D | P0 | Duplicate-item sink and conversion | Next | Duplicate or low-value drops have at least one scalable use through salvage, reroll materials, collection, defender gear, or conversion without creating inventory bloat. | Use D2 reference pacing, but account for the lack of trading, ladder resets, and alt-character demand. |
 | D1-A | P1 | Formula-driven ground scaling | Pending | Frontline pressure, defense output, rewards, and milestone unlocks scale through reusable formulas and bands without manual wave lists. | Start after the first dungeon depth/reward band is playable so both halves can exchange progression values. |
 
 ## 3.3 Progress Assessment Against Game-Form Plan
@@ -198,13 +199,13 @@ Speed assessment:
 
 - Good: save/load, real dungeon combat, authored reward continuity, normal overlays, visible ground behavior, and the first persistent depth ladder now support progression beyond a fixed one-room proof.
 - Good: the first formula band has been observed against the real spawned prefab and authored reward path in Play Mode, so the depth ladder is now a meaningful risk/reward choice rather than only saved structure.
-- Required correction: replace runtime prototype item lookup and implicit snapshot restoration through D0-C. Do not reopen D0-B unless the depth scaling contract regresses.
+- Required correction: add D0-D's durable duplicate/low-value conversion path. Do not reopen D0-B or D0-C unless their depth-scaling or item-identity contracts regress.
 
 Direction assessment:
 
 - Correct direction: the project is still preserving the intended PC incremental action RPG shape: automatic ground defense, direct-control dungeon combat, loot, equipment, crafting/salvage, save/load, and long-term progression.
 - Current risk: the verified ground lane and fixed three-slot actor projection can be mistaken for final defense architecture. They are accepted behavior bridges, not final content or prefab structure.
-- Operating rule: unless a regression or build blocker appears, do not spend another run polishing the current defense blockout or the compact depth buttons. The next meaningful production increment is formula-driven depth threat/reward scaling.
+- Operating rule: unless a regression or build blocker appears, do not spend another run polishing the current defense blockout, compact depth buttons, or registry diagnostics. The next meaningful production increment is the duplicate-item sink/conversion loop.
 
 ## 4. MVP Task Queue
 

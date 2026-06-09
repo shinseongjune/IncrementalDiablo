@@ -9,6 +9,14 @@ public static class GameSaveDataDiagnostics
 
     public static bool TryValidate(GameSaveData saveData, out string summary)
     {
+        return TryValidate(saveData, null, out summary);
+    }
+
+    public static bool TryValidate(
+        GameSaveData saveData,
+        ItemDefinitionRegistry definitionRegistry,
+        out string summary)
+    {
         List<string> errors = new List<string>();
         List<string> warnings = new List<string>();
 
@@ -22,7 +30,7 @@ public static class GameSaveDataDiagnostics
         ValidateCurrencies(saveData.currencies, errors);
         ValidateDefense(saveData.defense, errors);
         ValidateDungeon(saveData.dungeon, errors);
-        ValidateInventoryAndHero(saveData.inventory, saveData.hero, errors, warnings);
+        ValidateInventoryAndHero(saveData.inventory, saveData.hero, definitionRegistry, errors, warnings);
 
         summary = BuildSummary(saveData, errors, warnings);
         return errors.Count == 0;
@@ -199,7 +207,12 @@ public static class GameSaveDataDiagnostics
         }
     }
 
-    private static void ValidateInventoryAndHero(InventorySaveData inventory, HeroSaveData hero, List<string> errors, List<string> warnings)
+    private static void ValidateInventoryAndHero(
+        InventorySaveData inventory,
+        HeroSaveData hero,
+        ItemDefinitionRegistry definitionRegistry,
+        List<string> errors,
+        List<string> warnings)
     {
         if (inventory == null)
         {
@@ -216,6 +229,12 @@ public static class GameSaveDataDiagnostics
         Dictionary<long, ItemInstanceSaveData> itemsById = new Dictionary<long, ItemInstanceSaveData>();
         HashSet<ItemSlot> equippedSlots = new HashSet<ItemSlot>();
         int prototypeItemCount = 0;
+        int unresolvedDefinitionCount = 0;
+
+        if (definitionRegistry != null && !definitionRegistry.TryValidate(out string registryReport))
+        {
+            errors.Add(registryReport);
+        }
 
         for (int i = 0; i < items.Length; i++)
         {
@@ -269,6 +288,14 @@ public static class GameSaveDataDiagnostics
                 prototypeItemCount++;
             }
 
+            if (definitionRegistry != null &&
+                !definitionRegistry.TryResolve(item.definitionId, out _, out _))
+            {
+                unresolvedDefinitionCount++;
+                warnings.Add(
+                    $"inventory item {item.instanceId} definition '{item.definitionId}' is not registered and will remain quarantined");
+            }
+
             if (item.equipped && !equippedSlots.Add(item.slot))
             {
                 errors.Add($"multiple equipped items were saved in slot {item.slot}");
@@ -282,7 +309,16 @@ public static class GameSaveDataDiagnostics
 
         if (prototypeItemCount > 0)
         {
-            warnings.Add($"{prototypeItemCount} runtime prototype item(s) will restore from saved slot/rarity/power; replace this with authored ItemDefinition registry before production balance");
+            warnings.Add($"{prototypeItemCount} runtime prototype item(s) are legacy snapshots and cannot be equipped or salvaged until an explicit id migration exists");
+        }
+
+        if (definitionRegistry == null && items.Length > 0)
+        {
+            warnings.Add("item definition registry is unavailable, so saved item ids cannot be resolved");
+        }
+        else if (unresolvedDefinitionCount > 0)
+        {
+            warnings.Add($"{unresolvedDefinitionCount} item(s) have unresolved definition ids; data is preserved but gameplay actions stay disabled");
         }
 
         ValidateHeroEquipment(hero, itemsById, errors, warnings);

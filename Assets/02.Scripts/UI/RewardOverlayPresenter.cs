@@ -289,9 +289,9 @@ public class RewardOverlayPresenter : MonoBehaviour
             return "Item: none";
         }
 
-        string definitionText = string.IsNullOrWhiteSpace(item.DefinitionId)
-            ? "runtime snapshot"
-            : item.DefinitionId;
+        string definitionText = item.IsDefinitionResolved
+            ? item.DefinitionId
+            : $"UNRESOLVED {item.DefinitionId}";
         string equippedText = item.Equipped ? "Equipped" : "Stored";
         return $"{item.DisplayName}\n{item.Rarity} {item.Slot} Lv.{item.Level} / Power {item.RolledPower}\n{equippedText} / Durability {item.Durability}% / Affixes {item.AffixRolls.Length}\nDefinition: {definitionText}";
     }
@@ -304,7 +304,9 @@ public class RewardOverlayPresenter : MonoBehaviour
             return walletText;
         }
 
-        string salvageText = $"Salvage returns: {FormatRewards(GetSalvagePreview(item))}";
+        string salvageText = item.IsDefinitionResolved
+            ? $"Salvage returns: {FormatRewards(GetSalvagePreview(item))}"
+            : "Salvage unavailable: item definition is unresolved.";
         string rerollText = item.Definition != null && item.Definition.CanRerollAffix
             ? $"Rare reroll cost: {FormatRewards(item.Definition.AffixRerollCost)}"
             : "Rare reroll cost: unavailable for this item.";
@@ -315,8 +317,8 @@ public class RewardOverlayPresenter : MonoBehaviour
     {
         SetInteractable(claimRewardButton, expedition != null && expedition.RewardPending);
         SetInteractable(openInventoryButton, screenLayout != null && screenLayout.CanOpenInventoryOverlay);
-        SetInteractable(equipRewardButton, item != null && !item.Equipped && inventory != null && equipmentSlots != null);
-        SetInteractable(salvageRewardButton, item != null && salvageService != null);
+        SetInteractable(equipRewardButton, item != null && item.IsDefinitionResolved && !item.Equipped && inventory != null && equipmentSlots != null);
+        SetInteractable(salvageRewardButton, item != null && item.IsDefinitionResolved && salvageService != null);
         SetInteractable(closeOverlayButton, screenLayout != null);
     }
 

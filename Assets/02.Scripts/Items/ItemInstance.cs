@@ -19,6 +19,7 @@ public class ItemInstance
 
     public long InstanceId => instanceId;
     public ItemDefinition Definition => definition;
+    public bool IsDefinitionResolved => definition != null;
     public string DefinitionId => string.IsNullOrWhiteSpace(definitionId) && definition != null ? definition.Id : definitionId;
     public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? DefinitionId : displayName;
     public ItemSlot Slot => slot;
@@ -94,15 +95,9 @@ public class ItemInstance
         return item;
     }
 
-    public bool TrySetDefinition(ItemDefinition itemDefinition)
+    public bool ApplyResolvedDefinition(ItemDefinition itemDefinition)
     {
         if (itemDefinition == null)
-        {
-            return false;
-        }
-
-        string currentDefinitionId = DefinitionId;
-        if (!string.IsNullOrWhiteSpace(currentDefinitionId) && currentDefinitionId != itemDefinition.Id)
         {
             return false;
         }

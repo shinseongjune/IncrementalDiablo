@@ -728,6 +728,14 @@ MVP temporary presentation values:
 - Do not author separate enemy prefabs or room lists for each depth. Base prefab stats remain the depth-1 baseline; formulas own long-tail scaling.
 - Accepted Play Mode evidence on 2026-06-08: the user completed the Depth 1 versus Depth 2 comparison, including enemy HP/damage and the Depth 2 reward level/power path. Repeat only for regression after a scaling-contract change.
 
+### 2026-06-09 Item Registry Setup
+
+- `Gameplay > GameSystems > SimpleInventory` must reference `Assets/05.ScriptableObjects/Items/ItemDefinitionRegistry.asset` in `Definition Registry`.
+- Add every production-authored `ItemDefinition` to that registry before placing it in a reward table. IDs must stay unique and stable.
+- When retiring or renaming an id, add an `Id Migrations` entry from the old id to the registered replacement before shipping the content change.
+- Keep `Gameplay > DungeonRoot > LootDropper > Create Prototype Reward When Table Empty` disabled. The fallback remains available only for isolated dev/test scenes.
+- No visual placement or camera judgment is involved. The local harness checks the registry asset, scene reference, and fallback setting.
+
 Unity 세팅 완료 기준:
 
 - `SampleScene`/`Gameplay`에서 지속 전선과 던전 루프가 같은 런타임 안에 있다.

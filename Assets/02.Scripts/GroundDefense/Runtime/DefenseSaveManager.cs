@@ -6,7 +6,7 @@ using UnityEngine;
 [DefaultExecutionOrder(1000)]
 public class DefenseSaveManager : MonoBehaviour
 {
-    private const int CurrentSaveVersion = 2;
+    private const int CurrentSaveVersion = 3;
 
     [SerializeField] private DefenseDirector director;
     [SerializeField] private ExpeditionDirector expedition;
@@ -19,9 +19,11 @@ public class DefenseSaveManager : MonoBehaviour
     [SerializeField] private float autoSaveIntervalSeconds = 15f;
 
     private float autoSaveElapsed;
+    private bool lastLoadHasUnresolvedItems;
 
     public string SavePath => Path.Combine(Application.persistentDataPath, saveFileName);
     public bool HasSaveFile => File.Exists(SavePath);
+    public string LastLoadReport { get; private set; } = "Load has not run.";
 
     private void Start()
     {
@@ -94,19 +96,21 @@ public class DefenseSaveManager : MonoBehaviour
 
     public bool TryValidateCurrentSaveData(out string report)
     {
+        ResolveReferences();
         GameSaveData saveData = CreateSaveDataSnapshot();
-        return GameSaveDataDiagnostics.TryValidate(saveData, out report);
+        return GameSaveDataDiagnostics.TryValidate(saveData, inventory?.DefinitionRegistry, out report);
     }
 
     public bool TryValidateSavedFile(out string report)
     {
+        ResolveReferences();
         if (!TryReadSaveFile(out GameSaveData saveData, out string failureReason))
         {
             report = failureReason;
             return false;
         }
 
-        return GameSaveDataDiagnostics.TryValidate(saveData, out report);
+        return GameSaveDataDiagnostics.TryValidate(saveData, inventory?.DefinitionRegistry, out report);
     }
 
     public bool TryLoad()
@@ -130,12 +134,14 @@ public class DefenseSaveManager : MonoBehaviour
 
         if (!TryReadSaveFile(out GameSaveData saveData, out string failureReason))
         {
+            LastLoadReport = failureReason;
             Debug.LogWarning(failureReason, this);
             return false;
         }
 
-        if (!GameSaveDataDiagnostics.TryValidate(saveData, out string validationReport))
+        if (!GameSaveDataDiagnostics.TryValidate(saveData, inventory?.DefinitionRegistry, out string validationReport))
         {
+            LastLoadReport = validationReport;
             Debug.LogWarning($"DefenseSaveManager refused an invalid save file: {validationReport}", this);
             return false;
         }
@@ -156,6 +162,7 @@ public class DefenseSaveManager : MonoBehaviour
             if (inventory != null)
             {
                 inventory.ApplySaveData(saveData.inventory);
+                LastLoadReport = $"{LastLoadReport} {inventory.LastRestoreReport}";
             }
 
             RestoreEquipmentState(saveData);
@@ -165,6 +172,11 @@ public class DefenseSaveManager : MonoBehaviour
             }
 
             autoSaveElapsed = 0f;
+            if (lastLoadHasUnresolvedItems)
+            {
+                Debug.LogWarning(LastLoadReport, this);
+            }
+
             return true;
         }
         catch (Exception exception)
@@ -253,24 +265,40 @@ public class DefenseSaveManager : MonoBehaviour
         return true;
     }
 
-    private static void MigrateSaveData(GameSaveData saveData)
+    private void MigrateSaveData(GameSaveData saveData)
     {
-        if (saveData == null || saveData.version >= CurrentSaveVersion)
+        if (saveData == null)
         {
             return;
         }
 
-        saveData.dungeon ??= new DungeonSaveData();
-        int activeDepth = Mathf.Max(1, saveData.dungeon.depth);
-        int highestDepth = Mathf.Max(activeDepth, Mathf.Max(1, saveData.dungeon.highestUnlockedDepth));
-        int selectedDepth = saveData.dungeon.selectedDepth > 0
-            ? saveData.dungeon.selectedDepth
-            : activeDepth;
+        int sourceVersion = saveData.version;
+        if (sourceVersion < 2)
+        {
+            saveData.dungeon ??= new DungeonSaveData();
+            int activeDepth = Mathf.Max(1, saveData.dungeon.depth);
+            int highestDepth = Mathf.Max(activeDepth, Mathf.Max(1, saveData.dungeon.highestUnlockedDepth));
+            int selectedDepth = saveData.dungeon.selectedDepth > 0
+                ? saveData.dungeon.selectedDepth
+                : activeDepth;
 
-        saveData.dungeon.depth = activeDepth;
-        saveData.dungeon.highestUnlockedDepth = highestDepth;
-        saveData.dungeon.selectedDepth = Mathf.Clamp(selectedDepth, 1, highestDepth);
-        saveData.version = CurrentSaveVersion;
+            saveData.dungeon.depth = activeDepth;
+            saveData.dungeon.highestUnlockedDepth = highestDepth;
+            saveData.dungeon.selectedDepth = Mathf.Clamp(selectedDepth, 1, highestDepth);
+        }
+
+        ItemDefinitionRegistry registry = inventory?.DefinitionRegistry;
+        ItemDefinitionMigrationReport itemReport = registry?.MigrateInventorySaveData(saveData.inventory);
+        lastLoadHasUnresolvedItems = itemReport == null || itemReport.HasUnresolved;
+        LastLoadReport = itemReport == null
+            ? "Item migration blocked: item definition registry is missing."
+            : itemReport.BuildSummary();
+
+        if (sourceVersion < CurrentSaveVersion)
+        {
+            saveData.version = CurrentSaveVersion;
+            LastLoadReport = $"Save schema v{sourceVersion} -> v{CurrentSaveVersion}. {LastLoadReport}";
+        }
     }
 
     private void RestoreEquipmentState(GameSaveData saveData)
@@ -284,11 +312,11 @@ public class DefenseSaveManager : MonoBehaviour
             ? null
             : saveData.hero.equippedItemInstanceIds;
 
-        int snapshotDefinitionCount = inventory.RestoreEquipment(equipmentSlots, equippedItemInstanceIds, out int restoredCount);
-        if (snapshotDefinitionCount > 0)
+        int unresolvedDefinitionCount = inventory.RestoreEquipment(equipmentSlots, equippedItemInstanceIds, out int restoredCount);
+        if (unresolvedDefinitionCount > 0)
         {
-            Debug.Log(
-                $"Restored {restoredCount} equipped item(s); {snapshotDefinitionCount} used saved prototype power because their ItemDefinition assets were not resolved.",
+            Debug.LogWarning(
+                $"Restored {restoredCount} equipped item(s); skipped {unresolvedDefinitionCount} unresolved saved item(s).",
                 this);
         }
     }

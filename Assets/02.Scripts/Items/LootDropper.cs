@@ -51,7 +51,6 @@ public class LootDropper : MonoBehaviour
     private void Awake()
     {
         ResolveInventory();
-        RegisterRewardDefinitions();
     }
 
     private void OnValidate()
@@ -119,19 +118,6 @@ public class LootDropper : MonoBehaviour
 
         RewardGranted?.Invoke(item);
         return true;
-    }
-
-    private void RegisterRewardDefinitions()
-    {
-        if (rewardTable != null)
-        {
-            for (int i = 0; i < rewardTable.Length; i++)
-            {
-                inventory?.RegisterDefinition(rewardTable[i]?.Definition);
-            }
-        }
-
-        inventory?.RegisterDefinitions(rewardDefinitions);
     }
 
     private ItemDefinition SelectRewardDefinition(out LootRewardSource rewardSource)

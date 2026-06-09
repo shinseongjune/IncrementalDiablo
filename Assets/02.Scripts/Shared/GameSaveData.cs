@@ -3,7 +3,7 @@ using System;
 [Serializable]
 public class GameSaveData
 {
-    public int version = 2;
+    public int version = 3;
     public string savedAtUtc;
     public float playTimeSeconds;
     public ResourceAmount[] currencies;
