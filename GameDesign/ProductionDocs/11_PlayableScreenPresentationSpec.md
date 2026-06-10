@@ -302,6 +302,13 @@ Suggested names:
 - Equip, salvage, and reroll actions are disabled for that quarantined record. The item remains listed so a content-id migration can recover it without silently deleting player data.
 - Loading through `PlayableLoopHud` includes the schema/item migration summary in the normal message area. This is production error feedback, not a new overlay layout or visual-polish track.
 
+2026-06-10 duplicate conversion feedback:
+
+- When `LootDropper` auto-converts a dominated same-definition reward, `RewardOverlayPresenter` shows `Reward converted`, the authored loot source, the material payout, and the updated wallet.
+- The consumed candidate is not replaced by the previous inventory item in the reward detail area, and equip/salvage actions remain disabled for that resolved reward event.
+- `PlayableLoopHud` reports `Reward auto-converted`, while `ExpeditionDirector.LastResult` records the item name and gained materials.
+- No RectTransform, camera, icon, animation, or ornate-treatment change is required for D0-D.
+
 2026-05-28 scene layout cleanup pass:
 
 - `Gameplay` now uses the reference-image screen bands as the first deterministic layout pass: top global bar `y 0.925-0.99`, main play area `y 0.18-0.92`, and bottom action bar `y 0.04-0.175`.

@@ -17,6 +17,11 @@ public class LootDropper : MonoBehaviour
     [SerializeField] private SimpleInventory inventory;
     [SerializeField] private bool autoFindInventory = true;
 
+    [Header("Duplicate Conversion")]
+    [SerializeField] private ItemSalvageService salvageService;
+    [SerializeField] private bool autoFindSalvageService = true;
+    [SerializeField] private bool autoConvertInferiorDuplicates = true;
+
     [Header("Reward Definitions")]
     [SerializeField] private RewardEntry[] rewardTable = new RewardEntry[0];
     [SerializeField] private ItemDefinition[] rewardDefinitions = new ItemDefinition[0];
@@ -40,23 +45,32 @@ public class LootDropper : MonoBehaviour
     [SerializeField] private bool logGrantedRewards = true;
     [SerializeField] private string lastDropMessage;
     [SerializeField] private LootRewardSource lastRewardSource = LootRewardSource.None;
+    [SerializeField] private bool lastRewardAutoConverted;
+    [SerializeField] private string lastConvertedItemName;
+    [SerializeField] private ResourceAmount[] lastConversionRewards = new ResourceAmount[0];
 
     public event Action<ItemInstance> RewardGranted;
+    public event Action<ItemInstance, ResourceAmount[]> RewardConverted;
 
     public string LastDropMessage => lastDropMessage;
     public LootRewardSource LastRewardSource => lastRewardSource;
+    public bool LastRewardAutoConverted => lastRewardAutoConverted;
+    public string LastConvertedItemName => lastConvertedItemName;
+    public ResourceAmount[] LastConversionRewards => lastConversionRewards ?? new ResourceAmount[0];
     public bool HasValidWeightedRewardTable => CalculateRewardTableWeight() > 0f;
     public float RewardTableWeight => CalculateRewardTableWeight();
 
     private void Awake()
     {
         ResolveInventory();
+        ResolveSalvageService();
     }
 
     private void OnValidate()
     {
         rewardTable ??= new RewardEntry[0];
         rewardDefinitions ??= new ItemDefinition[0];
+        lastConversionRewards ??= new ResourceAmount[0];
         maxWeightedNonRareRewardsBeforeRare = Mathf.Max(0, maxWeightedNonRareRewardsBeforeRare);
         weightedNonRareRewardsSinceLastRare = Mathf.Max(0, weightedNonRareRewardsSinceLastRare);
         prototypeTier = Mathf.Max(1, prototypeTier);
@@ -99,15 +113,39 @@ public class LootDropper : MonoBehaviour
             return false;
         }
 
-        if (!inventory.TryAdd(definition, balance.Depth, balance.RewardPowerMultiplier, out item))
+        ItemInstance candidate = ItemInstance.CreateFromDefinition(
+            inventory.NextItemInstanceId,
+            definition,
+            balance.Depth,
+            balance.RewardPowerMultiplier);
+        if (candidate == null)
         {
             lastRewardSource = LootRewardSource.None;
-            SetLastDropMessage($"Loot reward failed: inventory is full or rejected {definition.DisplayName}.");
+            ResetLastConversion();
+            SetLastDropMessage($"Loot reward failed: could not roll {definition.DisplayName}.");
             Debug.LogWarning(lastDropMessage, this);
             return false;
         }
 
         lastRewardSource = rewardSource;
+        if (TryAutoConvertInferiorDuplicate(candidate, balance, out ResourceAmount[] conversionRewards))
+        {
+            item = candidate;
+            RewardConverted?.Invoke(candidate, conversionRewards);
+            return true;
+        }
+
+        if (!inventory.TryAdd(candidate))
+        {
+            lastRewardSource = LootRewardSource.None;
+            ResetLastConversion();
+            SetLastDropMessage($"Loot reward failed: inventory is full or rejected {definition.DisplayName}.");
+            Debug.LogWarning(lastDropMessage, this);
+            return false;
+        }
+
+        item = candidate;
+        ResetLastConversion();
         SetLastDropMessage(
             $"Loot reward granted from {FormatRewardSource(rewardSource)} at depth {balance.Depth}: " +
             $"{item.DisplayName} ({item.Rarity}, level {item.Level}, power {item.RolledPower}, reward x{balance.RewardPowerMultiplier:0.##}).");
@@ -117,6 +155,46 @@ public class LootDropper : MonoBehaviour
         }
 
         RewardGranted?.Invoke(item);
+        return true;
+    }
+
+    private bool TryAutoConvertInferiorDuplicate(
+        ItemInstance candidate,
+        DungeonDepthBalanceProfile balance,
+        out ResourceAmount[] rewards)
+    {
+        rewards = new ResourceAmount[0];
+        if (!autoConvertInferiorDuplicates ||
+            !ItemEconomyModel.TryFindAutoConversionMatch(candidate, inventory.Items, out ItemInstance retainedItem))
+        {
+            return false;
+        }
+
+        ResolveSalvageService();
+        if (salvageService == null)
+        {
+            return false;
+        }
+
+        lastRewardAutoConverted = true;
+        lastConvertedItemName = candidate.DisplayName;
+        lastConversionRewards = ItemEconomyModel.GetSalvageRewards(candidate);
+        if (!salvageService.TryConvertReward(candidate, out rewards))
+        {
+            ResetLastConversion();
+            return false;
+        }
+
+        lastConversionRewards = rewards;
+        SetLastDropMessage(
+            $"Loot reward auto-converted from {FormatRewardSource(lastRewardSource)} at depth {balance.Depth}: " +
+            $"{candidate.DisplayName} (level {candidate.Level}, power {candidate.RolledPower}) -> {FormatRewards(rewards)}. " +
+            $"Kept level {retainedItem.Level}, power {retainedItem.RolledPower}.");
+        if (logGrantedRewards)
+        {
+            Debug.Log(lastDropMessage, this);
+        }
+
         return true;
     }
 
@@ -366,9 +444,34 @@ public class LootDropper : MonoBehaviour
         }
     }
 
+    private void ResolveSalvageService()
+    {
+        if (salvageService == null && autoFindSalvageService)
+        {
+            salvageService = FindAnyObjectByType<ItemSalvageService>();
+        }
+    }
+
+    private void ResetLastConversion()
+    {
+        lastRewardAutoConverted = false;
+        lastConvertedItemName = string.Empty;
+        lastConversionRewards = new ResourceAmount[0];
+    }
+
     private void SetLastDropMessage(string message)
     {
         lastDropMessage = message;
+    }
+
+    private static string FormatRewards(ResourceAmount[] rewards)
+    {
+        if (rewards == null || rewards.Length == 0)
+        {
+            return "no materials";
+        }
+
+        return string.Join(", ", Array.ConvertAll(rewards, reward => reward.ToString()));
     }
 
     private static string FormatRewardSource(LootRewardSource rewardSource)

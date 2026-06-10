@@ -736,6 +736,15 @@ MVP temporary presentation values:
 - Keep `Gameplay > DungeonRoot > LootDropper > Create Prototype Reward When Table Empty` disabled. The fallback remains available only for isolated dev/test scenes.
 - No visual placement or camera judgment is involved. The local harness checks the registry asset, scene reference, and fallback setting.
 
+### 2026-06-10 Duplicate Conversion Setup
+
+- No new GameObject or visual layout is required.
+- `Gameplay > DungeonRoot > LootDropper > Salvage Service` references `Gameplay > GameSystems > ItemSalvageService`.
+- Keep `Auto Convert Inferior Duplicates` enabled. The rule only converts the same registered definition when an owned copy has equal-or-higher level and rolled power.
+- Keep `Auto Find Salvage Service` enabled as a fallback, but prefer the explicit scene reference above.
+- The reward overlay shows `Reward converted` plus the gained materials. The compact dungeon HUD shows `Reward auto-converted` and the expedition result records the conversion.
+- Static verification checks the scene reference, enabled policy, comparison guardrails, payout path, and UI event path. No subjective camera or layout review is required.
+
 Unity 세팅 완료 기준:
 
 - `SampleScene`/`Gameplay`에서 지속 전선과 던전 루프가 같은 런타임 안에 있다.

@@ -165,6 +165,9 @@ $requiredPaths = @(
     @{ Name = "Save manager script"; Path = "Assets\02.Scripts\GroundDefense\Runtime\DefenseSaveManager.cs" },
     @{ Name = "Item definition registry script"; Path = "Assets\02.Scripts\Items\ItemDefinitionRegistry.cs" },
     @{ Name = "Item definition registry asset"; Path = "Assets\05.ScriptableObjects\Items\ItemDefinitionRegistry.asset" },
+    @{ Name = "Item economy model"; Path = "Assets\02.Scripts\Items\ItemEconomyModel.cs" },
+    @{ Name = "Item salvage service"; Path = "Assets\02.Scripts\Items\ItemSalvageService.cs" },
+    @{ Name = "Loot dropper script"; Path = "Assets\02.Scripts\Items\LootDropper.cs" },
     @{ Name = "Simple inventory script"; Path = "Assets\02.Scripts\Items\SimpleInventory.cs" },
     @{ Name = "Playable HUD script"; Path = "Assets\02.Scripts\UI\PlayableLoopHud.cs" },
     @{ Name = "Screen layout controller script"; Path = "Assets\02.Scripts\UI\PlayableScreenLayoutController.cs" },
@@ -193,6 +196,9 @@ $saveDiagnosticsPath = Join-ProjectPath "Assets\02.Scripts\Shared\GameSaveDataDi
 $saveManagerPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\Runtime\DefenseSaveManager.cs"
 $itemRegistryPath = Join-ProjectPath "Assets\02.Scripts\Items\ItemDefinitionRegistry.cs"
 $itemRegistryAssetPath = Join-ProjectPath "Assets\05.ScriptableObjects\Items\ItemDefinitionRegistry.asset"
+$itemEconomyPath = Join-ProjectPath "Assets\02.Scripts\Items\ItemEconomyModel.cs"
+$itemSalvagePath = Join-ProjectPath "Assets\02.Scripts\Items\ItemSalvageService.cs"
+$lootDropperPath = Join-ProjectPath "Assets\02.Scripts\Items\LootDropper.cs"
 $simpleInventoryPath = Join-ProjectPath "Assets\02.Scripts\Items\SimpleInventory.cs"
 $playableHudPath = Join-ProjectPath "Assets\02.Scripts\UI\PlayableLoopHud.cs"
 $planPath = Join-ProjectPath "GameDesign\ProductionDocs\10_PlayableLoopMvpAutomationPlan.md"
@@ -215,6 +221,7 @@ if (Test-Path -LiteralPath $scenePath) {
         @{ Name = "Scene normal combat disables prototype simulation"; Token = "simulateWhenNoEnemies: 0" },
         @{ Name = "Scene has loot dropper"; Token = "m_EditorClassIdentifier: Assembly-CSharp::LootDropper" },
         @{ Name = "Scene disables runtime loot fallback"; Token = "createPrototypeRewardWhenTableEmpty: 0" },
+        @{ Name = "Scene enables inferior duplicate conversion"; Token = "autoConvertInferiorDuplicates: 1" },
         @{ Name = "Scene has dungeon RawImage viewport"; Token = "m_Name: RawImage_DungeonViewport" },
         @{ Name = "Scene has dungeon panel camera"; Token = "m_Name: Camera_DungeonPanel" },
         @{ Name = "Scene has dungeon render target"; Token = "m_EditorClassIdentifier: Assembly-CSharp::PanelCameraRenderTarget" },
@@ -240,6 +247,7 @@ if (Test-Path -LiteralPath $scenePath) {
     [void](Assert-SceneBehaviourReference "Playable HUD previous depth button" $sceneText "PlayableLoopHud" "previousDungeonDepthButton")
     [void](Assert-SceneBehaviourReference "Playable HUD next depth button" $sceneText "PlayableLoopHud" "nextDungeonDepthButton")
     [void](Assert-SceneBehaviourReference "Simple inventory item registry" $sceneText "SimpleInventory" "definitionRegistry")
+    [void](Assert-SceneBehaviourReference "Loot dropper salvage service" $sceneText "LootDropper" "salvageService")
 
     if ($sceneText -match "m_Script:\s+\{fileID:\s+0\}") {
         Add-Result "Scene missing-script scan" "FAIL" "Gameplay.unity contains at least one MonoBehaviour with m_Script fileID 0."
@@ -312,6 +320,21 @@ if ((Test-Path -LiteralPath $itemRegistryPath) -and
     }
 }
 
+if ((Test-Path -LiteralPath $itemEconomyPath) -and
+    (Test-Path -LiteralPath $itemSalvagePath) -and
+    (Test-Path -LiteralPath $lootDropperPath)) {
+    $itemEconomyText = Read-TextFile $itemEconomyPath
+    $itemSalvageText = Read-TextFile $itemSalvagePath
+    $lootDropperText = Read-TextFile $lootDropperPath
+
+    [void](Assert-TextContains "Duplicate conversion requires same definition" $itemEconomyText "StringComparison.Ordinal")
+    [void](Assert-TextContains "Duplicate conversion preserves stronger depth" $itemEconomyText "ownedItem.Level < candidate.Level")
+    [void](Assert-TextContains "Duplicate conversion preserves stronger power" $itemEconomyText "ownedItem.RolledPower < candidate.RolledPower")
+    [void](Assert-TextContains "Salvage service converts unstored reward" $itemSalvageText "public bool TryConvertReward")
+    [void](Assert-TextContains "Loot dropper evaluates duplicate conversion" $lootDropperText "TryAutoConvertInferiorDuplicate")
+    [void](Assert-TextContains "Loot dropper reports converted reward" $lootDropperText "RewardConverted?.Invoke")
+}
+
 if (Test-Path -LiteralPath $enemyPrefabPath) {
     $enemyPrefabText = Read-TextFile $enemyPrefabPath
     $requiredEnemyPrefabTokens = @(
@@ -356,7 +379,8 @@ if (Test-Path -LiteralPath $planPath) {
         "D0-A | P0 | Save-backed dungeon depth progression | Done",
         "D0-B | P0 | Formula-driven depth threat and reward bands | Done",
         "D0-C | P0 | Item registry and save migration | Done",
-        "D0-D | P0 | Duplicate-item sink and conversion | Next",
+        "D0-D | P0 | Duplicate-item sink and conversion | Done",
+        "D1-A | P1 | Formula-driven ground scaling | Next",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
         "12_PrototypeDebtRegister.md",
         "Get-PrototypeDebtInventory.ps1"

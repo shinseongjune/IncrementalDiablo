@@ -15785,6 +15785,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LootDropper
   inventory: {fileID: 1045172326}
   autoFindInventory: 1
+  salvageService: {fileID: 1045172327}
+  autoFindSalvageService: 1
+  autoConvertInferiorDuplicates: 1
   rewardTable:
   - definition: {fileID: 11400000, guid: 5c7ea7142bbf48549d79dd5d1dcb9769, type: 2}
     weight: 30
@@ -15813,6 +15816,9 @@ MonoBehaviour:
   logGrantedRewards: 1
   lastDropMessage:
   lastRewardSource: 0
+  lastRewardAutoConverted: 0
+  lastConvertedItemName:
+  lastConversionRewards: []
 --- !u!114 &1962279250
 MonoBehaviour:
   m_ObjectHideFlags: 0

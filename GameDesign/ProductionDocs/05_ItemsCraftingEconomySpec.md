@@ -1,5 +1,15 @@
 # Items Crafting Economy Spec
 
+## 2026-06-10 Phase D Duplicate Conversion
+
+- `LootDropper` rolls the candidate item before adding it to inventory. `ItemEconomyModel.TryFindAutoConversionMatch(...)` only matches an already-owned resolved item with the same canonical definition id.
+- The new reward is auto-converted only when the owned match has both `Level >= candidate.Level` and `RolledPower >= candidate.RolledPower`. Any candidate that improves either axis remains in inventory for player review.
+- Conversion uses `ItemSalvageService.TryConvertReward(...)` and the same depth-scaled Scrap/Essence/AlterStone calculation as manual salvage. The reward overlay and dungeon result show the material payout and do not present an older inventory item as the new reward.
+- If the salvage service or wallet is unavailable, conversion is skipped and normal inventory grant is attempted. A reward is never deleted merely because the conversion path is unavailable.
+- The current rule is deliberately narrow: it does not auto-score different definitions, compare affix builds, create collection bonuses, or add defender gear slots. Those are larger economy decisions.
+- Save schema remains v3. Converted rewards never enter inventory; the resulting wallet materials already persist through the existing save path.
+- D2 reference principle used: unwanted drops should become deterministic progress, as reflected by the reference pack's salvage-efficiency and equipment-scrap lanes. This project uses immediate single-player material conversion instead of copying D2 trading, vendor, cube, ladder, or alt-character pressure.
+
 ## 2026-06-08 Phase D Depth Reward Bands
 
 - Dungeon depth now changes reward value without changing the existing authored rarity weights. The per-clear 78/20/2 Normal/Magic/Rare table and first-Rare pity behavior remain unchanged.
@@ -301,7 +311,7 @@ MVP에서 하지 않는다.
 - Optional `ItemDefinitionIdMigration` entries map retired ids to a registered replacement before inventory restoration. Save schema v3 records that this migration stage exists.
 - Unknown ids are not deleted or converted from stale slot/rarity/power snapshots. They remain visible in inventory as unresolved quarantine records, while equip, salvage, and reroll actions stay disabled until an explicit migration is authored.
 - Normal `Gameplay` disables `LootDropper.createPrototypeRewardWhenTableEmpty`; an empty/invalid authored reward table now fails visibly instead of creating production-looking runtime loot.
-- This changes item durability and data safety, not rarity odds, salvage yields, reroll costs, or D2 pacing. D0-D now owns the next economy gain: a scalable use for duplicate and low-value authored drops.
+- This changes item durability and data safety, not rarity odds, salvage yields, reroll costs, or D2 pacing. The completed D0-D path above now owns the first scalable use for dominated duplicate authored drops.
 
 ## 15. 2026-05-30 Rare Access Pacing Note
 

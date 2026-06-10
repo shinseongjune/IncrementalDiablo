@@ -458,6 +458,11 @@ public class PlayableLoopHud : MonoBehaviour
 
         if (expedition.State == DungeonRunState.Cleared)
         {
+            if (lootDropper != null && lootDropper.LastRewardAutoConverted)
+            {
+                return "Reward auto-converted";
+            }
+
             if (!string.IsNullOrWhiteSpace(expedition.LastResult) &&
                 expedition.LastResult.StartsWith("Reward granted:", StringComparison.OrdinalIgnoreCase))
             {

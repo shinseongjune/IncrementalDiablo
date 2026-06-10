@@ -1,5 +1,13 @@
 # Base Script Usage Guide
 
+## 2026-06-10 D0-D Duplicate Conversion Usage
+
+- `ItemEconomyModel.TryFindAutoConversionMatch(candidate, inventory.Items, out retainedItem)` returns true only for a resolved same-definition item with equal-or-higher level and rolled power.
+- `LootDropper` evaluates that rule before `SimpleInventory.TryAdd(...)`. A converted reward never occupies inventory capacity.
+- `ItemSalvageService.TryConvertReward(...)` pays the candidate's normal depth-scaled salvage materials without trying to remove an item that was never stored.
+- `LootDropper.RewardConverted` is the player-feedback event. `RewardOverlayPresenter` clears its reward-item selection, shows the conversion payout, and disables item actions for that consumed reward.
+- Leave `Auto Convert Inferior Duplicates` enabled in normal production scenes. Disable it only in a focused test scene that needs to accumulate exact duplicate records.
+
 ## 2026-06-08 D0-B Depth Balance Usage
 
 - `DungeonDepthBalanceModel.Evaluate(depth)` returns the shared band number and multipliers for enemy health, enemy damage, reward power, and material yield.

@@ -70,7 +70,7 @@
 - Clearing the current highest unlocked depth adds exactly one next depth. Clearing a lower depth or failing a run does not advance the ladder.
 - Save schema v2 persists selected/highest depth and migrates v1 saves from their prior active depth. Save diagnostics now enforce the unlocked range.
 - The normal `Gameplay` HUD has `Depth -` / `Depth +` controls and displays active plus selected/highest depth. The user confirmed unlock, selection/start, non-advancing failure, and save/load restoration on 2026-06-07, closing D0-A.
-- D0-B formula-driven threat/reward bands and D0-C item registry/save migration are complete. D0-D duplicate-item sink and conversion is now the active production priority.
+- D0-B formula-driven threat/reward bands, D0-C item registry/save migration, and D0-D duplicate conversion are complete. D1-A formula-driven ground scaling is now the active production priority.
 
 ### 2026-06-08 Phase D D0-B implementation
 
@@ -86,7 +86,11 @@
 - Save schema v3 now migrates item ids before diagnostics/load and reports resolved, remapped, and unresolved counts.
 - Unknown saved ids are preserved as visible quarantine records but cannot be equipped, salvaged, or rerolled, preventing stale snapshots from acting as valid production items.
 - Normal `Gameplay` disables runtime fallback loot, and the harness guards the registry asset, scene reference, source contracts, and task routing.
-- D0-D duplicate/low-value item conversion is the next Phase D production task.
+
+### 2026-06-10 Phase D D0-D implementation
+
+- D0-D now auto-converts a newly rolled authored reward only when an owned copy of the same definition dominates both source depth and rolled power. The normal depth-scaled salvage payout goes directly to the wallet, while upgrade candidates remain reviewable.
+- D1-A formula-driven ground scaling is the next Phase D production task.
 
 ## 2. Phase 0. 문서 기준 고정
 

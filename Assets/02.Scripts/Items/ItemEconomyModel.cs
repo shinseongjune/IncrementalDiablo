@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -5,6 +6,43 @@ public static class ItemEconomyModel
 {
     private const float RerollGoldBaseCost = 50f;
     private const float RerollGoldGrowth = 1.35f;
+
+    public static bool TryFindAutoConversionMatch(
+        ItemInstance candidate,
+        IReadOnlyList<ItemInstance> ownedItems,
+        out ItemInstance retainedItem)
+    {
+        retainedItem = null;
+        if (candidate == null ||
+            !candidate.IsDefinitionResolved ||
+            string.IsNullOrWhiteSpace(candidate.DefinitionId) ||
+            ownedItems == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < ownedItems.Count; i++)
+        {
+            ItemInstance ownedItem = ownedItems[i];
+            if (ownedItem == null ||
+                !ownedItem.IsDefinitionResolved ||
+                !string.Equals(ownedItem.DefinitionId, candidate.DefinitionId, StringComparison.Ordinal) ||
+                ownedItem.Level < candidate.Level ||
+                ownedItem.RolledPower < candidate.RolledPower)
+            {
+                continue;
+            }
+
+            if (retainedItem == null ||
+                ownedItem.Level > retainedItem.Level ||
+                (ownedItem.Level == retainedItem.Level && ownedItem.RolledPower > retainedItem.RolledPower))
+            {
+                retainedItem = ownedItem;
+            }
+        }
+
+        return retainedItem != null;
+    }
 
     public static ResourceAmount[] GetSalvageRewards(ItemInstance item)
     {

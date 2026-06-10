@@ -63,7 +63,7 @@ public class RewardOverlayPresenter : MonoBehaviour
 
         if (selectLatestItemOnEnable)
         {
-            SelectLatestInventoryItem();
+            SynchronizeLatestRewardSelection();
         }
 
         Refresh();
@@ -115,9 +115,11 @@ public class RewardOverlayPresenter : MonoBehaviour
             return;
         }
 
-        SelectLatestInventoryItem();
+        SynchronizeLatestRewardSelection();
         ItemInstance item = GetRewardItem();
-        SetMessage(item == null ? "Reward claimed." : $"Reward claimed: {item.DisplayName}.");
+        SetMessage(lootDropper != null && lootDropper.LastRewardAutoConverted
+            ? lootDropper.LastDropMessage
+            : item == null ? "Reward claimed." : $"Reward claimed: {item.DisplayName}.");
     }
 
     public void OpenInventoryOverlay()
@@ -245,6 +247,11 @@ public class RewardOverlayPresenter : MonoBehaviour
             return $"Reward ready / Dungeon {expedition.State}";
         }
 
+        if (lootDropper != null && lootDropper.LastRewardAutoConverted)
+        {
+            return $"Reward converted / {FormatLootRewardSource(lootDropper.LastRewardSource)}";
+        }
+
         if (item != null)
         {
             return $"Latest reward / {item.Rarity} {item.Slot}";
@@ -301,6 +308,11 @@ public class RewardOverlayPresenter : MonoBehaviour
         string walletText = wallet == null ? "Wallet: unavailable" : $"Wallet: {wallet.FormatAll()}";
         if (item == null)
         {
+            if (lootDropper != null && lootDropper.LastRewardAutoConverted)
+            {
+                return $"{walletText}\nAuto-conversion gained: {FormatRewards(lootDropper.LastConversionRewards)}";
+            }
+
             return walletText;
         }
 
@@ -361,6 +373,18 @@ public class RewardOverlayPresenter : MonoBehaviour
         ItemInstance latestItem = inventory.Items[inventory.Items.Count - 1];
         rewardItemInstanceId = latestItem == null ? 0 : latestItem.InstanceId;
         rewardItemConsumed = false;
+    }
+
+    private void SynchronizeLatestRewardSelection()
+    {
+        if (lootDropper != null && lootDropper.LastRewardAutoConverted)
+        {
+            rewardItemInstanceId = 0;
+            rewardItemConsumed = true;
+            return;
+        }
+
+        SelectLatestInventoryItem();
     }
 
     private static ResourceAmount[] GetSalvagePreview(ItemInstance item)
@@ -473,12 +497,14 @@ public class RewardOverlayPresenter : MonoBehaviour
             if (subscribedLootDropper != null)
             {
                 subscribedLootDropper.RewardGranted -= HandleRewardGranted;
+                subscribedLootDropper.RewardConverted -= HandleRewardConverted;
             }
 
             subscribedLootDropper = lootDropper;
             if (subscribedLootDropper != null)
             {
                 subscribedLootDropper.RewardGranted += HandleRewardGranted;
+                subscribedLootDropper.RewardConverted += HandleRewardConverted;
             }
         }
 
@@ -536,6 +562,7 @@ public class RewardOverlayPresenter : MonoBehaviour
         if (subscribedLootDropper != null)
         {
             subscribedLootDropper.RewardGranted -= HandleRewardGranted;
+            subscribedLootDropper.RewardConverted -= HandleRewardConverted;
             subscribedLootDropper = null;
         }
 
@@ -563,6 +590,15 @@ public class RewardOverlayPresenter : MonoBehaviour
         rewardItemInstanceId = item == null ? 0 : item.InstanceId;
         rewardItemConsumed = false;
         lastMessage = item == null ? "Reward granted." : $"Reward granted: {item.DisplayName}.";
+        Refresh();
+    }
+
+    private void HandleRewardConverted(ItemInstance item, ResourceAmount[] rewards)
+    {
+        rewardItemInstanceId = 0;
+        rewardItemConsumed = true;
+        string itemName = item == null ? "Reward" : item.DisplayName;
+        lastMessage = $"Auto-converted {itemName}: {FormatRewards(rewards)}.";
         Refresh();
     }
 

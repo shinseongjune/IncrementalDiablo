@@ -77,6 +77,27 @@ public class ItemSalvageService : MonoBehaviour
         return true;
     }
 
+    public bool TryConvertReward(ItemInstance item, out ResourceAmount[] rewards)
+    {
+        rewards = new ResourceAmount[0];
+        if (item == null || item.Definition == null)
+        {
+            return false;
+        }
+
+        rewards = ItemEconomyModel.GetSalvageRewards(item);
+        ResolveWallet();
+        if (wallet == null)
+        {
+            Debug.LogWarning("ItemSalvageService needs a CurrencyWallet before it can convert a reward.", this);
+            return false;
+        }
+
+        wallet.Add(rewards);
+        Salvaged?.Invoke(item.Definition, rewards);
+        return true;
+    }
+
     private void Reset()
     {
         ResolveWallet();

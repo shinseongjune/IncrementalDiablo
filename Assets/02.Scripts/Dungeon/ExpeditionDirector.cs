@@ -229,7 +229,9 @@ public class ExpeditionDirector : MonoBehaviour
         }
 
         runtime.rewardPending = false;
-        runtime.lastResult = $"Reward granted: {item.DisplayName}";
+        runtime.lastResult = lootDropper.LastRewardAutoConverted
+            ? $"Reward converted: {item.DisplayName} -> {FormatRewards(lootDropper.LastConversionRewards)}"
+            : $"Reward granted: {item.DisplayName}";
         NotifyChanged();
         return true;
     }
@@ -350,5 +352,15 @@ public class ExpeditionDirector : MonoBehaviour
     private void NotifyChanged()
     {
         Changed?.Invoke();
+    }
+
+    private static string FormatRewards(ResourceAmount[] rewards)
+    {
+        if (rewards == null || rewards.Length == 0)
+        {
+            return "no materials";
+        }
+
+        return string.Join(", ", Array.ConvertAll(rewards, reward => reward.ToString()));
     }
 }
