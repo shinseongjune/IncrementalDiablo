@@ -1,5 +1,27 @@
 # Data Save And Balance Spec
 
+## 2026-06-11 Ground Defense Balance Model
+
+`GroundDefenseBalanceModel` is the runtime source of truth for D1-A. It uses ten-level bands instead of authored wave rows.
+
+```text
+b = floor((frontlineLevel - 1) / 10)
+s = (frontlineLevel - 1) % 10
+
+IncomingPressure = 1.65^b * (1 + 0.07s)
+DefenseOutput = 1.45^b * (1 + 0.025s)
+PressureCapacity = 1.4^b * (1 + 0.04s)
+ProgressRequired = 1.5^b * (1 + 0.05s)
+Reward = 1.5^b * (1 + 0.05s)
+```
+
+- Frontline Level 1 is exactly `x1` for every lane, preserving the existing first-level timing and baseline.
+- Every multiplier is monotonic and clamped to `1..1,000,000,000`.
+- Defense output multiplies the player's current Wall/Tower/Defender-derived output; it does not replace upgrade choices.
+- Band 2 and later starts grant `Gold 120 * 1.6^(band-2)` and `Scrap 16 * 1.6^(band-2)`, saturated to integer limits.
+- Milestone rewards need no new save field because they are granted only while crossing a band boundary; the wallet is already saved.
+- `Tools/Automation/Export-GroundDefenseBalance.ps1` reads the C# constants, verifies Frontline Levels 1-1000, and exports `GameDesign/Balance/GroundDefenseBalance.csv`.
+
 ## 2026-06-08 Dungeon Depth Balance Model
 
 `DungeonDepthBalanceModel` is the runtime source of truth for D0-B. It uses ten-depth milestone bands instead of authored per-depth rows.

@@ -1,5 +1,13 @@
 # Unity Scene And Prefab Setup Guide
 
+## 2026-06-11 Ground Progression Wiring
+
+- No new scene object or Inspector reference is required for D1-A. The existing `DefenseDirector` automatically evaluates `GroundDefenseBalanceModel` from `DefenseRuntimeState.FrontlineLevel`.
+- Do not restore the old `pressureGrowthPerLevel`, `pressureCapacityGrowthPerLevel`, `progressRequiredGrowthPerLevel`, or `rewardGrowthPerLevel` Inspector fields. Tune the shared constants and regenerate `GameDesign/Balance/GroundDefenseBalance.csv`.
+- The current `DefenseHud` and `PlayableLoopHud` automatically show active band, pressure/defense/reward multipliers, next band level, and latest milestone result.
+- Short runtime check when ground progression changes: at Frontline Level 1 confirm Band 1 and `x1` baseline; after any code/test-save route reaches Level 11, confirm Band 2, the Gold/Scrap milestone message, and no duplicate reward after save/load. This is a regression path, not a new visual-layout approval.
+- Phase E E0-A will require a separate prefab/pool handoff. Do not add more scene-authored fixed pressure slots in the meantime.
+
 작성일: 2026-05-03
 문서 목적: Unity 씬, 폴더, 프리팹, 컴포넌트 세팅 지시서
 

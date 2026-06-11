@@ -13,24 +13,20 @@ public class DefenseDirector : MonoBehaviour
     [SerializeField] private int startingLevel = 1;
     [SerializeField] private FrontlineMode startingMode = FrontlineMode.Push;
 
-    [Header("Frontline Pressure")]
+    [Header("Frontline Baselines")]
     [SerializeField] private float baseIncomingPressurePerSecond = 10f;
-    [SerializeField] private float pressureGrowthPerLevel = 1.12f;
     [SerializeField] private float pushPressureMultiplier = 1.3f;
     [SerializeField] private float basePressureCapacity = 100f;
-    [SerializeField] private float pressureCapacityGrowthPerLevel = 1.08f;
     [SerializeField] private float wallDamagePerPressureSecond = 0.018f;
 
     [Header("Frontline Progress")]
     [SerializeField] private float baseProgressRequired = 100f;
-    [SerializeField] private float progressRequiredGrowthPerLevel = 1.1f;
     [SerializeField] private float basePushProgressPerSecond = 2.5f;
     [SerializeField] private float surplusDefenseProgressMultiplier = 0.25f;
 
     [Header("Rewards")]
     [SerializeField] private float baseGoldPerMinute = 30f;
     [SerializeField] private float baseScrapPerMinute = 4f;
-    [SerializeField] private float rewardGrowthPerLevel = 1.08f;
     [SerializeField] private float pushRewardMultiplier = 1.15f;
     [SerializeField] private float breachedRewardMultiplier = 0.25f;
 
@@ -44,6 +40,13 @@ public class DefenseDirector : MonoBehaviour
     public DefenseRuntimeState Runtime => runtime;
     public CurrencyWallet Wallet => wallet;
     public DefenseUpgradeModel Upgrades => upgrades;
+    public GroundDefenseBalanceProfile CurrentProgressionProfile =>
+        GroundDefenseBalanceModel.Evaluate(runtime == null ? startingLevel : runtime.FrontlineLevel);
+    public float CurrentIncomingPressurePerSecond => GetIncomingPressurePerSecond();
+    public float CurrentDefensePowerPerSecond => GetDefensePowerPerSecond();
+    public float CurrentGoldPerMinute => GetGoldPerSecond() * 60f * GetCurrentRewardStateMultiplier();
+    public float CurrentScrapPerMinute => GetScrapPerSecond() * 60f * GetCurrentRewardStateMultiplier();
+    public string LastMilestoneMessage { get; private set; } = "Ground milestone: baseline band active.";
 
     private void Awake()
     {
@@ -92,7 +95,7 @@ public class DefenseDirector : MonoBehaviour
 
     private void Update()
     {
-        if (runtime.IsRunning)
+        if (ShouldAccrueDefenseIncome())
         {
             TickFrontline(Time.deltaTime);
         }
@@ -102,18 +105,14 @@ public class DefenseDirector : MonoBehaviour
     {
         startingLevel = Mathf.Max(1, startingLevel);
         baseIncomingPressurePerSecond = Mathf.Max(0f, baseIncomingPressurePerSecond);
-        pressureGrowthPerLevel = Mathf.Max(1f, pressureGrowthPerLevel);
         pushPressureMultiplier = Mathf.Max(1f, pushPressureMultiplier);
         basePressureCapacity = Mathf.Max(1f, basePressureCapacity);
-        pressureCapacityGrowthPerLevel = Mathf.Max(1f, pressureCapacityGrowthPerLevel);
         wallDamagePerPressureSecond = Mathf.Max(0f, wallDamagePerPressureSecond);
         baseProgressRequired = Mathf.Max(1f, baseProgressRequired);
-        progressRequiredGrowthPerLevel = Mathf.Max(1f, progressRequiredGrowthPerLevel);
         basePushProgressPerSecond = Mathf.Max(0f, basePushProgressPerSecond);
         surplusDefenseProgressMultiplier = Mathf.Max(0f, surplusDefenseProgressMultiplier);
         baseGoldPerMinute = Mathf.Max(0f, baseGoldPerMinute);
         baseScrapPerMinute = Mathf.Max(0f, baseScrapPerMinute);
-        rewardGrowthPerLevel = Mathf.Max(1f, rewardGrowthPerLevel);
         pushRewardMultiplier = Mathf.Max(1f, pushRewardMultiplier);
         breachedRewardMultiplier = Mathf.Clamp01(breachedRewardMultiplier);
     }
@@ -123,6 +122,7 @@ public class DefenseDirector : MonoBehaviour
         runtime.Initialize(GetMaxWallHealth(), startingLevel, startingMode, GetPressureCapacity(startingLevel), GetProgressRequired(startingLevel));
         goldRemainder = 0f;
         scrapRemainder = 0f;
+        LastMilestoneMessage = $"Ground milestone: Band {CurrentProgressionProfile.BandNumber} baseline active.";
         NotifyChanged();
     }
 
@@ -248,12 +248,13 @@ public class DefenseDirector : MonoBehaviour
         runtime.ApplySaveData(saveData, GetMaxWallHealth(), GetPressureCapacity(loadedLevel), GetProgressRequired(loadedLevel));
         goldRemainder = 0f;
         scrapRemainder = 0f;
+        LastMilestoneMessage = $"Ground milestone: Band {CurrentProgressionProfile.BandNumber} restored.";
         NotifyChanged();
     }
 
     public float SimulateOffline(float offlineSeconds)
     {
-        if (offlineSeconds <= 0f || !runtime.IsRunning)
+        if (offlineSeconds <= 0f || !ShouldAccrueDefenseIncome())
         {
             return 0f;
         }
@@ -261,7 +262,7 @@ public class DefenseDirector : MonoBehaviour
         float remainingSeconds = offlineSeconds;
         const float maxStepSeconds = 5f;
 
-        while (remainingSeconds > 0f && runtime.IsRunning)
+        while (remainingSeconds > 0f && ShouldAccrueDefenseIncome())
         {
             float stepSeconds = Mathf.Min(maxStepSeconds, remainingSeconds);
             TickFrontline(stepSeconds, false);
@@ -299,8 +300,14 @@ public class DefenseDirector : MonoBehaviour
 
         while (runtime.FrontlineProgress >= runtime.FrontlineProgressRequired)
         {
+            GroundDefenseBalanceProfile previousProfile = CurrentProgressionProfile;
             int nextLevel = runtime.FrontlineLevel + 1;
             runtime.AdvanceLevel(GetProgressRequired(nextLevel), GetPressureCapacity(nextLevel));
+            GroundDefenseBalanceProfile nextProfile = CurrentProgressionProfile;
+            if (nextProfile.BandNumber > previousProfile.BandNumber)
+            {
+                GrantMilestoneRewards(nextProfile);
+            }
         }
 
         if (notify)
@@ -316,7 +323,7 @@ public class DefenseDirector : MonoBehaviour
             return;
         }
 
-        float rewardMultiplier = runtime.State == DefenseState.Breached ? breachedRewardMultiplier : GetModeRewardMultiplier();
+        float rewardMultiplier = GetCurrentRewardStateMultiplier();
         goldRemainder += GetGoldPerSecond() * rewardMultiplier * Mathf.Max(0f, deltaTime);
         scrapRemainder += GetScrapPerSecond() * rewardMultiplier * Mathf.Max(0f, deltaTime);
 
@@ -343,23 +350,26 @@ public class DefenseDirector : MonoBehaviour
 
     private float GetDefensePowerPerSecond()
     {
-        return upgrades == null ? 10f : upgrades.TotalDefensePower + upgrades.WallPressureReductionPerSecond;
+        float rawDefensePower = upgrades == null
+            ? 10f
+            : upgrades.TotalDefensePower + upgrades.WallPressureReductionPerSecond;
+        return rawDefensePower * CurrentProgressionProfile.DefenseOutputMultiplier;
     }
 
     private float GetIncomingPressurePerSecond()
     {
-        float pressure = baseIncomingPressurePerSecond * Mathf.Pow(pressureGrowthPerLevel, Mathf.Max(0, runtime.FrontlineLevel - 1));
+        float pressure = baseIncomingPressurePerSecond * CurrentProgressionProfile.IncomingPressureMultiplier;
         return runtime.Mode == FrontlineMode.Push ? pressure * pushPressureMultiplier : pressure;
     }
 
     private float GetPressureCapacity(int level)
     {
-        return basePressureCapacity * Mathf.Pow(pressureCapacityGrowthPerLevel, Mathf.Max(0, level - 1));
+        return basePressureCapacity * GroundDefenseBalanceModel.Evaluate(level).PressureCapacityMultiplier;
     }
 
     private float GetProgressRequired(int level)
     {
-        return baseProgressRequired * Mathf.Pow(progressRequiredGrowthPerLevel, Mathf.Max(0, level - 1));
+        return baseProgressRequired * GroundDefenseBalanceModel.Evaluate(level).ProgressRequirementMultiplier;
     }
 
     private float GetProgressPerSecond(float surplusDefense)
@@ -374,17 +384,54 @@ public class DefenseDirector : MonoBehaviour
 
     private float GetGoldPerSecond()
     {
-        return baseGoldPerMinute * Mathf.Pow(rewardGrowthPerLevel, Mathf.Max(0, runtime.FrontlineLevel - 1)) / 60f;
+        return baseGoldPerMinute * CurrentProgressionProfile.RewardMultiplier / 60f;
     }
 
     private float GetScrapPerSecond()
     {
-        return baseScrapPerMinute * Mathf.Pow(rewardGrowthPerLevel, Mathf.Max(0, runtime.FrontlineLevel - 1)) / 60f;
+        return baseScrapPerMinute * CurrentProgressionProfile.RewardMultiplier / 60f;
     }
 
     private float GetModeRewardMultiplier()
     {
         return runtime.Mode == FrontlineMode.Push ? pushRewardMultiplier : 1f;
+    }
+
+    private float GetCurrentRewardStateMultiplier()
+    {
+        if (runtime.State == DefenseState.Breached)
+        {
+            return breachedRewardMultiplier;
+        }
+
+        return runtime.IsRunning ? GetModeRewardMultiplier() : 0f;
+    }
+
+    private bool ShouldAccrueDefenseIncome()
+    {
+        return runtime != null && (runtime.IsRunning || runtime.State == DefenseState.Breached);
+    }
+
+    private void GrantMilestoneRewards(GroundDefenseBalanceProfile profile)
+    {
+        ResourceAmount[] rewards = GroundDefenseBalanceModel.GetMilestoneRewards(profile);
+        if (wallet == null || rewards.Length == 0)
+        {
+            LastMilestoneMessage = $"Ground milestone: Band {profile.BandNumber} unlocked; reward unavailable.";
+            return;
+        }
+
+        wallet.Add(rewards);
+        LastMilestoneMessage =
+            $"Ground milestone: Band {profile.BandNumber} unlocked at Frontline Lv.{profile.BandStartLevel}; " +
+            $"{FormatRewards(rewards)}.";
+    }
+
+    private static string FormatRewards(ResourceAmount[] rewards)
+    {
+        return rewards == null || rewards.Length == 0
+            ? "no reward"
+            : string.Join(", ", Array.ConvertAll(rewards, reward => reward.ToString()));
     }
 
     private void ResolveReferences()

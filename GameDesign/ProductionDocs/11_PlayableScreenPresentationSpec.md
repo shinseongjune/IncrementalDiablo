@@ -1,5 +1,11 @@
 # Playable Screen Presentation Spec
 
+## 2026-06-11 Ground Progression Feedback
+
+- The frontline summary now shows the active formula band, pressure multiplier, defense-output multiplier, reward multiplier, next band level, and latest milestone result.
+- `DefenseHud` also shows effective defense output plus current Gold/Scrap per minute so an upgrade or band change has a visible numeric result.
+- This is functional progression feedback. Do not create a new panel or adjust camera/layout composition for D1-A; Phase E E0-A owns the production actor replacement.
+
 ## 2026-06-08 Dungeon Depth Balance Feedback
 
 - The Dungeon HUD line shows the selected depth's balance band while Ready and the active depth's band while Running.

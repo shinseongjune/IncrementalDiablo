@@ -1,10 +1,11 @@
 # Ground Defense Flow Blueprint
 
-## 2026-06-05 Current Implementation Boundary
+## 2026-06-11 Current Implementation Boundary
 
 - `GroundDefenseActorRuntime` proves individual hit, defeat, travel, and wall-contact readability while `DefenseRuntimeState` remains authoritative.
 - The fixed three actor slots and scene blockouts are accepted only as a P0-C behavior bridge. Do not polish or expand them as final content.
-- When this system returns to active production, replace the blockout with pooled enemy prefabs, archetype data, real targeting/death, and reusable feedback. Keep the continuous frontline and Hold/Push direction; do not reintroduce manual wave lists or RTS control.
+- `GroundDefenseBalanceModel` now gives the authoritative simulation reusable 10-level pressure/output/reward/progress bands plus formula-driven milestone caches. This replaces the old independent per-level growth fields, not the actor presentation.
+- Phase E E0-A must replace the blockout with pooled enemy prefabs, archetype data, real targeting/death, and reusable feedback. Keep the continuous frontline and Hold/Push direction; do not reintroduce manual wave lists or RTS control.
 
 작성일: 2026-04-30  
 문서 버전: v0.2  

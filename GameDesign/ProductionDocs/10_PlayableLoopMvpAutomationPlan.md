@@ -73,8 +73,8 @@ This document must not stop at the first MVP. When the current phase is complete
 | Phase A - Playable Loop MVP | Completed 2026-05-14 after Play Mode smoke-test confirmation. | MVP-01 through MVP-10 are `Done`; Play Mode can show ground reward -> dungeon -> loot -> equip/salvage -> save/load at debug quality. | Closed unless a regression appears. |
 | Phase B - 30-Minute Retention Slice | Completed 2026-05-17 after user confirmation that the normal player HUD slice was already done. | A new player can play about 30 minutes with at least three meaningful upgrade decisions, one failure/recovery moment, and no dev-console-only step. | Closed unless a regression appears. |
 | Phase C - First Real Game Slice | Completed 2026-06-06 from accumulated accepted evidence across P0-A through P0-D. The normal path now has visible defense behavior, direct-control prefab combat, authored rewards, overlays, crafting, and no silent calculation-combat clear. | One player-facing runtime slice contains a visible ground-defense lane, one direct-control dungeon room with at least one real enemy prefab, and authored item assets/definitions feeding the reward loop without relying on debug-only surfaces for the normal path. | Closed unless a regression appears. Residual overlay polish belongs to Phase E, not another Phase C acceptance loop. |
-| Phase D - Long-Horizon Systems Foundation | Current phase. The saved depth ladder, formula-driven threat/reward/material bands, production item registry/save migration path, and dominated-duplicate conversion sink are implemented. | Formula-driven dungeon tiers, ground scaling, item rarity/material sinks, and save migration hooks exist without hand-authored content ladders. | Add D1-A formula-driven ground pressure/output/reward/milestone scaling without manual wave lists. |
-| Phase E - Early Access Readiness Slice | Phase D is done. Systems scale, but the game is not yet release-shaped. | A 2-4 hour repeatable slice is playable with stable UI, recoverable failure, basic settings, readable onboarding, QA checklist, and no known progression blocker. | Add usability polish, error handling, content breadth, performance checks, settings, and release-scope triage. |
+| Phase D - Long-Horizon Systems Foundation | Completed 2026-06-11. The saved dungeon ladder, dungeon and ground formula bands, production item registry/save migration path, dominated-duplicate conversion sink, and formula-driven ground milestones are implemented. | Formula-driven dungeon tiers, ground scaling, item rarity/material sinks, and save migration hooks exist without hand-authored content ladders. | Closed unless a scaling, save, or economy regression appears. |
+| Phase E - Early Access Readiness Slice | Current phase. The long-horizon formulas exist, but the accepted ground actor bridge and several UI/feedback surfaces are not yet release-shaped. | A 2-4 hour repeatable slice is playable with stable UI, recoverable failure, basic settings, readable onboarding, QA checklist, and no known progression blocker. | Replace the fixed-slot ground actor bridge with pooled prefab actors that preserve the authoritative continuous-frontline model. |
 
 ## Phase Promotion Rule
 
@@ -129,11 +129,11 @@ Accepted runtime evidence is cumulative. Do not require another full-loop Play M
 
 | Field | Current value |
 | --- | --- |
-| Current phase | Phase D - Long-Horizon Systems Foundation |
-| Last meaningful movement | 2026-06-10: D0-D now auto-converts a newly rolled authored reward when an owned copy of the same definition has both equal-or-higher level and equal-or-higher rolled power. The depth-scaled salvage payout is visible in the reward overlay and dungeon result, while upgrade candidates remain stored. |
-| Next unlock | D1-A is `Next`: apply reusable formula bands to frontline pressure, defense output, ground rewards, and milestone unlocks without creating manual wave lists. |
-| Loop coverage | Phase A debug loop, Phase B normal HUD loop, and Phase C first real game slice are complete. Phase D now has a persistent depth ladder, formula-driven dungeon risk/reward/material profiles, durable authored item identity, and an inventory-bloat guard that turns dominated duplicates into saved materials. |
-| Known blockers | No current compile, scene-wiring, depth-scaling, reward-scaling, item-registry, save-migration, or duplicate-conversion blocker remains. The next product risk is that the ground layer still lacks a shared long-horizon scaling model comparable to the dungeon depth bands. |
+| Current phase | Phase E - Early Access Readiness Slice |
+| Last meaningful movement | 2026-06-11: D1-A now routes frontline pressure, defense output efficiency, pressure capacity, progress requirements, continuous Gold/Scrap income, and 10-level milestone rewards through one bounded reusable profile. Breached live/offline states now actually retain the documented 25% recovery income. The normal HUD exposes the active band and next unlock, and the deterministic export verifies Frontline Levels 1-1000. |
+| Next unlock | E0-A is `Next`: replace the fixed three-slot ground actor projection with pooled production enemy prefabs/archetype data while keeping `DefenseRuntimeState` authoritative and avoiding manual wave lists. |
+| Loop coverage | Phases A-C remain cumulatively accepted. Phase D is complete with persistent dungeon depth, dungeon and ground formula bands, durable authored item identity, save migration, dominated-duplicate conversion, and formula-driven ground milestone rewards. |
+| Known blockers | No current compile, scene-wiring, dungeon/ground scaling, item-registry, save-migration, or duplicate-conversion blocker remains. The first Phase E alpha blocker is TD-08: the normal ground battle still presents the authoritative simulation through fixed blockout actor slots rather than pooled production actors. |
 
 ## 3.1 Phase C MVP Completion Task List
 
@@ -179,6 +179,7 @@ Run Update Notes:
 - 2026-06-08: User confirmed the focused D0-B Play Mode comparison was completed successfully. Accepted evidence covers the Depth 1 versus Depth 2 enemy HP/damage increase and the Depth 2 authored reward level/power path. D0-B is `Done`; D0-C item registry and save migration is now `Next`.
 - 2026-06-09: Completed D0-C. `ItemDefinitionRegistry.asset` now owns the six authored tier-1 identities and optional legacy-id remaps; schema v3 runs item-id migration before validation/load; unresolved ids remain preserved but visibly quarantined instead of silently restoring snapshot gameplay power; equip/salvage actions disable for those items; and normal `Gameplay` disables runtime loot fallback. The harness guards the registry asset, scene reference, fallback setting, migration source contracts, and D0-C/D0-D routing. D0-D is now `Next`.
 - 2026-06-10: Completed D0-D. `LootDropper` rolls a candidate before inventory insertion and auto-converts it only when an owned resolved item with the same canonical definition has both equal-or-higher level and equal-or-higher rolled power. `ItemSalvageService` pays the normal depth-scaled materials without inventory insertion, reward/dungeon UI reports the conversion, and missing conversion dependencies fall back to normal grant instead of deleting the reward. The harness guards the scene reference, enabled policy, comparison constraints, payout path, and D0-D/D1-A routing. D1-A is now `Next`.
+- 2026-06-11: Completed D1-A and promoted Phase E. `GroundDefenseBalanceModel` now owns bounded 10-level bands for incoming pressure, upgrade output efficiency, pressure capacity, progress requirements, and Gold/Scrap income. Entering a new band grants a formula-driven milestone cache, both HUDs expose the active/next band, and `Export-GroundDefenseBalance.ps1` verifies/exports Frontline Levels 1-1000. Daily QA also fixed the pre-existing breach softlock risk: live/offline `Breached` states now continue the documented 25% recovery income instead of stopping all ticks. No manual waves, new scene composition, or extra fixed-slot blockout polish was added. E0-A production ground actor replacement is now `Next`.
 
 ## 3.2 Phase D Production Task List
 
@@ -190,23 +191,32 @@ This is the canonical work selector after Phase C. A validation-only run is not 
 | D0-B | P0 | Formula-driven depth threat and reward bands | Done | `DungeonDepthBalanceModel` defines bounded ten-depth bands; spawned enemy health/damage, item level/rolled power, and salvage material yield use the active/source depth; the HUD exposes the profile; the depth 1-100 export/check is deterministic; the user confirmed the Depth 1/2 runtime comparison. | No further action unless a regression appears. Keep runtime scaling, HUD feedback, CSV export, and harness contracts. |
 | D0-C | P0 | Item registry and save migration | Done | Saved authored items resolve through a production item-definition registry; unknown ids produce an explicit migration/diagnostic result instead of silently depending on runtime prototype definitions. | No further action unless a registry id changes or a migration regression appears. Keep schema-v3, quarantine, scene registry, and fallback-disable harness contracts. |
 | D0-D | P0 | Duplicate-item sink and conversion | Done | A newly rolled authored reward is converted into its normal depth-scaled salvage materials when an owned item with the same definition dominates both level and rolled power; upgrade candidates remain stored; conversion feedback is player-visible; and conversion failure falls back to normal grant. | No further action unless rewards disappear, stronger candidates are converted, or the UI presents an older item as the new reward. Cross-definition scoring, collection, and defender gear remain later product decisions. |
-| D1-A | P1 | Formula-driven ground scaling | Next | Frontline pressure, defense output, rewards, and milestone unlocks scale through reusable formulas and bands without manual wave lists. | Define one shared ground progression profile and connect it to the existing continuous-frontline runtime before adding new ground content. |
+| D1-A | P1 | Formula-driven ground scaling | Done | `GroundDefenseBalanceModel` provides bounded 10-level bands for pressure, defense output efficiency, capacity, progress requirements, rewards, and milestone caches; `DefenseDirector` consumes the profile for live/offline simulation; both HUDs expose the active and next band; and the level 1-1000 export is deterministic. | No further action unless the curve regresses. Tune constants through the shared model/export instead of restoring per-level Inspector growth fields or manual wave rows. |
+
+## 3.4 Phase E Production Task List
+
+Phase E converts the scalable systems into a repeatable, release-shaped slice. Work must retire alpha blockers or improve the normal player path; debug-only verification and placeholder polish remain secondary.
+
+| ID | Priority | Track | Current status | Completion criteria | Next update required |
+| --- | --- | --- | --- | --- | --- |
+| E0-A | P0 | Production ground actor replacement | Next | The normal ground lane uses pooled enemy prefabs plus reusable archetype data for health/travel/hit/death/wall-contact feedback, consumes the authoritative continuous-frontline profile without manual wave lists, and disables the fixed-slot blockout path in `Gameplay`. | Define the minimum actor/archetype/pool contract and replace TD-08 without changing camera framing or final art direction. |
 
 ## 3.3 Progress Assessment Against Game-Form Plan
 
-Current assessment: progress is on track for the staged goal of making the project take recognizable game form, but it is not close to a finished Steam 1.0 product. The project is between the 30-60 minute core-loop MVP target and the 5-10 hour vertical-slice target: the loop systems are connected enough to verify, while the player-facing action layer is still thin.
+Current assessment: progress is on track for the staged goal of making the project take recognizable game form, but it is not close to a finished Steam 1.0 product. Phase D's scalable progression foundation is complete; Phase E now has to turn the connected systems into a stable 2-4 hour player-facing slice.
 
 Speed assessment:
 
 - Good: save/load, real dungeon combat, authored reward continuity, normal overlays, visible ground behavior, and the first persistent depth ladder now support progression beyond a fixed one-room proof.
 - Good: the first formula band has been observed against the real spawned prefab and authored reward path in Play Mode, so the depth ladder is now a meaningful risk/reward choice rather than only saved structure.
-- Required correction: add D1-A's shared ground progression profile so the automatic defense half can scale beside the dungeon depth ladder. Do not reopen D0-B through D0-D unless their contracts regress.
+- Good: the automatic defense half now scales through the same kind of bounded, exportable profile as the dungeon ladder, including visible band milestones rather than manual wave rows.
+- Required correction: replace the fixed-slot ground presentation before alpha hardening. Do not reopen D0-B through D1-A unless their contracts regress.
 
 Direction assessment:
 
 - Correct direction: the project is still preserving the intended PC incremental action RPG shape: automatic ground defense, direct-control dungeon combat, loot, equipment, crafting/salvage, save/load, and long-term progression.
-- Current risk: the verified ground lane and fixed three-slot actor projection can be mistaken for final defense architecture. They are accepted behavior bridges, not final content or prefab structure.
-- Operating rule: unless a regression or build blocker appears, do not spend another run polishing the current defense blockout, compact depth buttons, or registry diagnostics. The next meaningful production increment is the duplicate-item sink/conversion loop.
+- Current risk: the verified ground lane and fixed three-slot actor projection can be mistaken for final defense architecture. D1-A scales the authoritative numbers but intentionally does not promote that blockout into production content.
+- Operating rule: unless a regression or build blocker appears, do not spend another run polishing the current defense blockout, compact depth buttons, registry diagnostics, or balance labels. The next meaningful production increment is E0-A pooled ground actor replacement.
 
 ## 4. MVP Task Queue
 

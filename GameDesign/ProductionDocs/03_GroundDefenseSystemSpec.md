@@ -1,5 +1,15 @@
 # Ground Defense System Spec
 
+## 2026-06-11 Phase D Ground Progression Profile
+
+- `GroundDefenseBalanceModel` is now the single source of truth for long-horizon ground scaling.
+- Ten-level bands scale incoming pressure, defense upgrade output efficiency, pressure capacity, progress requirements, and continuous Gold/Scrap income through bounded formulas.
+- Entering Frontline Levels 11, 21, 31, and later band starts grants a formula-driven Gold/Scrap milestone cache. The wallet already persists the granted resources, so no separate claimed-milestone save list is required.
+- `DefenseDirector` uses the same profile for live and offline simulation. `DefenseHud` and `PlayableLoopHud` expose the active band, multipliers, next band level, and latest milestone message.
+- `Breached` is included in live and offline reward ticking, so the documented 25% recovery income remains available while pressure/progress stay stopped.
+- `Tools/Automation/Export-GroundDefenseBalance.ps1` validates monotonic Frontline Levels 1-1000 and exports `GameDesign/Balance/GroundDefenseBalance.csv`.
+- This does not add authored wave rows, alter camera/layout composition, or promote the fixed three-slot actor bridge. Phase E E0-A owns the pooled prefab/archetype replacement.
+
 2026-05-23 Phase C visual bridge note:
 
 - `GroundDefenseLanePresenter` now auto-resolves renderers from assigned pressure/progress marker transforms and colors those markers by runtime state.
@@ -120,13 +130,15 @@ Holding/Pushing
 
 ## 7. 진행 공식
 
-MVP는 실제 적 오브젝트 없이 숫자로 먼저 검증한다.
+현재 구현은 기준값에 `GroundDefenseBalanceModel`의 Frontline Level 프로필을 곱한다. 레벨별 수동 행이나 웨이브 목록은 만들지 않는다.
 
 ```text
-incomingPressure = basePressure * pressureGrowth ^ (frontlineLevel - 1)
+profile = GroundDefenseBalanceModel.Evaluate(frontlineLevel)
+incomingPressure = basePressure * profile.incomingPressureMultiplier
 if mode == Push:
     incomingPressure *= pushPressureMultiplier
 
+defensePower = rawUpgradeDefensePower * profile.defenseOutputMultiplier
 enemyPressure += incomingPressure * deltaTime
 enemyPressure -= defensePower * deltaTime
 enemyPressure = clamp(enemyPressure, 0, pressureCapacity)
@@ -186,8 +198,9 @@ WallHealth <= 0
 보상은 전투가 계속 흐르는 만큼 시간 단위로 누적된다.
 
 ```text
-goldPerSecond = baseGoldPerMinute / 60 * rewardGrowth ^ (frontlineLevel - 1)
-scrapPerSecond = baseScrapPerMinute / 60 * rewardGrowth ^ (frontlineLevel - 1)
+profile = GroundDefenseBalanceModel.Evaluate(frontlineLevel)
+goldPerSecond = baseGoldPerMinute / 60 * profile.rewardMultiplier
+scrapPerSecond = baseScrapPerMinute / 60 * profile.rewardMultiplier
 ```
 
 Push 중에는 위험을 감수하므로 보상 배율을 조금 높일 수 있다.
@@ -205,6 +218,8 @@ if state == Breached:
 ```
 
 `breachedRewardMultiplier`는 초기 프로토타입에서 25%를 사용한다. 실패를 의미 있게 만들되, Gold를 모두 쓴 플레이어가 수리비를 다시 벌 방법까지 잃어버리는 소프트락은 허용하지 않는다.
+
+새 10레벨 밴드에 진입하면 별도의 수동 보상표 없이 공식 기반 Gold/Scrap milestone cache를 한 번 지급한다. 밴드 진입은 Frontline Level 상승 시점에만 판정되므로 저장을 다시 불러오는 것만으로 보상이 중복 지급되지 않는다.
 
 ## 11. 오프라인 진행
 

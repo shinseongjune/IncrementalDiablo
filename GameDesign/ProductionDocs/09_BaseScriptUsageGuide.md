@@ -1,5 +1,15 @@
 # Base Script Usage Guide
 
+## 2026-06-11 D1-A Ground Balance Usage
+
+- `GroundDefenseBalanceModel.Evaluate(frontlineLevel)` returns the shared ground band and multipliers for incoming pressure, defense output, pressure capacity, progress requirements, and continuous rewards.
+- `DefenseDirector` consumes the profile automatically during live and offline simulation. Do not add level-specific wave rows or restore independent growth fields in the scene.
+- `Breached` remains eligible for reward ticks at `breachedRewardMultiplier`; it does not resume pressure or progress, but it can no longer softlock repair income.
+- `GroundDefenseBalanceModel.GetMilestoneRewards(profile)` returns a Gold/Scrap cache only for Band 2 and later. `DefenseDirector` calls it only while crossing a band boundary.
+- `DefenseHud` and `PlayableLoopHud` expose the active band, next band level, and latest milestone result. No extra scene field is required.
+- Run `powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Automation\Export-GroundDefenseBalance.ps1` to regenerate `GameDesign/Balance/GroundDefenseBalance.csv`, or add `-CheckOnly` to verify Frontline Levels 1-1000 without rewriting it.
+- The fixed `GroundDefenseActorRuntime` slots are still TD-08 replacement debt. D1-A scales the authoritative simulation but does not make those blockout actors production content.
+
 ## 2026-06-10 D0-D Duplicate Conversion Usage
 
 - `ItemEconomyModel.TryFindAutoConversionMatch(candidate, inventory.Items, out retainedItem)` returns true only for a resolved same-definition item with equal-or-higher level and rolled power.
@@ -100,7 +110,7 @@
 
 2026-06-05 Phase C ground actor scope: `GroundDefenseActorRuntime` now owns a small reusable set of individual pressure actors with health, travel, defense hits, defeats, and wall-contact events. It consumes `DefenseRuntimeState` telemetry and does not replace the authoritative continuous frontline, rewards, breach, or save data. The user accepted this behavior for P0-C. The fixed three-slot scene presentation is frozen as a replacement target; do not add more placeholder tuning. Future ground production should preserve useful runtime events while moving to pooled prefabs, archetype data, real targeting/death, and reusable feedback.
 
-2026-06-09 automation-plan freshness scope: `Invoke-IncrementalDiabloChecks.ps1` requires the canonical plan to name `Phase D - Long-Horizon Systems Foundation`, completed D0-A/D0-B/D0-C, and next-task D0-D. The harness also checks the registry script/asset, all six authored definition references, the `Gameplay` inventory registry field, schema v3 migration tokens, and disabled normal-scene runtime loot fallback.
+2026-06-11 automation-plan freshness scope: `Invoke-IncrementalDiabloChecks.ps1` requires the canonical plan to name `Phase E - Early Access Readiness Slice`, completed D0-A through D1-A, and next-task E0-A. The harness also checks both dungeon and ground balance models/exports, the item registry and save migration contracts, duplicate conversion, and the existing scene wiring.
 
 2026-06-07 D0-A verification scope: the harness requires the depth-selection buttons and their `PlayableLoopHud` references in `Gameplay`, plus source contracts for selected/highest depth, clear-based unlock, schema v2 migration, save diagnostics, and button-safe HUD actions. The user confirmed the one-step unlock, non-advancing failure, and save/load behavior in Play Mode; this path is now regression-only.
 

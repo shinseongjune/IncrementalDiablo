@@ -405,12 +405,17 @@ public class PlayableLoopHud : MonoBehaviour
         string upgradeText = defense.Upgrades == null
             ? "Upgrades unavailable"
             : $"Wall Lv.{defense.Upgrades.WallLevel} / Tower Lv.{defense.Upgrades.TowerLevel} / Defenders Lv.{defense.Upgrades.DefenderLevel}";
+        GroundDefenseBalanceProfile profile = defense.CurrentProgressionProfile;
+        string balanceText =
+            $"Band {profile.BandNumber} / Pressure x{profile.IncomingPressureMultiplier:0.##} / Defense x{profile.DefenseOutputMultiplier:0.##} / " +
+            $"Reward x{profile.RewardMultiplier:0.##} / Next Band Lv.{profile.NextBandLevel}\n{defense.LastMilestoneMessage}";
 
         string defenseAlertText = showDefenseAlertInSummary ? BuildDefenseAlertText(runtime) : string.Empty;
         string alertText = string.IsNullOrWhiteSpace(defenseAlertText) ? string.Empty : $"\nDefense alert: {defenseAlertText}";
         string groundCombatText = groundCombatPresenter == null ? string.Empty : $"\n{groundCombatPresenter.LastCombatMessage}";
         string screenText = screenLayout == null ? string.Empty : $"\n{BuildScreenLayoutText()}";
-        return $"Frontline Lv.{runtime.FrontlineLevel} / {runtime.State} / {runtime.Mode} / Wall {Mathf.CeilToInt(runtime.WallHealth)}/{Mathf.CeilToInt(runtime.WallMaxHealth)}\nPressure {pressureText} / Progress {progressText}\n{upgradeText}{alertText}{groundCombatText}{screenText}";
+        return $"Frontline Lv.{runtime.FrontlineLevel} / {runtime.State} / {runtime.Mode} / Wall {Mathf.CeilToInt(runtime.WallHealth)}/{Mathf.CeilToInt(runtime.WallMaxHealth)}\n" +
+               $"Pressure {pressureText} / Progress {progressText}\n{balanceText}\n{upgradeText}{alertText}{groundCombatText}{screenText}";
     }
 
     private string BuildDungeonText()

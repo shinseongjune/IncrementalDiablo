@@ -1,6 +1,6 @@
 # Incremental Diablo Game Design Document
 
-## 2026-06-10 Implementation Direction Note
+## 2026-06-11 Implementation Direction Note
 
 - The current ground-defense fixed three-slot actor projection has completed its behavior-readability purpose. It is not the final defense design and will not receive further placeholder polish.
 - Phase C is complete from accumulated accepted evidence. Do not schedule more broad loop validation unless a regression or changed contract creates a new risk.
@@ -9,8 +9,8 @@
 - `Tools/Automation/Export-DungeonDepthBalance.ps1` exports and checks the same C# constants through `GameDesign/Balance/DungeonDepthBalance.csv`.
 - Phase D D0-C is complete: the six authored tier-1 items live in a production `ItemDefinitionRegistry`, save schema v3 applies explicit item-id remaps, unknown ids are preserved as unusable quarantined records with visible diagnostics, and normal `Gameplay` cannot silently grant runtime fallback loot.
 - Phase D D0-D is complete: a newly rolled authored reward is auto-converted into its normal depth-scaled salvage materials only when the inventory already owns the same definition at both equal-or-higher source depth and equal-or-higher rolled power. Upgrade candidates remain in inventory.
-- D1-A formula-driven ground scaling is the immediate production target so frontline pressure, defense output, rewards, and milestones can grow without manual wave lists.
-- Future ground-defense production must remain automatic and continuous-frontline based, but should move to reusable pooled prefabs, archetype data, real targeting/death, and scalable feedback rather than hand-authored waves or fixed blockout slots.
+- Phase D D1-A is complete: one bounded 10-level ground profile now scales incoming pressure, upgrade output efficiency, pressure capacity, progress requirements, continuous Gold/Scrap income, and milestone caches. The same formula drives live play, offline simulation, HUD readout, and the level 1-1000 export.
+- Phase D is complete and Phase E is current. The immediate production target is replacing the fixed three-slot ground actor bridge with reusable pooled prefabs and archetype data while preserving the automatic continuous-frontline model.
 
 작성일: 2026-04-30  
 문서 버전: v0.2  

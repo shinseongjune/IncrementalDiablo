@@ -10053,18 +10053,14 @@ MonoBehaviour:
   startingLevel: 1
   startingMode: 1
   baseIncomingPressurePerSecond: 10
-  pressureGrowthPerLevel: 1.12
   pushPressureMultiplier: 1.3
   basePressureCapacity: 100
-  pressureCapacityGrowthPerLevel: 1.08
   wallDamagePerPressureSecond: 0.018
   baseProgressRequired: 100
-  progressRequiredGrowthPerLevel: 1.1
   basePushProgressPerSecond: 2.5
   surplusDefenseProgressMultiplier: 0.25
   baseGoldPerMinute: 30
   baseScrapPerMinute: 4
-  rewardGrowthPerLevel: 1.08
   pushRewardMultiplier: 1.15
   breachedRewardMultiplier: 0.25
   runtime:

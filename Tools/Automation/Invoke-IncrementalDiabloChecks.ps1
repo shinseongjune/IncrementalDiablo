@@ -163,6 +163,8 @@ $requiredPaths = @(
     @{ Name = "Save data script"; Path = "Assets\02.Scripts\Shared\GameSaveData.cs" },
     @{ Name = "Save diagnostics script"; Path = "Assets\02.Scripts\Shared\GameSaveDataDiagnostics.cs" },
     @{ Name = "Save manager script"; Path = "Assets\02.Scripts\GroundDefense\Runtime\DefenseSaveManager.cs" },
+    @{ Name = "Ground defense balance model"; Path = "Assets\02.Scripts\GroundDefense\Runtime\GroundDefenseBalanceModel.cs" },
+    @{ Name = "Defense director script"; Path = "Assets\02.Scripts\GroundDefense\Runtime\DefenseDirector.cs" },
     @{ Name = "Item definition registry script"; Path = "Assets\02.Scripts\Items\ItemDefinitionRegistry.cs" },
     @{ Name = "Item definition registry asset"; Path = "Assets\05.ScriptableObjects\Items\ItemDefinitionRegistry.asset" },
     @{ Name = "Item economy model"; Path = "Assets\02.Scripts\Items\ItemEconomyModel.cs" },
@@ -179,7 +181,9 @@ $requiredPaths = @(
     @{ Name = "Script folder map"; Path = "GameDesign\ScriptFolderStructure.md" },
     @{ Name = "Prototype debt inventory script"; Path = "Tools\Automation\Get-PrototypeDebtInventory.ps1" },
     @{ Name = "Dungeon depth balance export"; Path = "Tools\Automation\Export-DungeonDepthBalance.ps1" },
-    @{ Name = "Dungeon depth balance CSV"; Path = "GameDesign\Balance\DungeonDepthBalance.csv" }
+    @{ Name = "Dungeon depth balance CSV"; Path = "GameDesign\Balance\DungeonDepthBalance.csv" },
+    @{ Name = "Ground defense balance export"; Path = "Tools\Automation\Export-GroundDefenseBalance.ps1" },
+    @{ Name = "Ground defense balance CSV"; Path = "GameDesign\Balance\GroundDefenseBalance.csv" }
 )
 
 foreach ($entry in $requiredPaths) {
@@ -194,6 +198,8 @@ $expeditionDirectorPath = Join-ProjectPath "Assets\02.Scripts\Dungeon\Expedition
 $saveDataPath = Join-ProjectPath "Assets\02.Scripts\Shared\GameSaveData.cs"
 $saveDiagnosticsPath = Join-ProjectPath "Assets\02.Scripts\Shared\GameSaveDataDiagnostics.cs"
 $saveManagerPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\Runtime\DefenseSaveManager.cs"
+$groundBalanceModelPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\Runtime\GroundDefenseBalanceModel.cs"
+$defenseDirectorPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\Runtime\DefenseDirector.cs"
 $itemRegistryPath = Join-ProjectPath "Assets\02.Scripts\Items\ItemDefinitionRegistry.cs"
 $itemRegistryAssetPath = Join-ProjectPath "Assets\05.ScriptableObjects\Items\ItemDefinitionRegistry.asset"
 $itemEconomyPath = Join-ProjectPath "Assets\02.Scripts\Items\ItemEconomyModel.cs"
@@ -366,6 +372,24 @@ if (Test-Path -LiteralPath $depthBalanceModelPath) {
     [void](Assert-TextContains "Depth balance exposes material yield scaling" $depthBalanceModelText "MaterialYieldMultiplier")
 }
 
+if ((Test-Path -LiteralPath $groundBalanceModelPath) -and
+    (Test-Path -LiteralPath $defenseDirectorPath) -and
+    (Test-Path -LiteralPath $playableHudPath)) {
+    $groundBalanceModelText = Read-TextFile $groundBalanceModelPath
+    $defenseDirectorText = Read-TextFile $defenseDirectorPath
+    $playableHudText = Read-TextFile $playableHudPath
+
+    [void](Assert-TextContains "Ground balance uses reusable bands" $groundBalanceModelText "public const int LevelsPerBand = 10;")
+    [void](Assert-TextContains "Ground balance exposes pressure scaling" $groundBalanceModelText "IncomingPressureMultiplier")
+    [void](Assert-TextContains "Ground balance exposes defense scaling" $groundBalanceModelText "DefenseOutputMultiplier")
+    [void](Assert-TextContains "Ground balance exposes reward scaling" $groundBalanceModelText "RewardMultiplier")
+    [void](Assert-TextContains "Ground balance exposes milestone rewards" $groundBalanceModelText "GetMilestoneRewards")
+    [void](Assert-TextContains "Defense director consumes ground profile" $defenseDirectorText "CurrentProgressionProfile")
+    [void](Assert-TextContains "Defense director grants band milestone" $defenseDirectorText "GrantMilestoneRewards")
+    [void](Assert-TextContains "Breached defense keeps recovery income" $defenseDirectorText "runtime.IsRunning || runtime.State == DefenseState.Breached")
+    [void](Assert-TextContains "Playable HUD exposes ground band" $playableHudText "Next Band Lv.")
+}
+
 if (Test-Path -LiteralPath $planPath) {
     $planText = Read-TextFile $planPath
     $requiredPlanTokens = @(
@@ -374,13 +398,14 @@ if (Test-Path -LiteralPath $planPath) {
         "Prototype Debt Sweep Rule",
         "No-Stagnation Rules",
         "Progress Tracker",
-        "Current phase | Phase D - Long-Horizon Systems Foundation",
+        "Current phase | Phase E - Early Access Readiness Slice",
         "Next unlock",
         "D0-A | P0 | Save-backed dungeon depth progression | Done",
         "D0-B | P0 | Formula-driven depth threat and reward bands | Done",
         "D0-C | P0 | Item registry and save migration | Done",
         "D0-D | P0 | Duplicate-item sink and conversion | Done",
-        "D1-A | P1 | Formula-driven ground scaling | Next",
+        "D1-A | P1 | Formula-driven ground scaling | Done",
+        "E0-A | P0 | Production ground actor replacement | Next",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
         "12_PrototypeDebtRegister.md",
         "Get-PrototypeDebtInventory.ps1"
@@ -420,6 +445,11 @@ if (Test-Path -LiteralPath $debtScriptPath) {
 $depthBalanceExportPath = Join-ProjectPath "Tools\Automation\Export-DungeonDepthBalance.ps1"
 if (Test-Path -LiteralPath $depthBalanceExportPath) {
     Invoke-CheckedCommand "Dungeon depth balance curve" { powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Automation\Export-DungeonDepthBalance.ps1 -CheckOnly }
+}
+
+$groundBalanceExportPath = Join-ProjectPath "Tools\Automation\Export-GroundDefenseBalance.ps1"
+if (Test-Path -LiteralPath $groundBalanceExportPath) {
+    Invoke-CheckedCommand "Ground defense balance curve" { powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Automation\Export-GroundDefenseBalance.ps1 -CheckOnly }
 }
 
 if (Test-Path -LiteralPath $AutomationTomlPath) {

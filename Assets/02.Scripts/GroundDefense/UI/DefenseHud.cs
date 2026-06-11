@@ -127,7 +127,12 @@ public class DefenseHud : MonoBehaviour
         DefenseUpgradeModel upgrades = director.Upgrades;
 
         SetText(stateText, $"State: {runtime.State} / Mode: {runtime.Mode}");
-        SetText(frontlineText, $"Frontline Lv.{runtime.FrontlineLevel}");
+        GroundDefenseBalanceProfile profile = director.CurrentProgressionProfile;
+        SetText(
+            frontlineText,
+            $"Frontline Lv.{runtime.FrontlineLevel} / Band {profile.BandNumber} / Next Band Lv.{profile.NextBandLevel}\n" +
+            $"Pressure x{profile.IncomingPressureMultiplier:0.##} / Defense x{profile.DefenseOutputMultiplier:0.##} / Reward x{profile.RewardMultiplier:0.##}\n" +
+            director.LastMilestoneMessage);
         SetText(wallText, $"Wall: {Mathf.CeilToInt(runtime.WallHealth)} / {Mathf.CeilToInt(runtime.WallMaxHealth)}");
         SetText(progressText, BuildProgressText(runtime));
         SetText(resourcesText, director.Wallet == null ? "Wallet: none" : director.Wallet.FormatAll());
@@ -163,9 +168,13 @@ public class DefenseHud : MonoBehaviour
         builder.Append(" / Defenders Lv.");
         builder.Append(upgrades.DefenderLevel);
         builder.Append("\nDPS ");
-        builder.Append(upgrades.TotalDefensePower.ToString("0.0"));
+        builder.Append(director.CurrentDefensePowerPerSecond.ToString("0.0"));
         builder.Append(" / Wall HP ");
         builder.Append(Mathf.CeilToInt(upgrades.MaxWallHealth));
+        builder.Append("\nGold/min ");
+        builder.Append(director.CurrentGoldPerMinute.ToString("0.#"));
+        builder.Append(" / Scrap/min ");
+        builder.Append(director.CurrentScrapPerMinute.ToString("0.#"));
         return builder.ToString();
     }
 
