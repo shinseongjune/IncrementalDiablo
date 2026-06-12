@@ -4923,6 +4923,8 @@ GameObject:
   - component: {fileID: 293513594}
   - component: {fileID: 293513595}
   - component: {fileID: 293513597}
+  - component: {fileID: 293513598}
+  - component: {fileID: 293513599}
   - component: {fileID: 293513596}
   m_Layer: 0
   m_Name: DefenseRoot
@@ -5020,15 +5022,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GroundDefenseActorRuntime
   defense: {fileID: 1045172322}
   autoFindDefense: 1
-  actorCapacity: 3
-  actorMaxHealth: 12
-  pressurePerSpawn: 8
-  damagePerHit: 3
+  actorArchetypes:
+  - {fileID: 11400000, guid: 129c179ac3e2497ea46e4776977c1e21, type: 2}
+  - {fileID: 11400000, guid: 8615c8b153c04f2c8c72e38adfe7e291, type: 2}
+  - {fileID: 11400000, guid: 5b94516610674d5785365f152a4a1670, type: 2}
+  actorCapacity: 8
   minimumRunningActors: 1
-  baseAdvancePerSecond: 0.1
-  pressureAdvancePerSecond: 0.12
-  hitFeedbackSeconds: 0.16
   activeActorCount: 0
+  visibleActorCount: 0
   totalHitCount: 0
   totalDefeatCount: 0
   totalWallContactCount: 0
@@ -5036,6 +5037,50 @@ MonoBehaviour:
   recentDefeatCount: 0
   recentWallContactCount: 0
   lastRuntimeMessage: "Defense actors: not initialized"
+--- !u!114 &293513598
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 293513593}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6891b61f9d924a10b0fd7d38c03add85, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::GroundDefenseEnemyPool
+  poolRoot: {fileID: 293513594}
+  prewarmArchetypes:
+  - {fileID: 11400000, guid: 129c179ac3e2497ea46e4776977c1e21, type: 2}
+  - {fileID: 11400000, guid: 8615c8b153c04f2c8c72e38adfe7e291, type: 2}
+  - {fileID: 11400000, guid: 5b94516610674d5785365f152a4a1670, type: 2}
+  prewarmPerArchetype: 3
+  maxInstances: 16
+--- !u!114 &293513599
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 293513593}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64912e028a8f41d5b70c2554254ae263, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::GroundDefenseBattlefieldView
+  defenseCamera: {fileID: 198103830}
+  wallAnchor: {fileID: 488788905}
+  attackOrigin: {fileID: 48257985}
+  readabilitySheet: {fileID: 2800000, guid: a041289685f941e8a40086ddca94abc3, type: 3}
+  defenderUv: {x: 0, y: 0, width: 0.33333334, height: 0.5}
+  towerUv: {x: 0.33333334, y: 0, width: 0.33333334, height: 0.5}
+  wallUv: {x: 0.6666667, y: 0, width: 0.33333334, height: 0.5}
+  defenderSize: {x: 2.4, y: 3.2}
+  towerSize: {x: 3.1, y: 3.8}
+  wallSize: {x: 4.8, y: 3.5}
+  defenderOffset: {x: 1.05, y: 1.55, z: 0.4}
+  towerOffset: {x: 0, y: 1.85, z: 0}
+  wallOffset: {x: 0, y: 1.55, z: 0}
 --- !u!114 &293513596
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5050,16 +5095,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GroundDefenseCombatPresenter
   defense: {fileID: 1045172322}
   actorRuntime: {fileID: 293513597}
+  enemyPool: {fileID: 293513598}
   autoFindDefense: 1
   autoFindActorRuntime: 1
+  autoFindEnemyPool: 1
   enemySpawnAnchor: {fileID: 1912540435}
   wallAnchor: {fileID: 488788905}
   attackOrigin: {fileID: 48257985}
-  pressureActors:
-  - {fileID: 1981259940}
-  - {fileID: 945588114}
-  - {fileID: 2102265677}
-  showPressureActors: 1
+  usePooledEnemies: 1
+  pressureActors: []
+  showPressureActors: 0
   minimumRunningActors: 1
   pressureActorCyclesPerSecond: 0.16
   pressureActorColor: {r: 0.82, g: 0.18, b: 0.12, a: 1}
@@ -5077,6 +5122,8 @@ MonoBehaviour:
   attackPulseCyclesPerSecond: 0.85
   defensePowerPerVisiblePulse: 8
   attackPulseColor: {r: 0.45, g: 0.9, b: 1, a: 1}
+  attackBoltLength: 0.8
+  attackBoltThickness: 0.08
   refreshEveryFrame: 1
 --- !u!1 &293555882
 GameObject:
@@ -9251,7 +9298,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &945588114
 Transform:
   m_ObjectHideFlags: 0
@@ -15993,7 +16040,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1981259940
 Transform:
   m_ObjectHideFlags: 0
@@ -16484,7 +16531,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2102265677
 Transform:
   m_ObjectHideFlags: 0

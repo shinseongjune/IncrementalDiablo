@@ -31,9 +31,19 @@ The final gameplay screen should use a **dungeon-dominant split layout** rather 
 
 ![Final gameplay screen concept](2026-05-17_FinalGameplayScreenConcept.png)
 
+## 2026-06-12 Defense Battlefield Interpretation
+
+The defense panel in this image is now the production direction, not only a generic side-panel placeholder.
+
+- Preserve the citadel-at-bottom/protected-edge composition, fixed towers near the wall, friendly squads in front, and enemy groups approaching from the far side.
+- The defense view should read like a classic RTS battle even though its control model remains automatic.
+- Units must visibly engage, attack, take damage, die, and receive reinforcements. Towers and ranged units use projectiles that originate from the attacker and terminate at a target.
+- The prepared role sheet at `../../Assets/06.Art/Sprites/GroundDefense/GroundDefense_ReadabilitySheet.png` defines the current grunt, shield, runner, defender, tower, and wall silhouette direction.
+- Do not translate the role sheet into isolated floating portraits. The assets belong inside a coherent battlefield with ground, depth, spacing, factions, and a visible contact line.
+
 ## Guardrails
 
 - Keep the dungeon area visually dominant.
 - Keep the defense lane alive and readable even while the player is in the dungeon.
 - Do not split the game into mutually exclusive player-facing modes by default.
-- Avoid RTS-like unit micromanagement, tower-placement puzzles, and always-open inventory panes.
+- Use RTS battle readability, but avoid individual unit micromanagement, production queues, free tower-placement puzzles, and always-open inventory panes.

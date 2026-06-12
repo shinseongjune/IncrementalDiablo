@@ -1,5 +1,26 @@
 # Unity Scene And Prefab Setup Guide
 
+## 2026-06-12 Direction-Only Ground Battlefield Handoff
+
+This section supersedes the older pulse/flash and billboard acceptance instructions below. Those older sections remain only as implementation history.
+
+- Composition reference: `GameDesign/References/2026-05-17_FinalGameplayScreenConcept.png`.
+- Unit/structure role reference: `Assets/06.Art/Sprites/GroundDefense/GroundDefense_ReadabilitySheet.png`.
+- Build one fixed isometric defense battlefield with the citadel/wall at the protected edge, fixed tower positions near the wall, friendly squads in front, and enemy formations entering from the far side.
+- Required actor relationships:
+  1. Enemy formations move toward the wall.
+  2. Defender squads intercept them at a visible contact line.
+  3. Melee units stop and play attacks against an actual opposing unit.
+  4. Towers/ranged units launch projectiles from a visible muzzle/origin to a visible target.
+  5. Hits reduce visible health and trigger target-bound reaction.
+  6. Death removes/recycles the unit through a death action.
+  7. Reinforcements enter from the correct faction side.
+  8. Enemies that pass the contact line attack the wall; damage appears on the wall.
+- Do not create or tune generic `Attack Pulses`, unattached wall flashes, moving pressure-marker rows, or isolated portrait-like battlefield billboards as the production solution.
+- Do not add unit selection, movement commands, focus-fire controls, production queues, worker economy, or free tower placement.
+- Fixed positions are authored in Unity. Exact lane width, camera framing, squad spacing, contact-line location, projectile arc, unit scale, and structure placement require editor judgment and must be validated against the reference image.
+- `DefenseRuntimeState` remains the progression/reward/breach authority. Scene actors visualize its pressure and defense rates; they do not own a separate wave campaign or save ladder.
+
 ## 2026-06-11 Ground Progression Wiring
 
 - No new scene object or Inspector reference is required for D1-A. The existing `DefenseDirector` automatically evaluates `GroundDefenseBalanceModel` from `DefenseRuntimeState.FrontlineLevel`.
@@ -520,6 +541,17 @@ Current `Gameplay` status as of 2026-06-05: `RawImage_DungeonViewport`, `Camera_
 5. P0-C acceptance: the user confirmed on 2026-06-05 that the behavior appears to work. The Play Mode path above is now regression-only, not a request for another visual tuning pass.
 6. Freeze rule: do not tune the current placeholder count, colors, movement speed, spacing, silhouette, or camera composition. When ground combat production resumes, replace the fixed scene slots with pooled enemy prefabs, archetype data, real targeting/death handling, and reusable combat feedback.
 
+2026-06-12 pooled ground actor replacement handoff (historical implementation bridge; superseded by the direction-only handoff above):
+
+1. Current `Gameplay > DefenseRoot` already has `GroundDefenseActorRuntime`, `GroundDefenseEnemyPool`, `GroundDefenseBattlefieldView`, and `GroundDefenseCombatPresenter` wired.
+2. `Actor Archetypes` and `Prewarm Archetypes` reference `GDA_Enemy_Grunt`, `GDA_Enemy_Shield`, and `GDA_Enemy_Runner`. All three reuse `PF_GroundDefenseEnemy_Grunt` as a pooled component shell while their archetype data selects a different region of `GroundDefense_ReadabilitySheet.png`.
+3. Role intent is fixed: Grunt is the common baseline (`12` HP, weight `4`), Shield Breaker is slow and durable (`24` HP, weight `1`), and Bone Runner is fragile and fast (`7` HP, weight `2`). Tune these through archetype assets, not manual wave rows.
+4. `Actor Capacity` starts at `8`; `Prewarm Per Archetype` starts at `3`; `Max Instances` starts at `16`. These are pooling/visibility limits, not authored wave counts.
+5. `GroundDefenseBattlefieldView` references `Camera_DefensePanel`, `WallAnchor`, `AttackOrigin`, and the readability sheet. It creates the stone wall at `WallAnchor`, the crossbow tower at `AttackOrigin`, and the defender between them. Serialized sizes/offsets are starting values and may be adjusted only if the panel has overlap or crop issues.
+6. Current implementation note: `GroundDefenseCombatPresenter` still owns pulse-derived bolt presentation. It is not the production target and should be removed from the normal player path when actual attackers/projectiles are implemented.
+7. Reusable boundary: preserve the authoritative `DefenseRuntimeState`, archetype stats, pooling, health, defeat, and wall-contact event concepts where useful.
+8. Do not request acceptance for billboard orientation, bolt targeting, or isolated role recognition. The next acceptance path begins only after visible squads meet and fight inside one coherent battlefield.
+
 ## 4. 프리팹 목록
 
 ### 지상 디펜스 프리팹
@@ -529,7 +561,8 @@ Current `Gameplay` status as of 2026-06-05: `RawImage_DungeonViewport`, `Camera_
 | `PF_GameSystems` | CurrencyWallet, DefenseUpgradeModel, DefenseDirector | 지속 전선 숫자 시뮬레이션 |
 | `PF_DefenseHud` | DefenseHud | UI |
 | `PF_GroundDefenseLane` | GroundDefenseLanePresenter + scene-authored anchors/markers | Phase C 지상 전선 시각 브리지 |
-| `PF_GroundDefenseCombatFeedback` | GroundDefenseCombatPresenter + pressure actors + wall contact flash + attack pulses | Phase C 지상 전투 피드백 브리지 |
+| `PF_GroundDefenseCombatFeedback` | GroundDefenseCombatPresenter + pressure actors + wall contact flash + attack pulses | Historical Phase C bridge; replace in the normal path with attacker-owned combat/projectile/structure-damage presentation |
+| `PF_GroundDefenseEnemy_Grunt` | GroundDefenseEnemyView + reusable pooled shell; archetype data supplies role art/stats | Phase E 풀링 지상 적 프리팹 |
 | `PF_DefenseWall` | DefenseWall, HealthBarUI | 시각 단계 성벽 체력 |
 | `PF_TowerBattery` | TowerBattery | 시각 단계 자동 공격 |
 | `PF_DefenderSquad` | DefenderSquad | 시각 단계 병력 전투력 |
@@ -576,8 +609,13 @@ MVP 숫자 검증은 `PF_GameSystems`와 `PF_DefenseHud`만으로 시작한다.
 | DefenseUpgradeModel | 강화 레벨과 비용 |
 | DefenseHud | 버튼과 표시 갱신 |
 | GroundDefenseLanePresenter | `DefenseDirector.Runtime`을 읽어 scene-authored 지상 전선 앵커, 압박/진행 마커, 자동 marker renderer, 선택 enemy-flow marker, 성벽/압박 fill, 상태 오브젝트, 색상, 라벨을 갱신 |
-| GroundDefenseCombatPresenter | `DefenseDirector.Runtime`을 읽어 scene-authored pressure actors, wall-contact flash, tower/defender attack pulses를 갱신하고 최근 압박/방어/벽 피해율을 포함한 `LastCombatMessage`를 HUD/Inspector에 노출 |
-| GroundDefenseActorRuntime | 연속 전선 압박/방어/벽 피해율을 개별 압박 적 슬롯의 체력, 이동, 피격, 처치, 벽 접촉 이벤트로 변환 |
+| GroundDefenseEnemyArchetype | 지상 적 프리팹, 역할 텍스처/UV/크기, 체력, 압박 비용, 이동, 피격, 처치, 벽 접촉 피드백 값을 재사용 가능한 데이터로 보관 |
+| GroundDefenseEnemyPool | 아키타입 프리팹을 사전 생성하고 비활성 인스턴스를 재사용 |
+| GroundDefenseBillboardUtility | 투명 시트의 UV 영역을 런타임 quad로 만들고 방어 패널 카메라를 향하게 함 |
+| GroundDefenseEnemyView | 풀링 적의 역할 실루엣, 체력바, 피격 tint, 처치 축소, 벽 접촉 크기 피드백을 표현 |
+| GroundDefenseBattlefieldView | `WallAnchor`/`AttackOrigin` 기준으로 성벽, 전선 수비병, 석궁탑 실루엣을 생성 |
+| GroundDefenseCombatPresenter | 현재 구현에서는 pooled actors, wall flash, pulse-derived bolts, diagnostics를 갱신한다. 이 presentation 책임은 E0-A에서 실제 squad attack/projectile/wall damage 컴포넌트로 교체하고, 필요한 runtime telemetry만 유지한다. |
+| GroundDefenseActorRuntime | 연속 전선 압박/방어/벽 피해율을 아키타입 기반 개별 압박 적 상태의 체력, 이동, 피격, 처치, 벽 접촉 이벤트로 변환 |
 | DefenseEnemy | 시각 단계 지상 적 스탯과 피격 |
 | EnemyMover | 시각 단계 성벽 방향 이동 |
 | DefenseWall | 시각 단계 성벽 체력과 손상 |

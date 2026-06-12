@@ -1,5 +1,13 @@
 # Production Document Map
 
+## 2026-06-12 Ground-Defense Reading Rule
+
+When a document says to avoid "RTS drift," interpret it as avoiding RTS micromanagement and scope, not avoiding RTS battlefield readability.
+
+- Approved: formations, visible contact lines, melee exchanges, projectiles, deaths, reinforcements, fixed defensive structures, and isometric dark-fantasy battle staging.
+- Excluded: individual unit selection/movement, production queues, worker economy, focus-fire commands, and free tower placement.
+- Current source of truth for this distinction: `01_GamePillarsAndMVP.md`, `03_GroundDefenseSystemSpec.md`, `10_PlayableLoopMvpAutomationPlan.md`, and `11_PlayableScreenPresentationSpec.md`.
+
 작성일: 2026-05-03
 문서 목적: 제작에 필요한 문서 목록, 논리적 근거, 읽는 순서, 유지 규칙 정리
 기준 프로젝트: `D:\Unity\IncrementalDiablo`

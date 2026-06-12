@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcb532b55ba445c3b96c4afd6f796cf6, type: 3}
+  m_Name: GDA_Enemy_Grunt
+  m_EditorClassIdentifier: Assembly-CSharp::GroundDefenseEnemyArchetype
+  id: ground_enemy_grunt
+  displayName: Frontline Grunt
+  viewPrefab: {fileID: 1140000000000000003, guid: a83542c699354f79a4cb7a5d808a43f1, type: 3}
+  spawnWeight: 4
+  visualTexture: {fileID: 2800000, guid: a041289685f941e8a40086ddca94abc3, type: 3}
+  visualUvRect:
+    serializedVersion: 2
+    x: 0
+    y: 0.5
+    width: 0.33333334
+    height: 0.5
+  visualSize: {x: 1.75, y: 2.4}
+  visualHeightOffset: 1.2
+  maxHealth: 12
+  pressurePerSpawn: 8
+  damagePerHit: 3
+  baseAdvancePerSecond: 0.1
+  pressureAdvancePerSecond: 0.12
+  hitFeedbackSeconds: 0.16
+  defeatFeedbackSeconds: 0.24
+  wallContactFeedbackSeconds: 0.18
+  baseColor: {r: 0.82, g: 0.18, b: 0.12, a: 1}
+  underFireColor: {r: 1, g: 0.68, b: 0.18, a: 1}
+  defeatColor: {r: 0.35, g: 0.08, b: 0.05, a: 1}
+  wallContactColor: {r: 1, g: 0.25, b: 0.1, a: 1}

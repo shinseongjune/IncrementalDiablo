@@ -1,5 +1,20 @@
 # Implementation Roadmap
 
+## 2026-06-12 Phase E Direction Update
+
+The next ground-defense implementation target is no longer a Play Mode approval pass for billboard actors and pulse-derived attacks.
+
+E0-A returns to production implementation with this bounded target:
+
+1. One fixed battlefield composed like `GameDesign/References/2026-05-17_FinalGameplayScreenConcept.png`.
+2. Enemy grunt/shield/runner formations based on the prepared role sheet.
+3. One defender squad that intercepts enemies at a visible contact line.
+4. One ranged or tower source with an attacker-owned projectile.
+5. Visible hit, health loss, death/recycle, reinforcement entry, wall attack, and wall damage.
+6. Existing formula-driven pressure, Hold/Push, rewards, save/load, and offline simulation preserved.
+
+Out of scope for this phase: individual unit control, focus-fire commands, production queues, worker economy, free tower placement, manual wave lists, and multiple battlefield maps.
+
 작성일: 2026-05-03
 문서 목적: 실제 구현 순서, 완료 기준, 작업 분해
 

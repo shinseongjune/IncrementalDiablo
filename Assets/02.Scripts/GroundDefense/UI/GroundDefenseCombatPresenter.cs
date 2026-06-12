@@ -5,17 +5,22 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
     [Header("References")]
     [SerializeField] private DefenseDirector defense;
     [SerializeField] private GroundDefenseActorRuntime actorRuntime;
+    [SerializeField] private GroundDefenseEnemyPool enemyPool;
     [SerializeField] private bool autoFindDefense = true;
     [SerializeField] private bool autoFindActorRuntime = true;
+    [SerializeField] private bool autoFindEnemyPool = true;
 
     [Header("Lane Anchors")]
     [SerializeField] private Transform enemySpawnAnchor;
     [SerializeField] private Transform wallAnchor;
     [SerializeField] private Transform attackOrigin;
 
-    [Header("Pressure Actors")]
+    [Header("Pooled Pressure Actors")]
+    [SerializeField] private bool usePooledEnemies = true;
+
+    [Header("Legacy Fixed Pressure Actors")]
     [SerializeField] private Transform[] pressureActors;
-    [SerializeField] private bool showPressureActors = true;
+    [SerializeField] private bool showPressureActors;
     [SerializeField] private int minimumRunningActors = 1;
     [SerializeField] private float pressureActorCyclesPerSecond = 0.16f;
     [SerializeField] private Color pressureActorColor = new Color(0.82f, 0.18f, 0.12f);
@@ -34,6 +39,8 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
     [SerializeField] private float attackPulseCyclesPerSecond = 0.85f;
     [SerializeField] private float defensePowerPerVisiblePulse = 8f;
     [SerializeField] private Color attackPulseColor = new Color(0.45f, 0.9f, 1f);
+    [SerializeField, Min(0.05f)] private float attackBoltLength = 0.8f;
+    [SerializeField, Min(0.01f)] private float attackBoltThickness = 0.08f;
 
     [Header("Refresh")]
     [SerializeField] private bool refreshEveryFrame = true;
@@ -42,6 +49,7 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
     private static readonly int ColorProperty = Shader.PropertyToID("_Color");
 
     private MaterialPropertyBlock propertyBlock;
+    private GroundDefenseEnemyView[] pooledActorViews = new GroundDefenseEnemyView[0];
     private Vector3 baseWallContactScale = Vector3.one;
     private float lastWallHealth;
     private float wallContactFlashRemaining;
@@ -83,6 +91,8 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
         {
             defense.Changed -= Refresh;
         }
+
+        ReleasePooledViews();
     }
 
     private void OnValidate()
@@ -93,16 +103,16 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
         wallContactScaleMultiplier = Mathf.Max(1f, wallContactScaleMultiplier);
         attackPulseCyclesPerSecond = Mathf.Max(0f, attackPulseCyclesPerSecond);
         defensePowerPerVisiblePulse = Mathf.Max(0.01f, defensePowerPerVisiblePulse);
+        attackBoltLength = Mathf.Max(0.05f, attackBoltLength);
+        attackBoltThickness = Mathf.Max(0.01f, attackBoltThickness);
     }
 
     private void Update()
     {
-        if (!refreshEveryFrame)
+        if (refreshEveryFrame)
         {
-            return;
+            Refresh();
         }
-
-        Refresh();
     }
 
     public void Refresh()
@@ -114,6 +124,7 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
             ActivePressureActorCount = 0;
             ActiveAttackPulseCount = 0;
             LastCombatMessage = "Ground combat visuals: no DefenseDirector";
+            ReleasePooledViews();
             SetAllActive(pressureActors, false);
             SetAllActive(attackPulses, false);
             SetWallContactVisible(false);
@@ -131,31 +142,82 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
     {
         ActivePressureActorCount = 0;
 
-        if (!showPressureActors || pressureActors == null || pressureActors.Length == 0)
+        if (enemySpawnAnchor == null || wallAnchor == null)
         {
+            ReleasePooledViews();
+            SetAllActive(pressureActors, false);
             return;
         }
 
-        if (enemySpawnAnchor == null || wallAnchor == null)
+        if (usePooledEnemies)
+        {
+            SetAllActive(pressureActors, false);
+            UpdatePooledPressureActors();
+            return;
+        }
+
+        ReleasePooledViews();
+        UpdateLegacyPressureActors(runtime);
+    }
+
+    private void UpdatePooledPressureActors()
+    {
+        if (actorRuntime == null || !actorRuntime.IsReady || enemyPool == null || !enemyPool.IsReady)
+        {
+            ReleasePooledViews();
+            return;
+        }
+
+        EnsurePooledViewStorage();
+        for (int i = 0; i < pooledActorViews.Length; i++)
+        {
+            if (!actorRuntime.IsActorVisible(i))
+            {
+                ReturnPooledView(i);
+                continue;
+            }
+
+            GroundDefenseEnemyArchetype archetype = actorRuntime.GetActorArchetype(i);
+            GroundDefenseEnemyView view = pooledActorViews[i];
+            if (view != null && view.Archetype != archetype)
+            {
+                ReturnPooledView(i);
+                view = null;
+            }
+
+            if (view == null)
+            {
+                view = enemyPool.Rent(archetype);
+                pooledActorViews[i] = view;
+            }
+
+            if (view == null)
+            {
+                continue;
+            }
+
+            float travelPercent = actorRuntime.GetActorTravelPercent(i);
+            view.Apply(
+                actorRuntime.GetActorVisualState(i),
+                Vector3.Lerp(enemySpawnAnchor.position, wallAnchor.position, travelPercent),
+                actorRuntime.GetActorHealthPercent(i),
+                actorRuntime.IsActorUnderFire(i),
+                actorRuntime.GetActorFeedbackPercent(i));
+            ActivePressureActorCount += 1;
+        }
+    }
+
+    private void UpdateLegacyPressureActors(DefenseRuntimeState runtime)
+    {
+        if (!showPressureActors || pressureActors == null || pressureActors.Length == 0)
         {
             SetAllActive(pressureActors, false);
             return;
         }
 
-        if (actorRuntime != null && actorRuntime.IsReady)
-        {
-            UpdateRuntimePressureActors(runtime);
-            return;
-        }
-
         int validActorCount = CountAssigned(pressureActors);
-        if (validActorCount == 0)
-        {
-            return;
-        }
-
         bool shouldShowActors = runtime.IsRunning || runtime.State == DefenseState.Breached;
-        if (!shouldShowActors)
+        if (!shouldShowActors || validActorCount == 0)
         {
             SetAllActive(pressureActors, false);
             return;
@@ -197,36 +259,6 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
             }
 
             validActorIndex += 1;
-        }
-    }
-
-    private void UpdateRuntimePressureActors(DefenseRuntimeState runtime)
-    {
-        for (int i = 0; i < pressureActors.Length; i++)
-        {
-            Transform actor = pressureActors[i];
-            if (actor == null)
-            {
-                continue;
-            }
-
-            bool active = i < actorRuntime.ActorCapacity && actorRuntime.IsActorActive(i);
-            SetActive(actor.gameObject, active);
-            if (!active)
-            {
-                continue;
-            }
-
-            float travelPercent = actorRuntime.GetActorTravelPercent(i);
-            actor.position = Vector3.Lerp(enemySpawnAnchor.position, wallAnchor.position, travelPercent);
-            float healthPercent = actorRuntime.GetActorHealthPercent(i);
-            Color healthColor = Color.Lerp(
-                pressureActorUnderFireColor,
-                GetPressureActorColor(runtime, travelPercent),
-                healthPercent);
-            Color actorColor = actorRuntime.IsActorUnderFire(i) ? pressureActorUnderFireColor : healthColor;
-            SetRendererColor(actor.GetComponentInChildren<Renderer>(), actorColor);
-            ActivePressureActorCount += 1;
         }
     }
 
@@ -346,6 +378,7 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
                 float spacing = activeTarget <= 1 ? 0f : activePulseIndex / (float)activeTarget;
                 float travelPercent = Mathf.Repeat(flowPhase + spacing, 1f);
                 pulse.position = Vector3.Lerp(attackOrigin.position, targetPosition, travelPercent);
+                OrientAttackBolt(pulse, targetPosition - attackOrigin.position);
                 SetRendererColor(pulse.GetComponentInChildren<Renderer>(), attackPulseColor);
                 ActiveAttackPulseCount += 1;
                 activePulseIndex += 1;
@@ -355,12 +388,51 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
         }
     }
 
+    private void OrientAttackBolt(Transform pulse, Vector3 attackDirection)
+    {
+        if (pulse == null)
+        {
+            return;
+        }
+
+        if (attackDirection.sqrMagnitude > 0.0001f)
+        {
+            pulse.rotation = Quaternion.FromToRotation(Vector3.up, attackDirection.normalized);
+        }
+
+        pulse.localScale = new Vector3(
+            attackBoltThickness,
+            attackBoltLength * 0.5f,
+            attackBoltThickness);
+    }
+
     private Vector3 GetAttackTargetPosition()
     {
         Transform leadingActor = null;
         float bestDistanceToWall = float.MaxValue;
 
-        if (pressureActors != null && wallAnchor != null)
+        if (usePooledEnemies && pooledActorViews != null && wallAnchor != null)
+        {
+            for (int i = 0; i < pooledActorViews.Length; i++)
+            {
+                GroundDefenseEnemyView view = pooledActorViews[i];
+                if (view == null ||
+                    !view.gameObject.activeSelf ||
+                    actorRuntime == null ||
+                    !actorRuntime.IsActorActive(i))
+                {
+                    continue;
+                }
+
+                float distance = Vector3.SqrMagnitude(view.transform.position - wallAnchor.position);
+                if (distance < bestDistanceToWall)
+                {
+                    bestDistanceToWall = distance;
+                    leadingActor = view.transform;
+                }
+            }
+        }
+        else if (pressureActors != null && wallAnchor != null)
         {
             for (int i = 0; i < pressureActors.Length; i++)
             {
@@ -389,7 +461,9 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
 
     private void UpdateCombatMessage(DefenseRuntimeState runtime)
     {
-        bool actorsReady = CountAssigned(pressureActors) > 0;
+        bool actorsReady = usePooledEnemies
+            ? actorRuntime != null && actorRuntime.IsReady && enemyPool != null && enemyPool.IsReady
+            : CountAssigned(pressureActors) > 0;
         bool wallReady = wallContactObject != null || wallContactRenderer != null;
         bool attacksReady = CountAssigned(attackPulses) > 0;
 
@@ -408,7 +482,49 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
         string actorRuntimeText = actorRuntime == null
             ? "actor runtime missing"
             : $"lead HP {Mathf.RoundToInt(actorRuntime.LeadingActorHealthPercent * 100f)}% / hits {actorRuntime.TotalHitCount} / defeats {actorRuntime.TotalDefeatCount} / contacts {actorRuntime.TotalWallContactCount}";
-        LastCombatMessage = $"Ground combat: {runtime.State} / actors {ActivePressureActorCount}/{CountAssigned(pressureActors)} / attacks {ActiveAttackPulseCount}/{CountAssigned(attackPulses)} / {actorRuntimeText} / pressure +{runtime.LastIncomingPressurePerSecond:0.#}/-{runtime.LastPressureClearedPerSecond:0.#}/s / wall {runtime.LastWallDamagePerSecond:0.##}/s";
+        string actorCapacityText = usePooledEnemies && actorRuntime != null
+            ? $"{ActivePressureActorCount}/{actorRuntime.ActorCapacity} pooled ({enemyPool?.ActiveCount ?? 0}/{enemyPool?.CreatedCount ?? 0})"
+            : $"{ActivePressureActorCount}/{CountAssigned(pressureActors)} fixed";
+        LastCombatMessage = $"Ground combat: {runtime.State} / actors {actorCapacityText} / attacks {ActiveAttackPulseCount}/{CountAssigned(attackPulses)} / {actorRuntimeText} / pressure +{runtime.LastIncomingPressurePerSecond:0.#}/-{runtime.LastPressureClearedPerSecond:0.#}/s / wall {runtime.LastWallDamagePerSecond:0.##}/s";
+    }
+
+    private void EnsurePooledViewStorage()
+    {
+        int capacity = actorRuntime == null ? 0 : actorRuntime.ActorCapacity;
+        if (pooledActorViews != null && pooledActorViews.Length == capacity)
+        {
+            return;
+        }
+
+        ReleasePooledViews();
+        pooledActorViews = new GroundDefenseEnemyView[capacity];
+    }
+
+    private void ReturnPooledView(int index)
+    {
+        if (pooledActorViews == null || index < 0 || index >= pooledActorViews.Length)
+        {
+            return;
+        }
+
+        if (pooledActorViews[index] != null)
+        {
+            enemyPool?.Return(pooledActorViews[index]);
+            pooledActorViews[index] = null;
+        }
+    }
+
+    private void ReleasePooledViews()
+    {
+        if (pooledActorViews == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < pooledActorViews.Length; i++)
+        {
+            ReturnPooledView(i);
+        }
     }
 
     private Color GetPressureActorColor(DefenseRuntimeState runtime, float travelPercent)
@@ -448,6 +564,15 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
             if (actorRuntime == null)
             {
                 actorRuntime = FindAnyObjectByType<GroundDefenseActorRuntime>();
+            }
+        }
+
+        if ((autoFindEnemyPool || force) && (enemyPool == null || force))
+        {
+            enemyPool = GetComponent<GroundDefenseEnemyPool>();
+            if (enemyPool == null)
+            {
+                enemyPool = FindAnyObjectByType<GroundDefenseEnemyPool>();
             }
         }
     }

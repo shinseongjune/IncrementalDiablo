@@ -1,8 +1,14 @@
 # Incremental Diablo Game Design Document
 
-## 2026-06-11 Implementation Direction Note
+## 2026-06-12 Approved Ground-Defense Direction
 
-- The current ground-defense fixed three-slot actor projection has completed its behavior-readability purpose. It is not the final defense design and will not receive further placeholder polish.
+- Ground defense should look like a classic dark-fantasy RTS defense battle: multiple enemy units advance as a formation, defender squads form a visible contact line, towers and ranged units fire real projectiles, units die, and reinforcements replace losses.
+- The target composition is the defense battlefield shown in `GameDesign/References/2026-05-17_FinalGameplayScreenConcept.png`: citadel wall at the protected edge, fixed defense structures near the wall, friendly units in front, and enemy groups approaching through a readable battlefield.
+- `Assets/06.Art/Sprites/GroundDefense/GroundDefense_ReadabilitySheet.png` is the current role and silhouette reference for grunt, shield enemy, runner, defender, tower, and wall. It is reference material for the intended units and structures, not approval of isolated billboard cards as the final scene.
+- Remove abstract player-facing combat stand-ins from the final direction. Generic attack pulses, unattached wall flashes, moving markers, and diagnostic combat text must not be the normal way attacks or damage are communicated. A projectile must come from a visible attacker, a hit must occur on a visible target, and wall damage must appear on the wall.
+- This is an **RTS-readable automatic defense**, not a full controllable RTS. The player upgrades wall, squads, towers, traps, composition, and Hold/Push policy, but does not select individual units, issue movement orders, manage production queues, or place towers during battle.
+- `DefenseRuntimeState` remains authoritative for pressure, rewards, progression, breach, save/load, and offline simulation. The visible squads are a scalable combat projection over that continuous simulation, not a hand-authored wave campaign.
+- The current pooled billboard/pulse implementation is not accepted as E0-A completion. It is an implementation bridge to replace with squad contact, real projectiles, death, reinforcement, and structure damage presentation.
 - Phase C is complete from accumulated accepted evidence. Do not schedule more broad loop validation unless a regression or changed contract creates a new risk.
 - Phase D D0-A save-backed dungeon depth progression is implemented and accepted in Play Mode: selected depth, highest unlocked depth, clear-based one-step unlock, failure without advancement, normal HUD controls, schema-v2 migration, and save/load persistence.
 - Phase D D0-B is implemented and accepted in Play Mode: selected depth scales spawned enemy health/damage, item level/rolled power, and salvage material yield, while the normal HUD exposes the active band multipliers.
@@ -10,7 +16,7 @@
 - Phase D D0-C is complete: the six authored tier-1 items live in a production `ItemDefinitionRegistry`, save schema v3 applies explicit item-id remaps, unknown ids are preserved as unusable quarantined records with visible diagnostics, and normal `Gameplay` cannot silently grant runtime fallback loot.
 - Phase D D0-D is complete: a newly rolled authored reward is auto-converted into its normal depth-scaled salvage materials only when the inventory already owns the same definition at both equal-or-higher source depth and equal-or-higher rolled power. Upgrade candidates remain in inventory.
 - Phase D D1-A is complete: one bounded 10-level ground profile now scales incoming pressure, upgrade output efficiency, pressure capacity, progress requirements, continuous Gold/Scrap income, and milestone caches. The same formula drives live play, offline simulation, HUD readout, and the level 1-1000 export.
-- Phase D is complete and Phase E is current. The immediate production target is replacing the fixed three-slot ground actor bridge with reusable pooled prefabs and archetype data while preserving the automatic continuous-frontline model.
+- Phase D is complete and Phase E is current. The immediate checkpoint is accepting the pooled ground actor replacement, then selecting the next normal-path alpha blocker.
 
 작성일: 2026-04-30  
 문서 버전: v0.2  

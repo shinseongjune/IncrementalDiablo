@@ -1,5 +1,17 @@
 # Game Pillars And MVP
 
+## 2026-06-12 Direction Override: RTS-Readable Automatic Defense
+
+This section overrides older wording that could be read as rejecting all RTS influence.
+
+- Ground defense **should use classic RTS visual language**: grouped units, a visible frontline, melee contact, ranged volleys, fixed defensive structures, deaths, reinforcements, and an isometric dark-fantasy battlefield.
+- Ground defense **should not use classic RTS micromanagement**: no individual unit selection, movement orders, focus-fire commands, production queues, resource-worker control, or free tower placement.
+- Player agency stays incremental and strategic: upgrade wall/tower/squads/traps, choose composition or priority policies, repair, and switch Hold/Push.
+- The screen composition reference is `GameDesign/References/2026-05-17_FinalGameplayScreenConcept.png`.
+- The current unit/structure silhouette reference is `Assets/06.Art/Sprites/GroundDefense/GroundDefense_ReadabilitySheet.png`.
+- Abstract pulses, moving debug markers, isolated billboard cards, and combat diagnostic text are not acceptable final player-facing combat. Every visible attack and damage event should belong to a visible attacker, target, projectile/contact, death, or damaged structure.
+- The continuous formula-driven frontline remains authoritative so the system can support 900+ hours without authored wave ladders.
+
 작성일: 2026-05-03
 문서 목적: 게임의 핵심 기둥, 제외 범위, MVP 완료 기준 확정
 
@@ -11,7 +23,7 @@
 
 ### Pillar 1. 지상은 막고 돈을 쌓는 곳이다
 
-지상 디펜스는 전략 게임, RTS, 점령전, 타워디펜스 퍼즐이 아니다.
+지상 디펜스는 RTS처럼 보이는 자동 전투를 사용하지만, RTS식 유닛 직접 조작·생산 관리·점령전·타워 배치 퍼즐은 아니다.
 
 확정:
 

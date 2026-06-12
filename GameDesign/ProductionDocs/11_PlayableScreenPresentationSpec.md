@@ -1,5 +1,15 @@
 # Playable Screen Presentation Spec
 
+## 2026-06-12 RTS-Readable Automatic Defense Presentation
+
+- The defense view should reproduce the visual hierarchy of `GameDesign/References/2026-05-17_FinalGameplayScreenConcept.png`: enemy formations at the far side, an active contact line in the middle, fixed friendly towers and squads near the protected wall, and the citadel/wall as the final readable defense object.
+- `Assets/06.Art/Sprites/GroundDefense/GroundDefense_ReadabilitySheet.png` supplies the current role silhouettes. Treat it as a concept/reference sheet whose figures belong in the battlefield, not as six independent billboard cards.
+- The normal player view must show actual combat actions: approach, melee contact, projectile launch and travel, hit reaction, health loss, death, reinforcement, wall attack, and breach danger.
+- Remove generic `pulse` vocabulary and abstract pulse objects from the production presentation. Small impact VFX are allowed only when attached to a real projectile, attack, hit, death, or structure-damage event.
+- Unit density should create RTS spectacle without destroying readability. Distinct faction colors, silhouettes, spacing, facing, health bars on damaged/selected-priority units, and depth ordering should make the battle understandable at a glance.
+- The defense side panel remains automatic and decision-light. It exposes repair, Hold/Push, upgrades, composition/priority decisions, and alerts, but never individual unit selection or movement controls.
+- The current pooled billboard/bolt implementation is not a presentation acceptance candidate. E0-A must be reworked toward the battlefield sequence above before Play Mode approval.
+
 ## 2026-06-11 Ground Progression Feedback
 
 - The frontline summary now shows the active formula band, pressure multiplier, defense-output multiplier, reward multiplier, next band level, and latest milestone result.

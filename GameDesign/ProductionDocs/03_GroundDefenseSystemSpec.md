@@ -1,5 +1,37 @@
 # Ground Defense System Spec
 
+## 2026-06-12 Approved Production Combat Contract
+
+### Target experience
+
+- Ground defense must look like the defense panel in `GameDesign/References/2026-05-17_FinalGameplayScreenConcept.png`: an isometric dark-fantasy battlefield with a protected citadel edge, fixed defense structures, friendly squads, approaching enemy formations, and a readable contact line.
+- `Assets/06.Art/Sprites/GroundDefense/GroundDefense_ReadabilitySheet.png` is the current silhouette reference. Grunt, shield enemy, runner, defender, tower, and wall should appear as battlefield actors/structures, not isolated UI portraits.
+- Required visible sequence: enemy formation advances -> defender squad intercepts -> melee/ranged attacks occur -> health and hit reaction change -> units die -> reinforcements enter -> surviving enemies attack the wall.
+- Tower and ranged attacks use real projectile presentation tied to a visible attacker and target. Melee attacks require visible contact and attack timing. Wall damage must appear on the wall through damage state, impact, health loss, or breach animation.
+- Generic attack pulses, unattached wall flashes, moving pressure markers, and normal-HUD combat diagnostics are not production combat feedback.
+
+### Control boundary
+
+- This is an RTS-readable automatic defense, not a directly controlled RTS.
+- Allowed player decisions: Hold/Push, repair, wall/tower/squad/trap upgrades, unlocks, formation or composition policy, and target-priority policy when later supported.
+- Excluded player actions: individual unit selection, movement orders, focus-fire clicking, worker/resource control, production queues, and free tower placement.
+- Tower and squad positions are authored battlefield roles. Progression changes their count, tier, equipment, appearance, and effectiveness rather than asking the player to solve a placement puzzle.
+
+### Simulation boundary
+
+- `DefenseRuntimeState` remains authoritative for pressure, rewards, progression, breach, save/load, and offline resolution.
+- `GroundDefenseBalanceModel` remains the formula source for 900+ hour scaling.
+- Visible squads are a pooled projection of the continuous simulation. Density, role mix, reinforcement timing, and visual losses should be formula-driven and reusable rather than stored as hand-authored wave lists.
+- Existing archetype, pooling, health, travel, defeat, and wall-contact code can be retained where useful. Billboard-only battlefield props, attack pulse/bolt presentation, and diagnostic player-facing copy are implementation debt to replace.
+
+### First production slice
+
+- One fixed battlefield composition based on the reference image.
+- Enemy roles: grunt, shield, runner.
+- Friendly roles: melee defender squad plus one ranged/tower source.
+- Visible melee contact, one real projectile type, death/recycle, reinforcement entry, and wall attack/damage.
+- No manual placement, selection, or wave authoring.
+
 ## 2026-06-11 Phase D Ground Progression Profile
 
 - `GroundDefenseBalanceModel` is now the single source of truth for long-horizon ground scaling.
@@ -93,8 +125,9 @@ MVP 화면은 한 줄 레인이다.
 | DefenseEnemy | `DefenseEnemy` | 시각 프로토타입 단계에서 실제 적 개체 |
 | TowerBattery | `TowerBattery` | 시각 프로토타입 단계에서 자동 포탑 공격 |
 | DefenseWall | `DefenseWall` | 시각 프로토타입 단계에서 성벽 피격 표현 |
-| GroundDefenseActorRuntime | `GroundDefenseActorRuntime` | 개별 압박 적 체력, 이동, 피격, 처치, 벽 접촉 이벤트 |
-| GroundDefenseCombatPresenter | `GroundDefenseCombatPresenter` | `DefenseDirector.Runtime` 기반 압박 적, 벽 피격, 공격 펄스 피드백 |
+| GroundDefenseActorRuntime | `GroundDefenseActorRuntime` | 아키타입 기반 개별 압박 적 체력, 이동, 피격, 처치, 벽 접촉 상태 |
+| GroundDefenseEnemyPool | `GroundDefenseEnemyPool` | 적 프리팹 사전 생성과 재사용 |
+| GroundDefenseCombatPresenter | `GroundDefenseCombatPresenter` | `DefenseDirector.Runtime` 기반 풀링 적, 벽 피격, 공격 펄스 피드백 |
 
 ## 5. 상태 구조
 

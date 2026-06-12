@@ -1,5 +1,13 @@
 # Core Loop And Player Flows
 
+## 2026-06-12 Ground-Defense Presentation Direction
+
+- The ground loop remains automatic, continuous, and controlled through Hold/Push, repair, and upgrades.
+- Its visible battle now follows classic RTS staging: enemy formations approach, defender squads intercept, towers/ranged units fire projectiles, units take hits and die, reinforcements arrive, and survivors damage the wall.
+- This changes what the player watches, not the input model. No individual selection, movement orders, production queues, or free tower placement are added.
+- Use `GameDesign/References/2026-05-17_FinalGameplayScreenConcept.png` for battlefield composition and `Assets/06.Art/Sprites/GroundDefense/GroundDefense_ReadabilitySheet.png` for role silhouettes.
+- Generic pulses, moving markers, isolated battlefield cards, and combat diagnostic text are not final normal-path feedback.
+
 작성일: 2026-05-03
 문서 목적: 플레이어가 실제로 누르는 것과 화면 흐름 정의
 
