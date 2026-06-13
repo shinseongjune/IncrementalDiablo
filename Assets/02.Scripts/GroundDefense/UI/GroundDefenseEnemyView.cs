@@ -21,6 +21,8 @@ public sealed class GroundDefenseEnemyView : MonoBehaviour
     private float healthBarWidth;
 
     public GroundDefenseEnemyArchetype Archetype { get; private set; }
+    public Vector3 AimPosition =>
+        transform.position + Vector3.up * (Archetype == null ? 1f : Archetype.VisualHeightOffset);
 
     private void Awake()
     {

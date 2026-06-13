@@ -1,5 +1,118 @@
 # Unity Scene And Prefab Setup Guide
 
+## 2026-06-13 Next Ground Battlefield Authoring Gate
+
+The current automatic battlefield failed Play Mode readability. Do not proceed by increasing counts, changing colors, or tuning projectile speed. The next Unity authoring pass must build and validate RTS concepts in this order.
+
+### 1. Author stable battlefield zones
+
+Under `DefenseRoot`, create or clearly identify authored transforms with these roles:
+
+- `Zone_EnemyStaging`
+- `Zone_Approach`
+- `Line_Contact`
+- `Zone_FriendlyDefense`
+- `Structure_Tower`
+- `Structure_Wall`
+
+The camera must show their spatial order. Enemy travel must cross the ground from `Zone_EnemyStaging` toward `Line_Contact`; it must not read as generic top-to-bottom screen motion.
+
+### 2. Unit visual contract
+
+Before pooling/density, validate one enemy and one defender.
+
+- Root sits on the ground plane.
+- Add a visible ground shadow or footprint.
+- Body faces its opponent.
+- Weapon/role silhouette is readable at the actual panel scale.
+- Enemy and friendly treatments differ by more than color.
+- Walking, idle/contact, attack windup, hit reaction, and death are separate visible states.
+
+Do not approve camera-facing cutouts merely because the source art is recognizable when viewed alone. They must read as actors occupying the battlefield.
+
+### 3. Building visual contract
+
+- Tower has a persistent foundation, tower body, and explicit `Muzzle` transform.
+- Wall/citadel is the largest protected object and owns its health/damage feedback.
+- Unit scale must remain clearly smaller than tower and wall scale.
+- Buildings remain fixed while units move around/in front of them.
+
+### 4. One deterministic attack proof
+
+Temporarily use one enemy, one defender, one tower, and one wall at low cadence.
+
+1. Enemy enters from `Zone_EnemyStaging`.
+2. Enemy reaches `Line_Contact` and stops.
+3. Defender visibly winds up and strikes; enemy visibly reacts.
+4. Tower visibly aims/winds up.
+5. Projectile leaves `Structure_Tower/Muzzle`, travels to the same enemy, and impacts it.
+6. Enemy dies or resumes movement.
+7. If it reaches the wall, its wall attack lands on `Structure_Wall`.
+
+Do not restore multiple archetypes, rapid spawns, or reinforcements until this path is readable without HUD diagnostics.
+
+### 5. Required review evidence
+
+- One paused screenshot proving unit/building/zone distinction.
+- One short observation of a complete melee exchange.
+- One short observation of tower muzzle -> projectile -> enemy impact.
+- The same proof in `DefenseFocus` and the compressed defense panel.
+
+## 2026-06-13 E0-A Automatic Battlefield Handoff
+
+`Gameplay > DefenseRoot` is already wired, but the presentation failed its focused Play Mode check. The values below describe the rejected technical checkpoint and must not be treated as an acceptance recipe.
+
+Current component wiring:
+
+1. `GroundDefenseActorRuntime`
+   - `Actor Archetypes`: Grunt, Shield, Runner.
+   - `Actor Capacity`: `8`.
+   - This remains transient presentation state; do not add save fields for actor slots.
+2. `GroundDefenseEnemyPool`
+   - `Prewarm Per Archetype`: `3`.
+   - `Max Instances`: `16`.
+3. `GroundDefenseBattlefieldView`
+   - `Enemy Spawn Anchor`: `Enemy Spawn Anchor`.
+   - `Wall Anchor`: `Wall Anchor`.
+   - `Attack Origin`: `Attack Origin`.
+   - `Readability Sheet`: `GroundDefense_ReadabilitySheet`.
+   - Starting formation values: `Contact Line Percent = 0.72`, `Enemy Lane Spacing = 0.72`, `Defender Count = 3`, `Defender Spacing = 0.92`, `Defender Line Gap = 0.72`.
+   - Starting action values: `Projectile Capacity = 5`, `Projectile Speed = 12`, `Projectile Arc Height = 0.45`, `Melee Lunge Seconds = 0.18`, `Melee Lunge Distance = 0.42`, `Defender Death Seconds = 0.45`, `Reinforcement Seconds = 0.85`, `Casualty Cooldown Seconds = 2.5`.
+4. `GroundDefenseCombatPresenter`
+   - `Battlefield View`: the same `DefenseRoot` component.
+   - `Use Production Battlefield`: enabled.
+   - `Pressure Actors`: empty and `Show Pressure Actors`: disabled.
+   - `Wall Contact Object/Renderer`: empty.
+   - `Attack Pulses`: empty and `Show Attack Pulses`: disabled.
+5. `GroundDefenseLanePresenter`
+   - `Show Enemy Flow Markers`: disabled.
+6. `PlayableLoopHud`
+   - `Show Ground Combat Diagnostics`: disabled.
+
+Fixed behavior:
+
+- Enemy travel maps into formation lanes, then converges on one contact line before the wall.
+- Actual `GroundDefenseActorRuntime.ActorHit` events trigger defender melee or a tower projectile.
+- Enemy defeat/recycle uses the existing actor runtime and pool.
+- Wall damage can trigger one defender casualty and later reinforcement.
+- Wall health/hit/breach feedback belongs to the wall, not a detached flash.
+
+Adjustable only after the Play Mode check:
+
+- `Contact Line Percent`, lane/defender spacing, and defender size may be adjusted if actors overlap or the panel crop hides the source-target relationship.
+- Projectile speed/arc and lunge distance may be adjusted if attacks are unreadable, but they must remain tied to a visible attacker and target.
+- Do not change camera framing, wall/tower position, or overall panel composition autonomously unless the current crop makes the check impossible.
+
+Historical Play Mode path that failed:
+
+1. Open `Assets/01.Scenes/Gameplay.unity` and enter Play Mode in `DefenseFocus`.
+2. Start defense and wait until several Grunt/Shield/Runner actors are active.
+3. Confirm enemies occupy multiple lanes and meet the three defenders before the wall.
+4. Confirm at least one defender lunge and one projectile visibly originate from the defender line/tower and point at an enemy.
+5. Confirm an enemy loses health, shows defeat, disappears, and a later enemy reuses the pool.
+6. Allow pressure to damage the wall. Confirm one defender falls, a replacement enters from the wall side, and wall health/hit/breach feedback appears on the wall.
+7. Start a dungeon and confirm the compressed defense panel still preserves the same relationships without unreadable overlap.
+
 ## 2026-06-12 Direction-Only Ground Battlefield Handoff
 
 This section supersedes the older pulse/flash and billboard acceptance instructions below. Those older sections remain only as implementation history.
@@ -561,7 +674,7 @@ Current `Gameplay` status as of 2026-06-05: `RawImage_DungeonViewport`, `Camera_
 | `PF_GameSystems` | CurrencyWallet, DefenseUpgradeModel, DefenseDirector | 지속 전선 숫자 시뮬레이션 |
 | `PF_DefenseHud` | DefenseHud | UI |
 | `PF_GroundDefenseLane` | GroundDefenseLanePresenter + scene-authored anchors/markers | Phase C 지상 전선 시각 브리지 |
-| `PF_GroundDefenseCombatFeedback` | GroundDefenseCombatPresenter + pressure actors + wall contact flash + attack pulses | Historical Phase C bridge; replace in the normal path with attacker-owned combat/projectile/structure-damage presentation |
+| `PF_GroundDefenseCombatFeedback` | GroundDefenseCombatPresenter + GroundDefenseBattlefieldView | E0-A runtime bridge: formation mapping, event-driven melee/projectiles, casualty/reinforcement, and wall-bound feedback; legacy pulse/flash references are disabled |
 | `PF_GroundDefenseEnemy_Grunt` | GroundDefenseEnemyView + reusable pooled shell; archetype data supplies role art/stats | Phase E 풀링 지상 적 프리팹 |
 | `PF_DefenseWall` | DefenseWall, HealthBarUI | 시각 단계 성벽 체력 |
 | `PF_TowerBattery` | TowerBattery | 시각 단계 자동 공격 |

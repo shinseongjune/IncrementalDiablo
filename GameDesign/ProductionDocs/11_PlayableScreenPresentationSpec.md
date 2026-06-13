@@ -1,5 +1,57 @@
 # Playable Screen Presentation Spec
 
+## 2026-06-13 RTS Visual Grammar After Failed Validation
+
+The current panel failed because motion existed without readable nouns or ownership. The next presentation pass must establish the following before adding spectacle.
+
+### Paused-frame test
+
+Without animation, labels, or diagnostic copy, one screenshot must make these immediately identifiable:
+
+- hostile unit;
+- friendly unit;
+- tower or ranged building;
+- wall/citadel;
+- enemy staging side;
+- contact line;
+- protected side.
+
+Faction color alone is not enough. Use silhouette, ground footprint/shadow, body scale, facing, weapon shape, authored zone, and building foundation together.
+
+### Motion test
+
+- Enemy entry must read as movement from an enemy staging zone across ground toward a known contact line.
+- Units stop when fighting. They do not continuously slide past targets or move like falling screen-space objects.
+- Spawn cadence starts deliberately slow. The viewer must see one unit complete spawn -> approach -> attack/hit or death before density rises.
+- Formation density is added only after a one-enemy/one-defender proof works in `DefenseFocus` and the compressed defense panel.
+
+### Attack ownership test
+
+- Melee: visible attacker body winds up and strikes a visible target at contact.
+- Tower/ranged: the visible tower aims or winds up; the projectile leaves its muzzle, crosses the battlefield, and impacts a visible enemy.
+- Projectile color, trail, and impact are secondary. A projectile-like object near the wall with no visible owner/target is invalid.
+- Structure damage must visibly land on the wall. Enemy projectiles or melee strikes must not be confused with friendly tower fire.
+
+### Presentation rejection checklist
+
+Reject the pass immediately when any are true:
+
+- enemies look like objects spawning at the top and falling to the bottom;
+- units, tower, and wall share the same card/billboard language or similar scale;
+- an attack can be seen but the attacker or target cannot be named;
+- movement speed or spawn frequency prevents one complete action from being observed;
+- combat is understandable only by watching health bars or diagnostic text;
+- the full defense view works but the compressed defense panel loses source-target relationships.
+
+## 2026-06-13 Ground Battlefield Runtime Pass
+
+- The normal defense panel now places pooled enemies in multiple lanes that converge on one contact line, with three friendly defenders between the enemy formation and the protected wall.
+- A measured actor hit produces either a defender lunge at that target or a projectile launched from the visible tower. Legacy scene-authored attack pulses are disabled.
+- Enemy defeats recycle through the existing pool. Sustained wall damage can knock out one defender, then show that slot reinforcing from the wall side.
+- The wall itself shows health loss, hit emphasis, and breach color; the unattached wall flash is disabled.
+- Moving pressure markers and normal-player ground-combat diagnostics are disabled. Pressure, wall health, Hold/Push, and alerts remain in the functional HUD.
+- User validation failed: the formation read as rapid top-to-bottom movement and the projectile near the wall had no clear owner or purpose. Treat this section as an implementation-history checkpoint, not accepted presentation.
+
 ## 2026-06-12 RTS-Readable Automatic Defense Presentation
 
 - The defense view should reproduce the visual hierarchy of `GameDesign/References/2026-05-17_FinalGameplayScreenConcept.png`: enemy formations at the far side, an active contact line in the middle, fixed friendly towers and squads near the protected wall, and the citadel/wall as the final readable defense object.

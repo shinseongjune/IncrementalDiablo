@@ -243,8 +243,14 @@ if (Test-Path -LiteralPath $scenePath) {
         @{ Name = "Scene has ground enemy pool"; Token = "m_EditorClassIdentifier: Assembly-CSharp::GroundDefenseEnemyPool" },
         @{ Name = "Scene has readable defense line"; Token = "m_EditorClassIdentifier: Assembly-CSharp::GroundDefenseBattlefieldView" },
         @{ Name = "Scene uses pooled ground enemies"; Token = "usePooledEnemies: 1" },
+        @{ Name = "Scene uses production ground battlefield"; Token = "useProductionBattlefield: 1" },
         @{ Name = "Scene disables fixed ground actors"; Token = "pressureActors: []" },
         @{ Name = "Scene disables fixed ground actor fallback"; Token = "showPressureActors: 0" },
+        @{ Name = "Scene disables moving pressure markers"; Token = "showEnemyFlowMarkers: 0" },
+        @{ Name = "Scene disables legacy attack pulses"; Token = "showAttackPulses: 0" },
+        @{ Name = "Scene clears legacy attack pulse references"; Token = "attackPulses: []" },
+        @{ Name = "Scene clears unattached wall flash"; Token = "wallContactObject: {fileID: 0}" },
+        @{ Name = "Scene hides ground combat diagnostics"; Token = "showGroundCombatDiagnostics: 0" },
         @{ Name = "Scene expands pooled ground actor capacity"; Token = "actorCapacity: 8" },
         @{ Name = "Scene wires production ground archetype"; Token = "129c179ac3e2497ea46e4776977c1e21" },
         @{ Name = "Scene wires shield ground archetype"; Token = "8615c8b153c04f2c8c72e38adfe7e291" },
@@ -283,9 +289,11 @@ if (Test-Path -LiteralPath $scenePath) {
     [void](Assert-SceneBehaviourReference "Ground combat presenter actor runtime" $sceneText "GroundDefenseCombatPresenter" "actorRuntime")
     [void](Assert-SceneBehaviourReference "Ground combat presenter enemy pool" $sceneText "GroundDefenseCombatPresenter" "enemyPool")
     [void](Assert-SceneBehaviourReference "Ground enemy pool root" $sceneText "GroundDefenseEnemyPool" "poolRoot")
+    [void](Assert-SceneBehaviourReference "Ground battlefield enemy spawn anchor" $sceneText "GroundDefenseBattlefieldView" "enemySpawnAnchor")
     [void](Assert-SceneBehaviourReference "Ground battlefield wall anchor" $sceneText "GroundDefenseBattlefieldView" "wallAnchor")
     [void](Assert-SceneBehaviourReference "Ground battlefield attack origin" $sceneText "GroundDefenseBattlefieldView" "attackOrigin")
     [void](Assert-SceneBehaviourReference "Ground battlefield readability sheet" $sceneText "GroundDefenseBattlefieldView" "readabilitySheet")
+    [void](Assert-SceneBehaviourReference "Ground presenter battlefield view" $sceneText "GroundDefenseCombatPresenter" "battlefieldView")
     [void](Assert-SceneBehaviourReference "Playable HUD previous depth button" $sceneText "PlayableLoopHud" "previousDungeonDepthButton")
     [void](Assert-SceneBehaviourReference "Playable HUD next depth button" $sceneText "PlayableLoopHud" "nextDungeonDepthButton")
     [void](Assert-SceneBehaviourReference "Simple inventory item registry" $sceneText "SimpleInventory" "definitionRegistry")
@@ -459,15 +467,21 @@ if ((Test-Path -LiteralPath $groundActorRuntimePath) -and
     [void](Assert-TextContains "Ground enemy view builds readable role visual" $groundEnemyViewText "BuildReadableVisual")
     [void](Assert-TextContains "Ground enemy view exposes health bar feedback" $groundEnemyViewText "UpdateHealthBar")
     [void](Assert-TextContains "Ground billboard utility faces defense camera" $groundBillboardUtilityText "GroundDefenseBillboardFacing")
-    [void](Assert-TextContains "Ground battlefield creates readable wall" $groundBattlefieldViewText "DefenseWall_Readable")
-    [void](Assert-TextContains "Ground battlefield creates readable tower" $groundBattlefieldViewText "CrossbowTower_Readable")
-    [void](Assert-TextContains "Ground battlefield creates readable defender" $groundBattlefieldViewText "FrontlineDefender_Readable")
-    [void](Assert-TextContains "Ground attack pulses become directional bolts" $groundCombatPresenterText "OrientAttackBolt")
+    [void](Assert-TextContains "Ground battlefield creates wall-bound feedback" $groundBattlefieldViewText '"DefenseWall"')
+    [void](Assert-TextContains "Ground battlefield creates attacker-owned tower" $groundBattlefieldViewText '"CrossbowTower"')
+    [void](Assert-TextContains "Ground battlefield creates defender squad" $groundBattlefieldViewText '$"Defender_{i + 1:00}"')
     [void](Assert-TextContains "Ground grunt uses readability sheet" $groundEnemyGruntAssetText "visualTexture:")
     [void](Assert-TextContains "Ground shield has durable role stats" $groundEnemyShieldAssetText "maxHealth: 24")
     [void](Assert-TextContains "Ground runner has fast role stats" $groundEnemyRunnerAssetText "baseAdvancePerSecond: 0.18")
     [void](Assert-TextContains "Ground enemy view renders defeat state" $groundEnemyViewText "GroundDefenseActorVisualState.Defeated")
+    [void](Assert-TextContains "Ground actor runtime emits real hit events" $groundActorRuntimeText "public event Action<int> ActorHit")
     [void](Assert-TextContains "Ground combat presenter rents pooled enemies" $groundCombatPresenterText "enemyPool.Rent(archetype)")
+    [void](Assert-TextContains "Ground combat presenter routes actual hits" $groundCombatPresenterText "battlefieldView.PlayDefenseHit(actorIndex, targetPosition)")
+    [void](Assert-TextContains "Ground battlefield owns contact formation" $groundBattlefieldViewText "GetEnemyWorldPosition")
+    [void](Assert-TextContains "Ground battlefield launches tower projectiles" $groundBattlefieldViewText "LaunchTowerProjectile")
+    [void](Assert-TextContains "Ground battlefield shows melee strikes" $groundBattlefieldViewText "PlayMeleeStrike")
+    [void](Assert-TextContains "Ground battlefield cycles casualties" $groundBattlefieldViewText "TriggerDefenderCasualty")
+    [void](Assert-TextContains "Ground battlefield binds wall damage" $groundBattlefieldViewText "ApplyWallState")
     [void](Assert-TextContains "Ground enemy prefab has production view" $groundEnemyPrefabText "m_EditorClassIdentifier: Assembly-CSharp::GroundDefenseEnemyView")
     [void](Assert-TextContains "Ground enemy prefab has collision silhouette" $groundEnemyPrefabText "CapsuleCollider:")
     [void](Assert-TextContains "Ground grunt archetype references prefab" $groundEnemyGruntAssetText "a83542c699354f79a4cb7a5d808a43f1")
@@ -490,8 +504,11 @@ if (Test-Path -LiteralPath $planPath) {
         "D0-C | P0 | Item registry and save migration | Done",
         "D0-D | P0 | Duplicate-item sink and conversion | Done",
         "D1-A | P1 | Formula-driven ground scaling | Done",
-        "E0-A | P0 | RTS-readable automatic defense battlefield | Next",
+        "E0-A | P0 | RTS-readable automatic defense battlefield | Next / Validation failed",
         "RTS-readable automatic defense",
+        "Static RTS battlefield grammar",
+        "Unit -> action -> target",
+        "attacker-owned projectile",
         "real projectiles",
         "reinforcements",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",

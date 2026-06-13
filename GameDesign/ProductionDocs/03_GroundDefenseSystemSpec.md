@@ -1,5 +1,64 @@
 # Ground Defense System Spec
 
+## 2026-06-13 Play Mode Rejection And RTS Concept Contract
+
+### Observed failure
+
+- Enemies appeared rapidly and mostly moved from the top of the defense panel toward the bottom.
+- The player could not tell what kind of units they were, where the actual frontline was, whether they had entered combat, or what action they were performing.
+- A projectile-like object was visible near the wall, but the player could not identify the attacker, target, impact, or gameplay meaning.
+- Therefore the 2026-06-13 implementation does not satisfy E0-A. Event wiring, pooling, and health changes are not sufficient evidence of RTS readability.
+
+### RTS nouns must be distinct before combat motion
+
+| Concept | Required visual identity | Rejection condition |
+| --- | --- | --- |
+| Enemy unit | Ground-anchored body, hostile faction treatment, facing toward the defended side, readable weapon/role, stable spawn-side origin | Appears as a floating card, particle, icon, or anonymous object moving vertically |
+| Friendly unit | Ground-anchored body, friendly faction treatment, authored defensive line, facing toward enemies, visible melee/ranged role | Indistinguishable from enemies or buildings; attack happens without visible body action |
+| Tower | Persistent structure larger than units, fixed foundation, visible weapon/muzzle, clear firing direction | Looks like a unit/card; projectile appears without a visible muzzle |
+| Wall/citadel | Largest protected structure, fixed protected-side position, persistent health/damage state | Reads as another sprite/card or receives damage away from the visible structure |
+| Projectile | Owned by one visible attacker and one visible target; launch, travel, and impact form one traceable event | Appears near the wall, loops continuously, or has no identifiable source/target |
+| Melee attack | Two opposing units meet at contact; attacker stops, winds up, strikes, target reacts, both recover or die | Units pass through each other, keep sliding, or damage occurs with no contact |
+
+### Battlefield zones
+
+The camera must expose four stable authored zones:
+
+```text
+[Enemy staging] -> [Approach space] -> [Contact line] -> [Friendly structures / Wall]
+```
+
+- Movement may be diagonal or across screen width/depth, but it must read as travel between these zones.
+- Screen-vertical movement is allowed only if perspective, ground plane, facing, and destination make the battlefield relationship obvious.
+- Fast top-to-bottom spawning that reads like falling objects or a conveyor is prohibited.
+- The contact line must remain visible long enough for approach, stop, attack, hit, and death states to be recognized.
+
+### Attack readability contract
+
+- Every attack follows `Unit -> action -> target`.
+- Tower/ranged timing: idle/reload -> aim or windup -> muzzle launch -> projectile travel -> target impact -> recovery.
+- Melee timing: approach -> stop at range -> windup -> strike -> target reaction -> recovery.
+- The projectile, impact, and damage number/health change support the attack; they cannot replace the visible attacker action.
+- Use one deterministic exchange at low cadence before enabling formula-driven density. Diagnostic text cannot be used as proof.
+
+### Required implementation order
+
+1. Static silhouette proof with one enemy, one defender, one tower, and one wall.
+2. One deterministic melee exchange.
+3. One deterministic tower projectile exchange.
+4. Enemy death and defender/wall damage.
+5. Reinforcement and pooling.
+6. Formula-driven density only after steps 1-5 remain readable in both full and compressed defense views.
+
+## 2026-06-13 E0-A Battlefield Implementation
+
+- `GroundDefenseActorRuntime` remains a transient projection of authoritative pressure/clear/wall-damage telemetry and now emits actor spawn, hit, defeat, and wall-contact events for presentation.
+- `GroundDefenseBattlefieldView` maps pooled enemies into formation lanes that converge on a fixed contact line before the wall. Three reusable defender visuals hold that line.
+- Actual actor-hit events alternate between a visible defender melee lunge and a projectile launched from the crossbow tower toward that actor. These attacks do not create a second damage simulation.
+- Enemy defeat still comes from the actor runtime health projection and recycles through the existing pool. When wall damage occurs, a defender can visibly fall and re-enter from the wall side after a bounded reinforcement delay.
+- Wall health loss, hit emphasis, and breach color are attached to the visible wall and its health bar. The normal path disables moving pressure markers, legacy repeating attack pulses, and the unattached wall flash.
+- This implementation failed its first Unity Play Mode readability check. Preserve useful runtime events and pooling, but do not tune speed/count alone or call this presentation accepted. The next pass must follow the ordered RTS concept contract above.
+
 ## 2026-06-12 Approved Production Combat Contract
 
 ### Target experience

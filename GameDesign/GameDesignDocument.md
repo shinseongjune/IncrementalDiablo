@@ -1,5 +1,20 @@
 # Incremental Diablo Game Design Document
 
+## 2026-06-13 Ground Presentation Validation Result
+
+- The current E0-A panel was rejected. Enemies appeared quickly and mainly moved from the top of the screen toward the bottom, so they did not read as RTS units entering, contacting, and fighting on a battlefield.
+- A projectile-like object near the wall did not communicate whether it came from the tower, which target it hit, or what effect it caused.
+- Future ground implementation must distinguish RTS nouns before adding density: hostile unit, friendly unit, tower, wall, staging zone, contact line, and protected zone.
+- Every visible attack must communicate `Unit -> action -> target`. Melee needs contact/windup/strike/reaction; projectiles need visible attacker/muzzle/launch/travel/impact.
+- Implementation order is fixed: static battlefield grammar, then one readable exchange, then formula-driven density. Faster spawning or more simultaneous motion is not progress when ownership becomes unclear.
+
+## 2026-06-13 Ground Battlefield Implementation Checkpoint
+
+- The first bounded RTS-readable automatic battlefield is implemented over `DefenseRuntimeState`: pooled enemy formation lanes meet a three-defender contact line, actual actor hits trigger melee lunges or tower projectiles, enemies visibly die/recycle, defenders can fall and reinforce during wall pressure, and wall health/damage/breach feedback is attached to the structure.
+- The normal scene disables the old moving pressure markers, repeating attack pulses, unattached wall flash, and player-facing combat diagnostics.
+- No unit selection, movement orders, free placement, production queues, manual wave rows, new save state, or second reward simulation were added.
+- E0-A requires one focused Unity Play Mode readability check before it is accepted.
+
 ## 2026-06-12 Approved Ground-Defense Direction
 
 - Ground defense should look like a classic dark-fantasy RTS defense battle: multiple enemy units advance as a formation, defender squads form a visible contact line, towers and ranged units fire real projectiles, units die, and reinforcements replace losses.

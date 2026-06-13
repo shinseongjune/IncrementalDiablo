@@ -38,6 +38,11 @@ public class GroundDefenseActorRuntime : MonoBehaviour
     private DefenseState lastObservedState = DefenseState.Idle;
     private int spawnSequence;
 
+    public event Action<int> ActorSpawned;
+    public event Action<int> ActorHit;
+    public event Action<int> ActorDefeated;
+    public event Action<int> ActorReachedWall;
+
     public int ActorCapacity => actors.Length;
     public int ActiveActorCount => activeActorCount;
     public int VisibleActorCount => visibleActorCount;
@@ -312,6 +317,12 @@ public class GroundDefenseActorRuntime : MonoBehaviour
             }
 
             actors[targetIndex] = actor;
+            ActorHit?.Invoke(targetIndex);
+
+            if (actor.visualState == GroundDefenseActorVisualState.Defeated)
+            {
+                ActorDefeated?.Invoke(targetIndex);
+            }
         }
     }
 
@@ -353,6 +364,10 @@ public class GroundDefenseActorRuntime : MonoBehaviour
             }
 
             actors[i] = actor;
+            if (actor.visualState == GroundDefenseActorVisualState.WallContact)
+            {
+                ActorReachedWall?.Invoke(i);
+            }
         }
     }
 
@@ -380,6 +395,7 @@ public class GroundDefenseActorRuntime : MonoBehaviour
                 feedbackRemaining = 0f
             };
             spawnSequence += 1;
+            ActorSpawned?.Invoke(i);
             return true;
         }
 

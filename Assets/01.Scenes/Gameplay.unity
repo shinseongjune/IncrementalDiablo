@@ -137,7 +137,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2741645
 Transform:
   m_ObjectHideFlags: 0
@@ -1283,7 +1283,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &133061858
 Transform:
   m_ObjectHideFlags: 0
@@ -4660,7 +4660,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &244575772
 Transform:
   m_ObjectHideFlags: 0
@@ -4999,7 +4999,7 @@ MonoBehaviour:
   - {fileID: 133061858}
   - {fileID: 892541683}
   - {fileID: 244575772}
-  showEnemyFlowMarkers: 1
+  showEnemyFlowMarkers: 0
   minimumRunningEnemyMarkers: 1
   enemyFlowCyclesPerSecond: 0.18
   stateLabel: {fileID: 0}
@@ -5069,18 +5069,35 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::GroundDefenseBattlefieldView
   defenseCamera: {fileID: 198103830}
+  enemySpawnAnchor: {fileID: 1912540435}
   wallAnchor: {fileID: 488788905}
   attackOrigin: {fileID: 48257985}
   readabilitySheet: {fileID: 2800000, guid: a041289685f941e8a40086ddca94abc3, type: 3}
+  contactLinePercent: 0.72
+  enemyLaneSpacing: 0.72
+  defenderCount: 3
+  defenderSpacing: 0.92
+  defenderLineGap: 0.72
   defenderUv: {x: 0, y: 0, width: 0.33333334, height: 0.5}
   towerUv: {x: 0.33333334, y: 0, width: 0.33333334, height: 0.5}
   wallUv: {x: 0.6666667, y: 0, width: 0.33333334, height: 0.5}
-  defenderSize: {x: 2.4, y: 3.2}
+  defenderSize: {x: 1.45, y: 2.05}
   towerSize: {x: 3.1, y: 3.8}
   wallSize: {x: 4.8, y: 3.5}
-  defenderOffset: {x: 1.05, y: 1.55, z: 0.4}
   towerOffset: {x: 0, y: 1.85, z: 0}
   wallOffset: {x: 0, y: 1.55, z: 0}
+  projectileCapacity: 5
+  projectileSpeed: 12
+  projectileArcHeight: 0.45
+  projectileColor: {r: 1, g: 0.78, b: 0.28, a: 1}
+  meleeLungeSeconds: 0.18
+  meleeLungeDistance: 0.42
+  defenderDeathSeconds: 0.45
+  reinforcementSeconds: 0.85
+  casualtyCooldownSeconds: 2.5
+  damagedWallColor: {r: 1, g: 0.55, b: 0.36, a: 1}
+  breachedWallColor: {r: 0.65, g: 0.12, b: 0.08, a: 1}
+  wallHitSeconds: 0.22
 --- !u!114 &293513596
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5096,29 +5113,29 @@ MonoBehaviour:
   defense: {fileID: 1045172322}
   actorRuntime: {fileID: 293513597}
   enemyPool: {fileID: 293513598}
+  battlefieldView: {fileID: 293513599}
   autoFindDefense: 1
   autoFindActorRuntime: 1
   autoFindEnemyPool: 1
+  autoFindBattlefieldView: 1
   enemySpawnAnchor: {fileID: 1912540435}
   wallAnchor: {fileID: 488788905}
   attackOrigin: {fileID: 48257985}
   usePooledEnemies: 1
+  useProductionBattlefield: 1
   pressureActors: []
   showPressureActors: 0
   minimumRunningActors: 1
   pressureActorCyclesPerSecond: 0.16
   pressureActorColor: {r: 0.82, g: 0.18, b: 0.12, a: 1}
   pressureActorUnderFireColor: {r: 1, g: 0.68, b: 0.18, a: 1}
-  wallContactObject: {fileID: 2121354839}
-  wallContactRenderer: {fileID: 2121354840}
+  wallContactObject: {fileID: 0}
+  wallContactRenderer: {fileID: 0}
   wallContactFlashSeconds: 0.22
   wallContactScaleMultiplier: 1.2
   wallContactColor: {r: 1, g: 0.25, b: 0.1, a: 1}
-  attackPulses:
-  - {fileID: 2741645}
-  - {fileID: 1947613229}
-  - {fileID: 1260978864}
-  showAttackPulses: 1
+  attackPulses: []
+  showAttackPulses: 0
   attackPulseCyclesPerSecond: 0.85
   defensePowerPerVisiblePulse: 8
   attackPulseColor: {r: 0.45, g: 0.9, b: 1, a: 1}
@@ -8849,7 +8866,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &892541683
 Transform:
   m_ObjectHideFlags: 0
@@ -9212,6 +9229,7 @@ MonoBehaviour:
   autoFindReferences: 1
   syncScreenFocusWithDungeon: 1
   openRewardOverlayOnDungeonClear: 1
+  showGroundCombatDiagnostics: 0
   showDefenseAlertInSummary: 1
   prioritizeDefenseAlertDuringDungeon: 1
   lowWallHealthPercent: 0.35
@@ -11890,7 +11908,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1260978864
 Transform:
   m_ObjectHideFlags: 0
@@ -15607,7 +15625,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1947613229
 Transform:
   m_ObjectHideFlags: 0
@@ -16780,7 +16798,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!23 &2121354840
 MeshRenderer:
   m_ObjectHideFlags: 0

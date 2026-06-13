@@ -1,5 +1,25 @@
 # Implementation Roadmap
 
+## 2026-06-13 E0-A Rejected Checkpoint And Rebuild Order
+
+The bounded battlefield code was implemented without changing the continuous frontline authority:
+
+1. Pooled enemies use five formation lanes and converge on a contact line.
+2. Three defenders occupy the friendly side of that line.
+3. Actor-hit events drive visible melee lunges or tower-owned projectiles.
+4. Enemy defeat/recycle remains pool-backed.
+5. Wall damage can produce a defender casualty followed by reinforcement entry.
+6. Wall health, hit, and breach feedback are attached to the wall.
+7. Moving markers, legacy repeating pulses, the unattached flash, and normal HUD combat diagnostics are disabled.
+
+User Play Mode validation rejected the presentation: enemies read as rapid top-to-bottom objects and the projectile near the wall had no clear source, target, or meaning. Preserve useful events/pooling, but rebuild presentation in three gates:
+
+1. `E0-A1 Static RTS nouns`: one enemy, one defender, one tower, one wall, and stable battlefield zones are distinct in a paused frame.
+2. `E0-A2 One combat exchange`: one melee attack and one attacker-owned tower projectile clearly show Unit -> action -> target.
+3. `E0-A3 Density`: only after the first two pass, restore archetype mix, casualties, reinforcements, and formula-driven actor density.
+
+Do not route another run to speed/count/color tuning of the current motion. The next implementation output must be E0-A1.
+
 ## 2026-06-12 Phase E Direction Update
 
 The next ground-defense implementation target is no longer a Play Mode approval pass for billboard actors and pulse-derived attacks.

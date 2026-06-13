@@ -24,6 +24,7 @@ public class PlayableLoopHud : MonoBehaviour
     [SerializeField] private bool autoFindReferences = true;
     [SerializeField] private bool syncScreenFocusWithDungeon = true;
     [SerializeField] private bool openRewardOverlayOnDungeonClear = true;
+    [SerializeField] private bool showGroundCombatDiagnostics;
 
     [Header("Dungeon Viewport Diagnostics")]
     [SerializeField] private bool showDungeonViewportDiagnostics = true;
@@ -412,7 +413,9 @@ public class PlayableLoopHud : MonoBehaviour
 
         string defenseAlertText = showDefenseAlertInSummary ? BuildDefenseAlertText(runtime) : string.Empty;
         string alertText = string.IsNullOrWhiteSpace(defenseAlertText) ? string.Empty : $"\nDefense alert: {defenseAlertText}";
-        string groundCombatText = groundCombatPresenter == null ? string.Empty : $"\n{groundCombatPresenter.LastCombatMessage}";
+        string groundCombatText = !showGroundCombatDiagnostics || groundCombatPresenter == null
+            ? string.Empty
+            : $"\n{groundCombatPresenter.LastCombatMessage}";
         string screenText = screenLayout == null ? string.Empty : $"\n{BuildScreenLayoutText()}";
         return $"Frontline Lv.{runtime.FrontlineLevel} / {runtime.State} / {runtime.Mode} / Wall {Mathf.CeilToInt(runtime.WallHealth)}/{Mathf.CeilToInt(runtime.WallMaxHealth)}\n" +
                $"Pressure {pressureText} / Progress {progressText}\n{balanceText}\n{upgradeText}{alertText}{groundCombatText}{screenText}";

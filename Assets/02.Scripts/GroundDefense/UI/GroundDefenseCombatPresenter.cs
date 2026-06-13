@@ -6,9 +6,11 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
     [SerializeField] private DefenseDirector defense;
     [SerializeField] private GroundDefenseActorRuntime actorRuntime;
     [SerializeField] private GroundDefenseEnemyPool enemyPool;
+    [SerializeField] private GroundDefenseBattlefieldView battlefieldView;
     [SerializeField] private bool autoFindDefense = true;
     [SerializeField] private bool autoFindActorRuntime = true;
     [SerializeField] private bool autoFindEnemyPool = true;
+    [SerializeField] private bool autoFindBattlefieldView = true;
 
     [Header("Lane Anchors")]
     [SerializeField] private Transform enemySpawnAnchor;
@@ -17,6 +19,7 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
 
     [Header("Pooled Pressure Actors")]
     [SerializeField] private bool usePooledEnemies = true;
+    [SerializeField] private bool useProductionBattlefield = true;
 
     [Header("Legacy Fixed Pressure Actors")]
     [SerializeField] private Transform[] pressureActors;
@@ -56,6 +59,7 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
     private bool hasWallSnapshot;
     private DefenseState lastState = DefenseState.Idle;
     private int lastActorWallContactCount;
+    private GroundDefenseActorRuntime subscribedActorRuntime;
 
     public int ActivePressureActorCount { get; private set; }
     public int ActiveAttackPulseCount { get; private set; }
@@ -76,6 +80,7 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
     private void OnEnable()
     {
         ResolveReferences();
+        SyncActorRuntimeSubscription();
 
         if (defense != null)
         {
@@ -87,6 +92,8 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
 
     private void OnDisable()
     {
+        SyncActorRuntimeSubscription(true);
+
         if (defense != null)
         {
             defense.Changed -= Refresh;
@@ -118,6 +125,7 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
     public void Refresh()
     {
         ResolveReferences();
+        SyncActorRuntimeSubscription();
 
         if (defense == null || defense.Runtime == null)
         {
@@ -197,9 +205,12 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
             }
 
             float travelPercent = actorRuntime.GetActorTravelPercent(i);
+            Vector3 position = UseProductionBattlefield
+                ? battlefieldView.GetEnemyWorldPosition(i, travelPercent)
+                : Vector3.Lerp(enemySpawnAnchor.position, wallAnchor.position, travelPercent);
             view.Apply(
                 actorRuntime.GetActorVisualState(i),
-                Vector3.Lerp(enemySpawnAnchor.position, wallAnchor.position, travelPercent),
+                position,
                 actorRuntime.GetActorHealthPercent(i),
                 actorRuntime.IsActorUnderFire(i),
                 actorRuntime.GetActorFeedbackPercent(i));
@@ -282,6 +293,20 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
             WallContactEventCount += 1;
         }
 
+        if (UseProductionBattlefield)
+        {
+            battlefieldView.ApplyWallState(
+                runtime.WallHealthPercent,
+                tookWallDamage || actorReachedWall,
+                runtime.State == DefenseState.Breached);
+            wallContactFlashRemaining = 0f;
+            SetWallContactVisible(false);
+            lastWallHealth = runtime.WallHealth;
+            lastState = runtime.State;
+            lastActorWallContactCount = actorRuntime == null ? 0 : actorRuntime.TotalWallContactCount;
+            return;
+        }
+
         if (Application.isPlaying)
         {
             wallContactFlashRemaining = Mathf.Max(0f, wallContactFlashRemaining - Time.deltaTime);
@@ -333,6 +358,13 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
     private void UpdateAttackPulses(DefenseRuntimeState runtime)
     {
         ActiveAttackPulseCount = 0;
+
+        if (UseProductionBattlefield)
+        {
+            SetAllActive(attackPulses, false);
+            ActiveAttackPulseCount = battlefieldView.ActiveProjectileCount;
+            return;
+        }
 
         if (!showAttackPulses || attackPulses == null || attackPulses.Length == 0)
         {
@@ -464,8 +496,10 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
         bool actorsReady = usePooledEnemies
             ? actorRuntime != null && actorRuntime.IsReady && enemyPool != null && enemyPool.IsReady
             : CountAssigned(pressureActors) > 0;
-        bool wallReady = wallContactObject != null || wallContactRenderer != null;
-        bool attacksReady = CountAssigned(attackPulses) > 0;
+        bool wallReady = UseProductionBattlefield ||
+                         wallContactObject != null ||
+                         wallContactRenderer != null;
+        bool attacksReady = UseProductionBattlefield || CountAssigned(attackPulses) > 0;
 
         if (enemySpawnAnchor == null || wallAnchor == null)
         {
@@ -485,7 +519,10 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
         string actorCapacityText = usePooledEnemies && actorRuntime != null
             ? $"{ActivePressureActorCount}/{actorRuntime.ActorCapacity} pooled ({enemyPool?.ActiveCount ?? 0}/{enemyPool?.CreatedCount ?? 0})"
             : $"{ActivePressureActorCount}/{CountAssigned(pressureActors)} fixed";
-        LastCombatMessage = $"Ground combat: {runtime.State} / actors {actorCapacityText} / attacks {ActiveAttackPulseCount}/{CountAssigned(attackPulses)} / {actorRuntimeText} / pressure +{runtime.LastIncomingPressurePerSecond:0.#}/-{runtime.LastPressureClearedPerSecond:0.#}/s / wall {runtime.LastWallDamagePerSecond:0.##}/s";
+        string attackText = UseProductionBattlefield
+            ? $"defenders {battlefieldView.ActiveDefenderCount} / projectiles {battlefieldView.ActiveProjectileCount}"
+            : $"legacy attacks {ActiveAttackPulseCount}/{CountAssigned(attackPulses)}";
+        LastCombatMessage = $"Ground combat: {runtime.State} / actors {actorCapacityText} / {attackText} / {actorRuntimeText} / pressure +{runtime.LastIncomingPressurePerSecond:0.#}/-{runtime.LastPressureClearedPerSecond:0.#}/s / wall {runtime.LastWallDamagePerSecond:0.##}/s";
     }
 
     private void EnsurePooledViewStorage()
@@ -575,6 +612,55 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
                 enemyPool = FindAnyObjectByType<GroundDefenseEnemyPool>();
             }
         }
+
+        if ((autoFindBattlefieldView || force) && (battlefieldView == null || force))
+        {
+            battlefieldView = GetComponent<GroundDefenseBattlefieldView>();
+            if (battlefieldView == null)
+            {
+                battlefieldView = FindAnyObjectByType<GroundDefenseBattlefieldView>();
+            }
+        }
+    }
+
+    private bool UseProductionBattlefield =>
+        useProductionBattlefield &&
+        battlefieldView != null &&
+        battlefieldView.IsReady;
+
+    private void SyncActorRuntimeSubscription(bool clear = false)
+    {
+        GroundDefenseActorRuntime target = clear ? null : actorRuntime;
+        if (subscribedActorRuntime == target)
+        {
+            return;
+        }
+
+        if (subscribedActorRuntime != null)
+        {
+            subscribedActorRuntime.ActorHit -= HandleActorHit;
+        }
+
+        subscribedActorRuntime = target;
+        if (subscribedActorRuntime != null)
+        {
+            subscribedActorRuntime.ActorHit += HandleActorHit;
+        }
+    }
+
+    private void HandleActorHit(int actorIndex)
+    {
+        if (!UseProductionBattlefield || actorRuntime == null)
+        {
+            return;
+        }
+
+        GroundDefenseEnemyArchetype archetype = actorRuntime.GetActorArchetype(actorIndex);
+        Vector3 targetPosition = battlefieldView.GetEnemyWorldPosition(
+            actorIndex,
+            actorRuntime.GetActorTravelPercent(actorIndex));
+        targetPosition += Vector3.up * (archetype == null ? 1f : archetype.VisualHeightOffset);
+        battlefieldView.PlayDefenseHit(actorIndex, targetPosition);
     }
 
     private void SetWallContactVisible(bool active)

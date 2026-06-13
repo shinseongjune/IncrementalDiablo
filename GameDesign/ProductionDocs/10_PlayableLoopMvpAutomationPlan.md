@@ -130,10 +130,10 @@ Accepted runtime evidence is cumulative. Do not require another full-loop Play M
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase E - Early Access Readiness Slice |
-| Last meaningful movement | 2026-06-12: The ground-defense product direction was revised. The target is now the RTS-readable automatic battle shown by the prepared screen and role references: enemy formations, defender squads, fixed towers, melee contact, real projectiles, death, reinforcements, and wall damage. Generic pulses, unattached flashes, moving markers, isolated billboard cards, and normal-player diagnostic combat text are replacement debt. |
-| Next unlock | E0-A is `Next`: replace the current billboard/pulse presentation with one fixed reference-driven battlefield where pooled enemy and friendly squads visibly meet, attack, die, reinforce, and damage the wall while `DefenseRuntimeState` remains authoritative. |
+| Last meaningful movement | 2026-06-13: User Play Mode validation rejected the current E0-A presentation. Enemies appeared rapidly and mostly moved from the top of the panel toward the bottom, so their role, destination, contact, and attack state were not understandable. A projectile-like object appeared near the wall, but its owner, target, and effect were unclear. The implementation is a technical checkpoint, not an accepted RTS-readable battle. |
+| Next unlock | E0-A is `Next / Validation failed`. Implement E0-A1 `Static RTS battlefield grammar` first: one paused frame must clearly distinguish enemy units, friendly units, tower, and wall by ground position, faction, silhouette, scale, and facing. Then implement E0-A2 `One readable combat exchange`: Unit -> action -> target must show approach, stop/contact, windup or launch, hit, and recovery. Only after both pass may E0-A3 add formation density and formula-driven reinforcement. |
 | Loop coverage | Phases A-C remain cumulatively accepted. Phase D is complete with persistent dungeon depth, dungeon and ground formula bands, durable authored item identity, save migration, dominated-duplicate conversion, and formula-driven ground milestone rewards. |
-| Known blockers | No current compile, scaling, save, item-registry, migration, or economy blocker is known. E0-A is blocked from acceptance because the current normal path still represents combat through billboard/pulse abstractions instead of the newly approved squad-contact battlefield. This is an implementation gap, not a request for visual tuning of the current path. |
+| Known blockers | No compile, save, scaling, item, or economy blocker is known. The blocker is visual grammar: the current panel does not establish stable battlefield zones or visually separate units, buildings, and attacks. Fast spawning and screen-vertical travel currently read as a conveyor rather than an RTS battle, and the projectile lacks visible attacker ownership. |
 
 ## 3.1 Phase C MVP Completion Task List
 
@@ -183,6 +183,8 @@ Run Update Notes:
 - 2026-06-12: Implemented E0-A's production ground actor contract. `GroundDefenseActorRuntime` now projects authoritative pressure/clear/wall-damage telemetry through archetype-backed actor states, including timed hit, defeat, and wall-contact feedback. `GroundDefenseEnemyPool` prewarms and reuses `PF_GroundDefenseEnemy_Grunt` views from `GDA_Enemy_Grunt`; `GroundDefenseCombatPresenter` targets pooled actors; and `Gameplay` clears/disables the fixed `PressureActor_01..03` path. The harness now guards the prefab, archetype, pool, scene references, and disabled fixed fallback. E0-A is `Needs Unity Play Mode` for one focused runtime reuse/readability check.
 - 2026-06-12: Player review found that the first pooled pass still read as indistinguishable cubes/capsules and therefore did not satisfy a sellable defense presentation. Added one transparent readability sheet with three enemy silhouettes and three defense-line silhouettes; introduced `GDA_Enemy_Shield` and `GDA_Enemy_Runner` with durable/fast role stats; added camera-facing role visuals, health bars, wall/defender/tower presentation, and directional attack bolts. E0-A remains `Needs Unity Play Mode`, now with explicit role-recognition and composition criteria rather than pool behavior alone.
 - 2026-06-12: Direction decision supersedes the prior E0-A acceptance path. The prepared screen concept is now the battlefield composition target and the prepared role sheet is the silhouette target. Ground defense must use RTS visual grammar without RTS micromanagement: actual squads, contact, projectiles, death, reinforcement, and structure damage. The existing billboard/pulse/bolt/flash presentation is no longer eligible for acceptance and must be replaced. This run changes documentation only.
+- 2026-06-13: Implemented the bounded E0-A battlefield replacement. `GroundDefenseActorRuntime` emits actor-hit events; `GroundDefenseBattlefieldView` owns the contact formation, three-defender squad, real tower projectile pool, melee lunges, defender casualty/reinforcement cycle, and wall-bound health/hit/breach feedback; `GroundDefenseCombatPresenter` maps pooled enemies into formation lanes and routes real hit events into attacks. `Gameplay` disables moving pressure markers, legacy attack pulses, the unattached wall flash, and normal-player combat diagnostics. E0-A is `Needs Unity Play Mode` for one focused panel-readability check; no additional system design decision is required.
+- 2026-06-13: User validation failed that checkpoint. The player saw enemies appear rapidly and move top-to-bottom without understanding unit roles or combat, while a projectile-like object near the wall had no readable owner or target. E0-A returns to `Next / Validation failed`. Future implementation must prove static RTS nouns before motion: enemy unit, friendly unit, tower, and wall must be separable in one paused frame. It must then prove one deterministic Unit -> action -> target exchange before adding density, rapid reinforcements, or formula-scaled spectacle.
 
 ## 3.2 Phase D Production Task List
 
@@ -202,7 +204,21 @@ Phase E converts the scalable systems into a repeatable, release-shaped slice. W
 
 | ID | Priority | Track | Current status | Completion criteria | Next update required |
 | --- | --- | --- | --- | --- | --- |
-| E0-A | P0 | RTS-readable automatic defense battlefield | Next | One fixed battlefield based on the prepared reference shows pooled enemy formations meeting defender squads before the wall; melee contact, one real projectile path, hit/death, reinforcements, and wall attack/damage are visible. `DefenseRuntimeState` remains authoritative, no manual wave rows are introduced, and the player has no individual-unit control or free tower placement. | Replace normal-path pulses, unattached flashes, isolated battlefield billboards, moving pressure markers, and player-facing combat diagnostics. Reuse archetype/pool/runtime work where it supports real battlefield actors. |
+| E0-A | P0 | RTS-readable automatic defense battlefield | Next / Validation failed | One fixed battlefield based on the prepared reference passes three ordered gates. E0-A1: a paused frame clearly separates enemy units, friendly units, tower, wall, enemy staging zone, contact line, and protected zone. E0-A2: one melee exchange and one attacker-owned projectile show Unit -> action -> target through approach, stop/contact, windup/launch, hit, and recovery. E0-A3: deaths, reinforcements, density, and wall attack/damage remain readable when formula-driven pressure is reintroduced. `DefenseRuntimeState` stays authoritative and no unit micromanagement or manual wave rows are added. | Implement E0-A1 only. Use one enemy, one defender, one tower, and one wall at low cadence. Do not add more units or fast spawning until the static silhouette proof and one deterministic combat exchange pass in both `DefenseFocus` and the compressed defense panel. |
+
+### E0-A Ordered Implementation Gates
+
+1. `E0-A1 - Static RTS battlefield grammar`
+   - In one paused screenshot, a reviewer can point to enemy unit, friendly unit, tower, wall, enemy staging zone, contact line, and protected zone without motion or diagnostic text.
+   - Units are ground-anchored with readable feet/shadow, faction treatment, facing, body scale, and weapon role. Buildings are persistent, larger, and visually rooted to authored positions.
+   - Camera composition shows travel across battlefield depth or width toward a contact line. A fast top-to-bottom conveyor is a failure.
+2. `E0-A2 - One readable combat exchange`
+   - Start with one enemy, one defender, one tower, and one wall.
+   - Melee reads as approach -> stop at contact -> windup -> strike -> target reaction -> recovery.
+   - A projectile is attacker-owned: visible tower/muzzle -> launch -> travel -> enemy impact. A projectile appearing near the wall or without a visible source/target is a failure.
+3. `E0-A3 - Automatic battle density`
+   - Only after E0-A1 and E0-A2 pass, restore multiple archetypes, deaths, reinforcements, and formula-driven density.
+   - Cadence must leave enough time to recognize spawn, movement, attack, hit, and death. More simultaneous motion is not progress if concepts become ambiguous.
 
 ## 3.3 Progress Assessment Against Game-Form Plan
 
@@ -213,13 +229,13 @@ Speed assessment:
 - Good: save/load, real dungeon combat, authored reward continuity, normal overlays, visible ground behavior, and the first persistent depth ladder now support progression beyond a fixed one-room proof.
 - Good: the first formula band has been observed against the real spawned prefab and authored reward path in Play Mode, so the depth ladder is now a meaningful risk/reward choice rather than only saved structure.
 - Good: the automatic defense half now scales through the same kind of bounded, exportable profile as the dungeon ladder, including visible band milestones rather than manual wave rows.
-- Current checkpoint: the fixed-slot path is disabled and reusable archetype/pool/runtime foundations exist, but the current pooled billboard/pulse presentation has been rejected as the final player-facing form. E0-A returns to implementation work; do not request Play Mode acceptance until actual squad contact and attack presentation exist.
+- Current checkpoint: the event, pooling, and wall-damage plumbing exists, but the current battlefield presentation failed Play Mode readability. Enemy motion read as a rapid top-to-bottom conveyor and the wall-side projectile had no readable owner or target. E0-A1 is the next gate: one paused frame must first separate one enemy, one defender, one tower, and one wall.
 
 Direction assessment:
 
 - Correct direction: the project is still preserving the intended PC incremental action RPG shape: automatic ground defense, direct-control dungeon combat, loot, equipment, crafting/salvage, save/load, and long-term progression.
 - Current risk: production scope can drift into a full RTS. Prevent that by separating visual language from controls: use formations, contact, projectiles, casualties, and reinforcements, while keeping authored tower positions, automatic unit behavior, formula scaling, and high-level upgrade/Hold/Push decisions.
-- Operating rule: E0-A implementation should first create one bounded battle: one defender squad, grunt/shield/runner enemies, one ranged/tower projectile, death/recycle, reinforcement entry, and wall damage. Do not build unit selection, movement commands, focus fire, production queues, worker economy, free tower placement, or hand-authored wave lists.
+- Operating rule: E0-A must proceed in evidence order. First author one enemy, one defender, one tower, and one wall that remain distinguishable in a paused full-size and compressed panel. Then add one deterministic attacker-owned projectile or melee exchange with a visible source, action path, target, impact, and reaction. Only after both proofs pass may the implementation add role variety, casualties, reinforcements, or density. Do not build unit selection, movement commands, focus fire, production queues, worker economy, free tower placement, or hand-authored wave lists.
 
 ## 4. MVP Task Queue
 

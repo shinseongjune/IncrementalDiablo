@@ -1,5 +1,34 @@
 # Ground Defense Flow Blueprint
 
+## 2026-06-13 Failed Readability Check And Required Battle Grammar
+
+- The first runtime battlefield pass failed because enemies read as rapidly spawned objects moving top-to-bottom rather than units crossing a battlefield toward a defended line.
+- The wall-side projectile had no readable source, target, or impact ownership.
+- The next flow proof must use one enemy, one defender, one tower, and one wall:
+
+```text
+Enemy staging
+-> enemy approaches across ground
+-> enemy stops at contact line
+-> defender winds up and strikes
+-> enemy reacts
+-> tower aims and launches from visible muzzle
+-> projectile travels to that enemy
+-> impact/death or enemy continues to wall
+-> wall receives visible enemy-owned damage
+```
+
+- Static object roles must be understandable before this flow starts. Do not use motion, health bars, or diagnostic text to compensate for unclear unit/building silhouettes.
+- Do not restore rapid spawn cadence, multiple formations, or reinforcement spectacle until one complete exchange is readable in the compressed panel.
+
+## 2026-06-13 Runtime Battlefield Bridge
+
+- Pooled enemies now approach through multiple visual lanes and converge on one defender contact line before reaching the wall.
+- Real actor-hit events drive defender melee lunges or tower projectiles; the attack presentation no longer loops independently from combat telemetry.
+- Enemy deaths recycle pooled views. Wall pressure can visibly remove one defender and bring a reinforcement from the protected side.
+- Wall health, hit, and breach feedback is rendered on the wall itself. Moving markers, repeating attack pulses, and the detached wall flash are disabled in the normal scene.
+- This remains automatic visualization of the continuous frontline. It adds no player unit commands, wave rows, or saved actor roster.
+
 ## 2026-06-12 Approved RTS-Readable Automatic Defense
 
 - The ground layer uses classic RTS battle staging for spectacle and clarity: enemy groups advance from the far side, defender squads intercept them before the wall, ranged units and fixed towers launch visible projectiles, defeated units fall or disappear through a death action, and reinforcements enter from their faction side.
