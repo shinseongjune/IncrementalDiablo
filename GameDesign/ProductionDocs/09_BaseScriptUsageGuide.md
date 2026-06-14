@@ -1,10 +1,19 @@
 # Base Script Usage Guide
 
+## 2026-06-14 E0-A1 Usage
+
+- `GroundDefenseBattlefieldView.PresentationStage` is `StaticGrammar` in `Gameplay`.
+- In this stage, `GroundDefenseCombatPresenter` releases/hides pooled runtime views and reports the single grammar-proof enemy instead. The actor runtime still projects the authoritative simulation in the background.
+- `GroundDefenseBattlefieldView` procedurally builds the four named battlefield regions, one enemy, one defender, tower/wall foundations, and unit footprints. No extra scene GameObject or Inspector reference is required.
+- Combat events, projectile pools, defender casualties, and reinforcements are intentionally inactive. Do not switch to `AutomaticBattle` until the E0-A1 paused-frame proof is accepted.
+- User validation failed because the visible nouns still render as primitive rectangles/capsules/blocks. Inspect the generated billboard material, UV, alpha, sorting, defense-camera visibility, and fallback renderers before changing cadence or enabling attacks.
+- The next implementation remains E0-A1 rendering repair. E0-A2 must not start until the paused noun proof passes.
+
 2026-06-13 E0-A battlefield scope: `GroundDefenseActorRuntime` exposes reusable actor lifecycle events, but the current presentation failed Play Mode readability. `GroundDefenseBattlefieldView` and `GroundDefenseCombatPresenter` are a technical checkpoint, not an accepted visual contract. The next implementation must first use one enemy, one defender, one tower, and one wall to prove static RTS noun separation and one Unit -> action -> target exchange. Do not increase capacity, cadence, or simultaneous projectiles until that proof passes in the full and compressed defense panels.
 
 ## 2026-06-12 E0-A Direction And Reuse Boundary
 
-- E0-A is not awaiting acceptance. The current billboard/pulse-derived presentation was rejected as the production direction.
+- The rejected pooled billboard/pulse-derived path is not eligible for acceptance. The current E0-A1 `StaticGrammar` path is the only active validation target.
 - Reuse `GroundDefenseEnemyArchetype` for enemy role identity/stats, `GroundDefenseActorRuntime` for transient health/travel/defeat/contact state, and `GroundDefenseEnemyPool` for bounded instances.
 - Replace isolated billboard presentation with battlefield units that have facing, approach, attack/contact, hit reaction, death, and reinforcement states.
 - Replace `GroundDefenseCombatPresenter` attack pulses/bolts with projectiles or melee actions owned by a visible attacker and target.

@@ -244,6 +244,7 @@ if (Test-Path -LiteralPath $scenePath) {
         @{ Name = "Scene has readable defense line"; Token = "m_EditorClassIdentifier: Assembly-CSharp::GroundDefenseBattlefieldView" },
         @{ Name = "Scene uses pooled ground enemies"; Token = "usePooledEnemies: 1" },
         @{ Name = "Scene uses production ground battlefield"; Token = "useProductionBattlefield: 1" },
+        @{ Name = "Scene locks E0-A1 static grammar stage"; Token = "presentationStage: 0" },
         @{ Name = "Scene disables fixed ground actors"; Token = "pressureActors: []" },
         @{ Name = "Scene disables fixed ground actor fallback"; Token = "showPressureActors: 0" },
         @{ Name = "Scene disables moving pressure markers"; Token = "showEnemyFlowMarkers: 0" },
@@ -470,6 +471,14 @@ if ((Test-Path -LiteralPath $groundActorRuntimePath) -and
     [void](Assert-TextContains "Ground battlefield creates wall-bound feedback" $groundBattlefieldViewText '"DefenseWall"')
     [void](Assert-TextContains "Ground battlefield creates attacker-owned tower" $groundBattlefieldViewText '"CrossbowTower"')
     [void](Assert-TextContains "Ground battlefield creates defender squad" $groundBattlefieldViewText '$"Defender_{i + 1:00}"')
+    [void](Assert-TextContains "Ground battlefield defines static grammar gate" $groundBattlefieldViewText "GroundDefenseBattlefieldStage.StaticGrammar")
+    [void](Assert-TextContains "Ground battlefield creates enemy staging zone" $groundBattlefieldViewText '"Zone_EnemyStaging"')
+    [void](Assert-TextContains "Ground battlefield creates approach zone" $groundBattlefieldViewText '"Zone_Approach"')
+    [void](Assert-TextContains "Ground battlefield creates contact line" $groundBattlefieldViewText '"Line_Contact"')
+    [void](Assert-TextContains "Ground battlefield creates protected zone" $groundBattlefieldViewText '"Zone_FriendlyDefense"')
+    [void](Assert-TextContains "Ground battlefield creates one grammar enemy" $groundBattlefieldViewText '"Enemy_GrammarProof"')
+    [void](Assert-TextContains "Ground battlefield creates one grammar defender" $groundBattlefieldViewText '"Defender_GrammarProof"')
+    [void](Assert-TextContains "Ground presenter hides runtime actors for static proof" $groundCombatPresenterText "!battlefieldView.UsesRuntimeEnemies")
     [void](Assert-TextContains "Ground grunt uses readability sheet" $groundEnemyGruntAssetText "visualTexture:")
     [void](Assert-TextContains "Ground shield has durable role stats" $groundEnemyShieldAssetText "maxHealth: 24")
     [void](Assert-TextContains "Ground runner has fast role stats" $groundEnemyRunnerAssetText "baseAdvancePerSecond: 0.18")
@@ -507,9 +516,9 @@ if (Test-Path -LiteralPath $planPath) {
         "E0-A | P0 | RTS-readable automatic defense battlefield | Next / Validation failed",
         "RTS-readable automatic defense",
         "Static RTS battlefield grammar",
+        "StaticGrammar",
         "Unit -> action -> target",
         "attacker-owned projectile",
-        "real projectiles",
         "reinforcements",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
         "12_PrototypeDebtRegister.md",

@@ -1,5 +1,21 @@
 # Unity Scene And Prefab Setup Guide
 
+## 2026-06-14 E0-A1 Static Grammar Handoff
+
+`Gameplay > DefenseRoot > GroundDefenseBattlefieldView` is now wired for the first ordered gate:
+
+1. Keep `Presentation Stage = Static Grammar`.
+2. Keep `Enemy Staging Percent = 0.28`, `Contact Line Percent = 0.72`, and `Battlefield Width = 4.8` for the first check.
+3. The component generates `Zone_EnemyStaging`, `Zone_Approach`, `Line_Contact`, `Zone_FriendlyDefense`, `Enemy_GrammarProof`, `Defender_GrammarProof`, `Foundation_Tower`, and `Foundation_Wall` at runtime.
+4. Do not switch to `Automatic Battle`, enable legacy pressure actors/pulses, or change pooled capacity for this check.
+5. Enter Play Mode in `DefenseFocus`, pause, and confirm one enemy, one defender, tower, wall, ground zones, and contact line are all identifiable without HUD diagnostics.
+6. Start a dungeon so the defense view compresses, pause again, and repeat the same noun check.
+7. If the proof fails, record which object overlaps, crops out, appears ungrounded, or has ambiguous faction/scale. Do not compensate with faster motion or more units.
+
+Fixed values for this gate: one visible enemy, one visible defender, no visible projectile, no casualty/reinforcement, and continuous background `DefenseRuntimeState`. Adjustable after review: zone width/color, unit scale/height offset, contact-line position, and tower/wall offsets. The ordered zone relationship and one-unit/one-building proof are fixed.
+
+Validation result: failed. The zones and contact line rendered, but the intended role-sheet figures/structures were not recognizable in the panel. Before changing composition values, inspect the generated billboard material, UV crop, alpha/background handling, render queue/sorting, defense-camera visibility, and any primitive fallback renderers. The next proof must visibly replace the capsule/rectangle/block read with explicit enemy, defender, tower, and wall silhouettes.
+
 ## 2026-06-13 Next Ground Battlefield Authoring Gate
 
 The current automatic battlefield failed Play Mode readability. Do not proceed by increasing counts, changing colors, or tuning projectile speed. The next Unity authoring pass must build and validate RTS concepts in this order.

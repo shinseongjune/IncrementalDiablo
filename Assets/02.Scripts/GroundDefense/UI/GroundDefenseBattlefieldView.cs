@@ -1,5 +1,11 @@
 using UnityEngine;
 
+public enum GroundDefenseBattlefieldStage
+{
+    StaticGrammar,
+    AutomaticBattle
+}
+
 public sealed class GroundDefenseBattlefieldView : MonoBehaviour
 {
     private enum DefenderVisualState
@@ -16,6 +22,22 @@ public sealed class GroundDefenseBattlefieldView : MonoBehaviour
     [SerializeField] private Transform attackOrigin;
     [SerializeField] private Texture2D readabilitySheet;
 
+    [Header("Presentation Gate")]
+    [SerializeField] private GroundDefenseBattlefieldStage presentationStage =
+        GroundDefenseBattlefieldStage.StaticGrammar;
+
+    [Header("Battlefield Ground")]
+    [SerializeField, Range(0.1f, 0.45f)] private float enemyStagingPercent = 0.28f;
+    [SerializeField, Min(1f)] private float battlefieldWidth = 4.8f;
+    [SerializeField, Min(0.01f)] private float contactLineWidth = 0.16f;
+    [SerializeField, Min(0f)] private float groundVisualHeight = 0.025f;
+    [SerializeField] private Color enemyStagingColor = new Color(0.42f, 0.08f, 0.06f, 0.38f);
+    [SerializeField] private Color approachColor = new Color(0.16f, 0.13f, 0.1f, 0.32f);
+    [SerializeField] private Color protectedZoneColor = new Color(0.06f, 0.18f, 0.32f, 0.38f);
+    [SerializeField] private Color contactLineColor = new Color(0.92f, 0.68f, 0.24f, 0.82f);
+    [SerializeField] private Color footprintColor = new Color(0.01f, 0.01f, 0.01f, 0.58f);
+    [SerializeField] private Color foundationColor = new Color(0.08f, 0.2f, 0.34f, 0.72f);
+
     [Header("Battlefield Formation")]
     [SerializeField, Range(0.5f, 0.9f)] private float contactLinePercent = 0.72f;
     [SerializeField, Min(0.1f)] private float enemyLaneSpacing = 0.72f;
@@ -24,12 +46,16 @@ public sealed class GroundDefenseBattlefieldView : MonoBehaviour
     [SerializeField, Min(0.1f)] private float defenderLineGap = 0.72f;
 
     [Header("Readable Defense Line")]
+    [SerializeField] private Rect enemyUv = new Rect(0f, 0.5f, 0.33333334f, 0.5f);
     [SerializeField] private Rect defenderUv = new Rect(0f, 0f, 0.33333334f, 0.5f);
     [SerializeField] private Rect towerUv = new Rect(0.33333334f, 0f, 0.33333334f, 0.5f);
     [SerializeField] private Rect wallUv = new Rect(0.6666667f, 0f, 0.33333334f, 0.5f);
+    [SerializeField] private Vector2 enemySize = new Vector2(1.9f, 2.6f);
     [SerializeField] private Vector2 defenderSize = new Vector2(1.45f, 2.05f);
     [SerializeField] private Vector2 towerSize = new Vector2(3.1f, 3.8f);
     [SerializeField] private Vector2 wallSize = new Vector2(4.8f, 3.5f);
+    [SerializeField, Min(0f)] private float enemyHeightOffset = 1.3f;
+    [SerializeField, Min(0f)] private float defenderHeightOffset = 1.05f;
     [SerializeField] private Vector3 towerOffset = new Vector3(0f, 1.85f, 0f);
     [SerializeField] private Vector3 wallOffset = new Vector3(0f, 1.55f, 0f);
 
@@ -54,6 +80,7 @@ public sealed class GroundDefenseBattlefieldView : MonoBehaviour
 
     private MaterialPropertyBlock propertyBlock;
     private GameObject generatedRoot;
+    private GroundDefenseBillboardHandle staticEnemyVisual;
     private GroundDefenseBillboardHandle wallVisual;
     private GroundDefenseBillboardHandle towerVisual;
     private GroundDefenseBillboardHandle wallHealthBar;
@@ -75,6 +102,10 @@ public sealed class GroundDefenseBattlefieldView : MonoBehaviour
         wallAnchor != null &&
         attackOrigin != null &&
         readabilitySheet != null;
+    public GroundDefenseBattlefieldStage PresentationStage => presentationStage;
+    public bool UsesRuntimeEnemies => presentationStage == GroundDefenseBattlefieldStage.AutomaticBattle;
+    public bool SupportsCombatEvents => presentationStage == GroundDefenseBattlefieldStage.AutomaticBattle;
+    public int VisibleEnemyCount => staticEnemyVisual == null ? 0 : 1;
 
     public int ActiveProjectileCount
     {
@@ -137,14 +168,21 @@ public sealed class GroundDefenseBattlefieldView : MonoBehaviour
 
     private void OnValidate()
     {
+        enemyStagingPercent = Mathf.Clamp(enemyStagingPercent, 0.1f, 0.45f);
+        battlefieldWidth = Mathf.Max(1f, battlefieldWidth);
+        contactLineWidth = Mathf.Max(0.01f, contactLineWidth);
+        groundVisualHeight = Mathf.Max(0f, groundVisualHeight);
         contactLinePercent = Mathf.Clamp(contactLinePercent, 0.5f, 0.9f);
         enemyLaneSpacing = Mathf.Max(0.1f, enemyLaneSpacing);
         defenderCount = Mathf.Max(1, defenderCount);
         defenderSpacing = Mathf.Max(0.1f, defenderSpacing);
         defenderLineGap = Mathf.Max(0.1f, defenderLineGap);
+        enemySize = ClampSize(enemySize);
         defenderSize = ClampSize(defenderSize);
         towerSize = ClampSize(towerSize);
         wallSize = ClampSize(wallSize);
+        enemyHeightOffset = Mathf.Max(0f, enemyHeightOffset);
+        defenderHeightOffset = Mathf.Max(0f, defenderHeightOffset);
         projectileCapacity = Mathf.Max(1, projectileCapacity);
         projectileSpeed = Mathf.Max(0.1f, projectileSpeed);
         projectileArcHeight = Mathf.Max(0f, projectileArcHeight);
@@ -168,9 +206,15 @@ public sealed class GroundDefenseBattlefieldView : MonoBehaviour
         generatedRoot = new GameObject("AutomaticDefenseBattlefield");
         generatedRoot.transform.SetParent(transform, false);
 
+        BuildBattlefieldGround();
         BuildStructures();
+        BuildStaticGrammarEnemy();
         BuildDefenders();
-        BuildProjectilePool();
+        if (SupportsCombatEvents)
+        {
+            BuildProjectilePool();
+        }
+
         UpdateWallVisual();
     }
 
@@ -200,7 +244,7 @@ public sealed class GroundDefenseBattlefieldView : MonoBehaviour
 
     public void PlayDefenseHit(int actorIndex, Vector3 targetPosition)
     {
-        if (generatedRoot == null)
+        if (generatedRoot == null || !SupportsCombatEvents)
         {
             return;
         }
@@ -226,15 +270,102 @@ public sealed class GroundDefenseBattlefieldView : MonoBehaviour
         }
 
         wallHitRemaining = wallHitSeconds;
-        if (casualtyCooldownRemaining <= 0f)
+        if (presentationStage == GroundDefenseBattlefieldStage.AutomaticBattle &&
+            casualtyCooldownRemaining <= 0f)
         {
             TriggerDefenderCasualty();
             casualtyCooldownRemaining = casualtyCooldownSeconds;
         }
     }
 
+    private void BuildBattlefieldGround()
+    {
+        Vector3 start = enemySpawnAnchor.position;
+        Vector3 wall = wallAnchor.position;
+        float totalLength = Vector3.Distance(start, wall);
+        if (totalLength <= 0.001f)
+        {
+            return;
+        }
+
+        float stagingEnd = Mathf.Min(enemyStagingPercent, contactLinePercent - 0.05f);
+        BuildGroundBand("Zone_EnemyStaging", 0f, stagingEnd, enemyStagingColor, -30);
+        BuildGroundBand("Zone_Approach", stagingEnd, contactLinePercent, approachColor, -29);
+        BuildGroundBand("Zone_FriendlyDefense", contactLinePercent, 1f, protectedZoneColor, -28);
+
+        Vector3 direction = (wall - start).normalized;
+        Vector3 contactPosition = Vector3.Lerp(start, wall, contactLinePercent);
+        CreateGroundQuad(
+            "Line_Contact",
+            contactPosition + Vector3.up * (groundVisualHeight + 0.004f),
+            direction,
+            contactLineWidth,
+            battlefieldWidth,
+            contactLineColor,
+            -20);
+    }
+
+    private void BuildGroundBand(
+        string name,
+        float startPercent,
+        float endPercent,
+        Color color,
+        int sortingOrder)
+    {
+        Vector3 start = Vector3.Lerp(enemySpawnAnchor.position, wallAnchor.position, startPercent);
+        Vector3 end = Vector3.Lerp(enemySpawnAnchor.position, wallAnchor.position, endPercent);
+        Vector3 delta = end - start;
+        float length = delta.magnitude;
+        if (length <= 0.001f)
+        {
+            return;
+        }
+
+        CreateGroundQuad(
+            name,
+            (start + end) * 0.5f + Vector3.up * groundVisualHeight,
+            delta.normalized,
+            length,
+            battlefieldWidth,
+            color,
+            sortingOrder);
+    }
+
+    private void BuildStaticGrammarEnemy()
+    {
+        if (presentationStage != GroundDefenseBattlefieldStage.StaticGrammar)
+        {
+            return;
+        }
+
+        Vector3 groundPosition = Vector3.Lerp(
+            enemySpawnAnchor.position,
+            wallAnchor.position,
+            enemyStagingPercent * 0.58f);
+        staticEnemyVisual = GroundDefenseBillboardUtility.CreateBillboard(
+            "Enemy_GrammarProof",
+            generatedRoot.transform,
+            defenseCamera,
+            readabilitySheet,
+            enemyUv,
+            enemySize,
+            Color.white,
+            12);
+        staticEnemyVisual.Root.transform.position =
+            groundPosition + Vector3.up * enemyHeightOffset;
+        BuildFootprint("Enemy_Footprint", groundPosition, enemySize.x);
+    }
+
     private void BuildStructures()
     {
+        CreateGroundQuad(
+            "Foundation_Wall",
+            wallAnchor.position + Vector3.up * (groundVisualHeight + 0.008f),
+            GetTravelDirection(),
+            Mathf.Max(1.8f, wallSize.x * 0.82f),
+            Mathf.Max(1.2f, wallSize.x * 0.42f),
+            foundationColor,
+            -10);
         wallVisual = GroundDefenseBillboardUtility.CreateBillboard(
             "DefenseWall",
             generatedRoot.transform,
@@ -246,6 +377,14 @@ public sealed class GroundDefenseBattlefieldView : MonoBehaviour
             6);
         wallVisual.Root.transform.position = wallAnchor.position + wallOffset;
 
+        CreateGroundQuad(
+            "Foundation_Tower",
+            attackOrigin.position + Vector3.up * (groundVisualHeight + 0.01f),
+            GetTravelDirection(),
+            Mathf.Max(1.4f, towerSize.x * 0.72f),
+            Mathf.Max(1f, towerSize.x * 0.48f),
+            foundationColor,
+            -9);
         towerVisual = GroundDefenseBillboardUtility.CreateBillboard(
             "CrossbowTower",
             generatedRoot.transform,
@@ -282,13 +421,16 @@ public sealed class GroundDefenseBattlefieldView : MonoBehaviour
 
     private void BuildDefenders()
     {
-        defenderVisuals = new GroundDefenseBillboardHandle[defenderCount];
-        defenderStates = new DefenderState[defenderCount];
+        int activeDefenderCount = presentationStage == GroundDefenseBattlefieldStage.AutomaticBattle
+            ? defenderCount
+            : 1;
+        defenderVisuals = new GroundDefenseBillboardHandle[activeDefenderCount];
+        defenderStates = new DefenderState[activeDefenderCount];
 
-        for (int i = 0; i < defenderCount; i++)
+        for (int i = 0; i < activeDefenderCount; i++)
         {
             GroundDefenseBillboardHandle defender = GroundDefenseBillboardUtility.CreateBillboard(
-                $"Defender_{i + 1:00}",
+                activeDefenderCount == 1 ? "Defender_GrammarProof" : $"Defender_{i + 1:00}",
                 generatedRoot.transform,
                 defenseCamera,
                 readabilitySheet,
@@ -296,14 +438,16 @@ public sealed class GroundDefenseBattlefieldView : MonoBehaviour
                 defenderSize,
                 Color.white,
                 10 + i);
+            Vector3 homePosition = GetDefenderHomePosition(i, activeDefenderCount);
             defenderVisuals[i] = defender;
             defenderStates[i] = new DefenderState
             {
                 state = DefenderVisualState.Active,
-                homePosition = GetDefenderHomePosition(i),
-                targetPosition = GetDefenderHomePosition(i)
+                homePosition = homePosition,
+                targetPosition = homePosition
             };
             defender.Root.transform.position = defenderStates[i].homePosition;
+            BuildFootprint($"Defender_Footprint_{i + 1:00}", homePosition, defenderSize.x);
         }
     }
 
@@ -413,7 +557,7 @@ public sealed class GroundDefenseBattlefieldView : MonoBehaviour
         {
             DefenderState defender = defenderStates[i];
             GroundDefenseBillboardHandle visual = defenderVisuals[i];
-            defender.homePosition = GetDefenderHomePosition(i);
+            defender.homePosition = GetDefenderHomePosition(i, defenderStates.Length);
             defender.actionRemaining = Mathf.Max(0f, defender.actionRemaining - deltaTime);
 
             switch (defender.state)
@@ -546,14 +690,65 @@ public sealed class GroundDefenseBattlefieldView : MonoBehaviour
             Color.Lerp(breachedWallColor, new Color(0.25f, 0.78f, 0.3f), wallHealthPercent));
     }
 
-    private Vector3 GetDefenderHomePosition(int index)
+    private Vector3 GetDefenderHomePosition(int index, int activeDefenderCount)
     {
         Vector3 start = enemySpawnAnchor.position;
         Vector3 wall = wallAnchor.position;
         Vector3 directionToWall = (wall - start).normalized;
         Vector3 contact = Vector3.Lerp(start, wall, contactLinePercent);
-        float side = GetCenteredSlot(index, defenderCount) * defenderSpacing;
-        return contact + directionToWall * defenderLineGap + GetSideAxis() * side;
+        float side = GetCenteredSlot(index, activeDefenderCount) * defenderSpacing;
+        return contact +
+               directionToWall * defenderLineGap +
+               GetSideAxis() * side +
+               Vector3.up * defenderHeightOffset;
+    }
+
+    private void BuildFootprint(string name, Vector3 visualPosition, float bodyWidth)
+    {
+        Vector3 groundPosition = visualPosition;
+        groundPosition.y = enemySpawnAnchor.position.y + groundVisualHeight + 0.012f;
+        CreateGroundQuad(
+            name,
+            groundPosition,
+            GetTravelDirection(),
+            Mathf.Max(0.55f, bodyWidth * 0.58f),
+            Mathf.Max(0.32f, bodyWidth * 0.28f),
+            footprintColor,
+            -5);
+    }
+
+    private MeshRenderer CreateGroundQuad(
+        string name,
+        Vector3 position,
+        Vector3 direction,
+        float length,
+        float width,
+        Color color,
+        int sortingOrder)
+    {
+        MeshRenderer renderer = GroundDefenseBillboardUtility.CreateQuad(
+            name,
+            generatedRoot.transform,
+            Texture2D.whiteTexture,
+            new Rect(0f, 0f, 1f, 1f),
+            new Vector2(length, width),
+            color,
+            sortingOrder);
+        renderer.transform.position = position;
+        Vector3 safeDirection = direction.sqrMagnitude <= 0.0001f
+            ? Vector3.right
+            : direction.normalized;
+        renderer.transform.rotation =
+            Quaternion.FromToRotation(Vector3.right, safeDirection) *
+            Quaternion.Euler(90f, 0f, 0f);
+        return renderer;
+    }
+
+    private Vector3 GetTravelDirection()
+    {
+        Vector3 direction = wallAnchor.position - enemySpawnAnchor.position;
+        direction.y = 0f;
+        return direction.sqrMagnitude <= 0.0001f ? Vector3.right : direction.normalized;
     }
 
     private Vector3 GetSideAxis()
@@ -591,6 +786,7 @@ public sealed class GroundDefenseBattlefieldView : MonoBehaviour
     {
         GroundDefenseBillboardUtility.DestroyVisual(generatedRoot);
         generatedRoot = null;
+        staticEnemyVisual = null;
         wallVisual = null;
         towerVisual = null;
         wallHealthBar = null;

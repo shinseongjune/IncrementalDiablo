@@ -1,5 +1,13 @@
 # Ground Defense System Spec
 
+## 2026-06-14 E0-A1 Static Grammar Implementation
+
+- `GroundDefenseBattlefieldView` now has an explicit `StaticGrammar` presentation stage. `DefenseRuntimeState` and the pooled actor projection keep running, but the normal panel suppresses runtime enemy motion, attacks, casualties, and reinforcements until E0-A1 is accepted.
+- The generated battlefield contains `Zone_EnemyStaging`, `Zone_Approach`, `Line_Contact`, and `Zone_FriendlyDefense`, plus one enemy footprint, one defender footprint, and fixed tower/wall foundations.
+- The visible proof contains exactly one enemy, one defender, one tower, and one wall. Enemy/defender art retains opposing facing from the role sheet, structures remain larger and fixed, and the defender is now vertically offset so its feet sit on the ground instead of the billboard center intersecting the ground plane.
+- User validation failed: the zone bands and line appeared, but enemy/defender/tower/wall did not read as those concepts. The actual panel showed flat colored regions, capsule-like geometry, bars, and small blocks. Treat the role-sheet/runtime-material/fallback rendering path as the next defect. Zone color cannot substitute for recognizable silhouettes.
+- E0-A1 is `Next / Validation failed`. E0-A2 combat events and E0-A3 pooled density remain hidden behind that gate.
+
 ## 2026-06-13 Play Mode Rejection And RTS Concept Contract
 
 ### Observed failure

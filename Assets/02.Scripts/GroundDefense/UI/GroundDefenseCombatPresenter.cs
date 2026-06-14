@@ -170,6 +170,13 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
 
     private void UpdatePooledPressureActors()
     {
+        if (UseProductionBattlefield && !battlefieldView.UsesRuntimeEnemies)
+        {
+            ReleasePooledViews();
+            ActivePressureActorCount = battlefieldView.VisibleEnemyCount;
+            return;
+        }
+
         if (actorRuntime == null || !actorRuntime.IsReady || enemyPool == null || !enemyPool.IsReady)
         {
             ReleasePooledViews();
@@ -516,11 +523,13 @@ public class GroundDefenseCombatPresenter : MonoBehaviour
         string actorRuntimeText = actorRuntime == null
             ? "actor runtime missing"
             : $"lead HP {Mathf.RoundToInt(actorRuntime.LeadingActorHealthPercent * 100f)}% / hits {actorRuntime.TotalHitCount} / defeats {actorRuntime.TotalDefeatCount} / contacts {actorRuntime.TotalWallContactCount}";
-        string actorCapacityText = usePooledEnemies && actorRuntime != null
-            ? $"{ActivePressureActorCount}/{actorRuntime.ActorCapacity} pooled ({enemyPool?.ActiveCount ?? 0}/{enemyPool?.CreatedCount ?? 0})"
-            : $"{ActivePressureActorCount}/{CountAssigned(pressureActors)} fixed";
+        string actorCapacityText = UseProductionBattlefield && !battlefieldView.UsesRuntimeEnemies
+            ? $"{ActivePressureActorCount} static grammar proof"
+            : usePooledEnemies && actorRuntime != null
+                ? $"{ActivePressureActorCount}/{actorRuntime.ActorCapacity} pooled ({enemyPool?.ActiveCount ?? 0}/{enemyPool?.CreatedCount ?? 0})"
+                : $"{ActivePressureActorCount}/{CountAssigned(pressureActors)} fixed";
         string attackText = UseProductionBattlefield
-            ? $"defenders {battlefieldView.ActiveDefenderCount} / projectiles {battlefieldView.ActiveProjectileCount}"
+            ? $"{battlefieldView.PresentationStage} / defenders {battlefieldView.ActiveDefenderCount} / projectiles {battlefieldView.ActiveProjectileCount}"
             : $"legacy attacks {ActiveAttackPulseCount}/{CountAssigned(attackPulses)}";
         LastCombatMessage = $"Ground combat: {runtime.State} / actors {actorCapacityText} / {attackText} / {actorRuntimeText} / pressure +{runtime.LastIncomingPressurePerSecond:0.#}/-{runtime.LastPressureClearedPerSecond:0.#}/s / wall {runtime.LastWallDamagePerSecond:0.##}/s";
     }

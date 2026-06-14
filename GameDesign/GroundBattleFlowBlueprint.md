@@ -1,5 +1,16 @@
 # Ground Defense Flow Blueprint
 
+## 2026-06-14 Static Grammar Gate
+
+The visible ground flow is temporarily held before combat:
+
+```text
+Enemy staging zone -> one hostile unit -> approach ground -> contact line
+-> one friendly defender -> fixed tower -> protected wall
+```
+
+`DefenseRuntimeState` continues to advance resources, pressure, Hold/Push, wall state, and progression, but pooled actor motion and attacks are hidden. User validation confirmed the spatial bands but rejected the nouns: the visible output remains primitive rectangles/capsules/blocks. E0-A1 stays failed until the enemy, defender, tower, and wall silhouettes render recognizably.
+
 ## 2026-06-13 Failed Readability Check And Required Battle Grammar
 
 - The first runtime battlefield pass failed because enemies read as rapidly spawned objects moving top-to-bottom rather than units crossing a battlefield toward a defended line.

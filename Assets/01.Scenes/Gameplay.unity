@@ -5073,17 +5073,32 @@ MonoBehaviour:
   wallAnchor: {fileID: 488788905}
   attackOrigin: {fileID: 48257985}
   readabilitySheet: {fileID: 2800000, guid: a041289685f941e8a40086ddca94abc3, type: 3}
+  presentationStage: 0
+  enemyStagingPercent: 0.28
+  battlefieldWidth: 4.8
+  contactLineWidth: 0.16
+  groundVisualHeight: 0.025
+  enemyStagingColor: {r: 0.42, g: 0.08, b: 0.06, a: 0.38}
+  approachColor: {r: 0.16, g: 0.13, b: 0.1, a: 0.32}
+  protectedZoneColor: {r: 0.06, g: 0.18, b: 0.32, a: 0.38}
+  contactLineColor: {r: 0.92, g: 0.68, b: 0.24, a: 0.82}
+  footprintColor: {r: 0.01, g: 0.01, b: 0.01, a: 0.58}
+  foundationColor: {r: 0.08, g: 0.2, b: 0.34, a: 0.72}
   contactLinePercent: 0.72
   enemyLaneSpacing: 0.72
   defenderCount: 3
   defenderSpacing: 0.92
   defenderLineGap: 0.72
+  enemyUv: {x: 0, y: 0.5, width: 0.33333334, height: 0.5}
   defenderUv: {x: 0, y: 0, width: 0.33333334, height: 0.5}
   towerUv: {x: 0.33333334, y: 0, width: 0.33333334, height: 0.5}
   wallUv: {x: 0.6666667, y: 0, width: 0.33333334, height: 0.5}
+  enemySize: {x: 1.9, y: 2.6}
   defenderSize: {x: 1.45, y: 2.05}
   towerSize: {x: 3.1, y: 3.8}
   wallSize: {x: 4.8, y: 3.5}
+  enemyHeightOffset: 1.3
+  defenderHeightOffset: 1.05
   towerOffset: {x: 0, y: 1.85, z: 0}
   wallOffset: {x: 0, y: 1.55, z: 0}
   projectileCapacity: 5

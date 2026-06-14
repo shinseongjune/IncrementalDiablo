@@ -1,5 +1,13 @@
 # Incremental Diablo Game Design Document
 
+## 2026-06-14 E0-A1 Static Grammar Checkpoint
+
+- The normal defense panel is now deliberately held at one hostile unit, one friendly unit, one tower, and one wall with visible staging, approach, contact, and protected ground regions.
+- Runtime actor motion, attacks, deaths, and reinforcements are hidden while this gate is active.
+- The continuous automatic frontline still owns pressure, Hold/Push, rewards, wall state, save/load, and progression. This is a presentation gate, not a second simulation or a manual RTS mode.
+- User validation failed: ground regions and the contact line are present, but the actor/structure output still reads as rectangles, a capsule-like shape, bars, and blocks rather than recognizable RTS nouns.
+- E0-A1 is `Validation failed`. Fix the visible silhouette/material/fallback path before E0-A2 adds any action.
+
 ## 2026-06-13 Ground Presentation Validation Result
 
 - The current E0-A panel was rejected. Enemies appeared quickly and mainly moved from the top of the screen toward the bottom, so they did not read as RTS units entering, contacting, and fighting on a battlefield.

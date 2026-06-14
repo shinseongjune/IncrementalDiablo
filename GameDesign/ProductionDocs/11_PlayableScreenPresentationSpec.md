@@ -1,5 +1,13 @@
 # Playable Screen Presentation Spec
 
+## 2026-06-14 E0-A1 Static Panel Contract
+
+- `Gameplay` now selects `GroundDefenseBattlefieldStage.StaticGrammar`.
+- The full and compressed defense panels should show one hostile unit in the enemy staging zone, one friendly unit behind the contact line, a fixed tower and wall on the protected side, three ordered ground zones, and grounded footprints/foundations.
+- Runtime pooled enemies, melee/projectile events, casualties, and reinforcements are intentionally hidden for this gate. The underlying automatic defense simulation, Hold/Push state, wall health, resources, and progression continue normally.
+- User evidence failed this contract. Spatial bands and a contact line are visible, but the nouns are not: rectangles, capsule-like geometry, bars, and blocks do not communicate hostile unit, friendly unit, tower, or wall. The next pass must make the prepared silhouettes or replacement authored visuals render clearly through the real defense camera/panel path.
+- Acceptance still requires one paused screenshot per panel state without diagnostic text. Do not count colored zone rectangles as unit/building readability.
+
 ## 2026-06-13 RTS Visual Grammar After Failed Validation
 
 The current panel failed because motion existed without readable nouns or ownership. The next presentation pass must establish the following before adding spectacle.

@@ -1,5 +1,17 @@
 # Implementation Roadmap
 
+## 2026-06-14 E0-A1 Validation-Failed Checkpoint
+
+E0-A1 is implemented as a bounded visual gate:
+
+1. `StaticGrammar` hides pooled motion and combat-event presentation without stopping `DefenseRuntimeState`.
+2. One enemy, one defender, one tower, and one wall remain persistently visible.
+3. Enemy staging, approach, contact, and protected ground regions are rendered as ordered battlefield space.
+4. Unit footprints and structure foundations provide ground ownership; the defender billboard is corrected to sit above the ground plane.
+5. E0-A2 attacks and E0-A3 density remain disabled until the paused full/compressed panel proof passes.
+
+User evidence rejected this checkpoint. The zone bands and contact line render, but the intended enemy, defender, tower, and wall remain unrecognizable in the actual panel and read as primitive rectangles/capsules/blocks. The next implementation must diagnose the role-sheet material, UV, alpha, sorting, camera, and primitive fallback path. Do not implement E0-A2 or add density.
+
 ## 2026-06-13 E0-A Rejected Checkpoint And Rebuild Order
 
 The bounded battlefield code was implemented without changing the continuous frontline authority:
@@ -18,7 +30,7 @@ User Play Mode validation rejected the presentation: enemies read as rapid top-t
 2. `E0-A2 One combat exchange`: one melee attack and one attacker-owned tower projectile clearly show Unit -> action -> target.
 3. `E0-A3 Density`: only after the first two pass, restore archetype mix, casualties, reinforcements, and formula-driven actor density.
 
-Do not route another run to speed/count/color tuning of the current motion. The next implementation output must be E0-A1.
+That rejection routed the next implementation output to E0-A1 rather than speed/count/color tuning. The 2026-06-14 section above records the resulting code-ready checkpoint.
 
 ## 2026-06-12 Phase E Direction Update
 
