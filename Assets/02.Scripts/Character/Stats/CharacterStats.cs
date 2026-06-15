@@ -23,6 +23,21 @@ public class CharacterStats : MonoBehaviour
 
     public event Action Changed;
 
+    public void ConfigureBaseStats(
+        float nextMaxHealth,
+        float nextMoveSpeed,
+        float nextAttackDamage,
+        float nextAttackRange,
+        float nextAttackCooldown)
+    {
+        maxHealth = Mathf.Max(1f, nextMaxHealth);
+        moveSpeed = Mathf.Max(0f, nextMoveSpeed);
+        attackDamage = Mathf.Max(0f, nextAttackDamage);
+        attackRange = Mathf.Max(0f, nextAttackRange);
+        attackCooldown = Mathf.Max(0.05f, nextAttackCooldown);
+        Changed?.Invoke();
+    }
+
     private void Awake()
     {
         ResolveEquipmentSlots();

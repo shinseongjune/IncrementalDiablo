@@ -1,11 +1,27 @@
 # Playable Screen Presentation Spec
 
+## 2026-06-15 Live NavMesh Battle Contract
+
+- The defense panel must now explain itself through real behavior: hostile actors enter across visible ground, friendly actors intercept them, both exchange attacks, defeated actors leave, reinforcements return, and surviving hostiles attack the wall.
+- Region bands, contact-line rectangles, health-bar-like lines, and stationary proof objects are removed from the normal acceptance path.
+- Full and compressed panel acceptance requires readable source, movement destination, target choice, attack contact, death, reinforcement side, and wall damage. HUD text may confirm wall health but cannot substitute for the visible event.
+- Current visuals may use the prepared sprite sheet, but the sprites are attached to actual NavMesh actors rather than floating presentation cards.
+- Camera framing and final art remain editor-sensitive. The fixed behavioral contract is enemy -> defender -> wall and defender -> enemy, with no individual unit controls.
+- 2026-06-15 Play Mode result: the behavioral contract passed, but the lack of recognizable friendly/enemy models still makes faction identity difficult. Model/silhouette identity and attack ownership are the next presentation gate.
+
+## 2026-06-15 E0-A1 Sprite Panel Repair
+
+- Enemy, defender, tower, and wall cells now render through `SpriteRenderer` rather than generated UV/material quads.
+- The defender faces the enemy. The wall health bar is hidden in `StaticGrammar`, and zone bands use lower alpha so object silhouettes own the read.
+- Full and compressed panel acceptance is unchanged: a paused screenshot must identify all four nouns without labels, motion, health bars, or diagnostic copy.
+- E0-A2 remains blocked until both panel states pass.
+
 ## 2026-06-14 E0-A1 Static Panel Contract
 
 - `Gameplay` now selects `GroundDefenseBattlefieldStage.StaticGrammar`.
 - The full and compressed defense panels should show one hostile unit in the enemy staging zone, one friendly unit behind the contact line, a fixed tower and wall on the protected side, three ordered ground zones, and grounded footprints/foundations.
 - Runtime pooled enemies, melee/projectile events, casualties, and reinforcements are intentionally hidden for this gate. The underlying automatic defense simulation, Hold/Push state, wall health, resources, and progression continue normally.
-- User evidence failed this contract. Spatial bands and a contact line are visible, but the nouns are not: rectangles, capsule-like geometry, bars, and blocks do not communicate hostile unit, friendly unit, tower, or wall. The next pass must make the prepared silhouettes or replacement authored visuals render clearly through the real defense camera/panel path.
+- User evidence failed this initial quad-rendered contract. Spatial bands and a contact line were visible, but the nouns were not. The 2026-06-15 sprite repair above is the current validation candidate.
 - Acceptance still requires one paused screenshot per panel state without diagnostic text. Do not count colored zone rectangles as unit/building readability.
 
 ## 2026-06-13 RTS Visual Grammar After Failed Validation

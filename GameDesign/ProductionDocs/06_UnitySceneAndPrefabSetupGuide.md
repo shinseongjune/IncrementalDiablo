@@ -1,5 +1,38 @@
 # Unity Scene And Prefab Setup Guide
 
+## 2026-06-15 NavMesh Ground Battle Handoff
+
+`Gameplay > DefenseRoot` now has `GroundDefenseNavMeshBattlefield` enabled. `GroundDefenseLanePresenter`, `GroundDefenseActorRuntime`, `GroundDefenseEnemyPool`, `GroundDefenseBattlefieldView`, and `GroundDefenseCombatPresenter` are disabled.
+
+Focused Play Mode validation:
+
+1. Open `Gameplay`, enter Play Mode, and select `DefenseFocus`.
+2. Confirm a dark ground surface appears between `Enemy Spawn Anchor` and `Wall Anchor`.
+3. Confirm three enemies spawn on the hostile side and two defenders spawn near the wall.
+4. Confirm enemies use NavMesh movement toward defenders, defenders move to intercept, and both stop near attack range while exchanging hit feedback.
+5. Allow defenders to die. Confirm surviving enemies continue to the visible wall and attack it on cadence.
+6. Watch the wall presentation and defense HUD. Confirm wall health decreases and breach can occur through these visible hits.
+7. Confirm defeated defenders and enemies disappear and reinforce after their configured delays without leaving inert duplicates.
+8. Start a dungeon to compress the defense panel and repeat the movement, combat, and wall-path check.
+
+Fixed for this gate: existing enemy/wall anchors, runtime-generated ground/NavMesh, two defenders, three enemies, shared character component stack, automatic targeting, and no unit commands. Adjustable after review: ground width, unit spacing, movement speed, attack range/cooldown, respawn delay, sprite scale, and camera framing. Do not reposition anchors or change panel composition unless the live view proves a specific crop or pathing defect.
+
+2026-06-15 result: the user confirmed this behavior works. No repeat of this foundation check is required unless movement, targeting, respawn, or wall damage changes. The next authoring handoff is recognizable friendly/enemy models and attack-source readability at full and compressed panel scale.
+
+## 2026-06-15 E0-A1 Sprite Rendering Handoff
+
+No new GameObject or Inspector reference is required.
+
+1. Keep `Gameplay > DefenseRoot > GroundDefenseBattlefieldView > Presentation Stage = Static Grammar`.
+2. Enter Play Mode in `DefenseFocus` and pause.
+3. Confirm the enemy and defender are visible as full-color cutout sprites and face each other.
+4. Confirm the tower and wall read as larger rooted structures, not small blocks.
+5. Confirm no wall health bar appears during this static proof and the zone bands remain secondary.
+6. Start a dungeon to compress the defense panel, pause, and repeat the same four-noun check.
+7. Reject the pass if any noun still reads as a rectangle/capsule/block or if cropping removes the weapon/building silhouette. Do not enable `Automatic Battle`.
+
+The rendering implementation now uses `Sprite.Create` and `SpriteRenderer`; the old custom role quad/material path is no longer the validation target.
+
 ## 2026-06-14 E0-A1 Static Grammar Handoff
 
 `Gameplay > DefenseRoot > GroundDefenseBattlefieldView` is now wired for the first ordered gate:
@@ -14,7 +47,7 @@
 
 Fixed values for this gate: one visible enemy, one visible defender, no visible projectile, no casualty/reinforcement, and continuous background `DefenseRuntimeState`. Adjustable after review: zone width/color, unit scale/height offset, contact-line position, and tower/wall offsets. The ordered zone relationship and one-unit/one-building proof are fixed.
 
-Validation result: failed. The zones and contact line rendered, but the intended role-sheet figures/structures were not recognizable in the panel. Before changing composition values, inspect the generated billboard material, UV crop, alpha/background handling, render queue/sorting, defense-camera visibility, and any primitive fallback renderers. The next proof must visibly replace the capsule/rectangle/block read with explicit enemy, defender, tower, and wall silhouettes.
+Validation result for the initial quad path: failed. The zones and contact line rendered, but the intended role-sheet figures/structures were not recognizable in the panel. The 2026-06-15 sprite handoff above replaces that rendering path; use it for the next proof.
 
 ## 2026-06-13 Next Ground Battlefield Authoring Gate
 
@@ -740,7 +773,7 @@ MVP 숫자 검증은 `PF_GameSystems`와 `PF_DefenseHud`만으로 시작한다.
 | GroundDefenseLanePresenter | `DefenseDirector.Runtime`을 읽어 scene-authored 지상 전선 앵커, 압박/진행 마커, 자동 marker renderer, 선택 enemy-flow marker, 성벽/압박 fill, 상태 오브젝트, 색상, 라벨을 갱신 |
 | GroundDefenseEnemyArchetype | 지상 적 프리팹, 역할 텍스처/UV/크기, 체력, 압박 비용, 이동, 피격, 처치, 벽 접촉 피드백 값을 재사용 가능한 데이터로 보관 |
 | GroundDefenseEnemyPool | 아키타입 프리팹을 사전 생성하고 비활성 인스턴스를 재사용 |
-| GroundDefenseBillboardUtility | 투명 시트의 UV 영역을 런타임 quad로 만들고 방어 패널 카메라를 향하게 함 |
+| GroundDefenseBillboardUtility | 투명 시트의 UV 영역을 런타임 sprite로 만들고 방어 패널 카메라를 향하게 함 |
 | GroundDefenseEnemyView | 풀링 적의 역할 실루엣, 체력바, 피격 tint, 처치 축소, 벽 접촉 크기 피드백을 표현 |
 | GroundDefenseBattlefieldView | `WallAnchor`/`AttackOrigin` 기준으로 성벽, 전선 수비병, 석궁탑 실루엣을 생성 |
 | GroundDefenseCombatPresenter | 현재 구현에서는 pooled actors, wall flash, pulse-derived bolts, diagnostics를 갱신한다. 이 presentation 책임은 E0-A에서 실제 squad attack/projectile/wall damage 컴포넌트로 교체하고, 필요한 runtime telemetry만 유지한다. |

@@ -31,9 +31,9 @@ public sealed class GroundDefenseBattlefieldView : MonoBehaviour
     [SerializeField, Min(1f)] private float battlefieldWidth = 4.8f;
     [SerializeField, Min(0.01f)] private float contactLineWidth = 0.16f;
     [SerializeField, Min(0f)] private float groundVisualHeight = 0.025f;
-    [SerializeField] private Color enemyStagingColor = new Color(0.42f, 0.08f, 0.06f, 0.38f);
-    [SerializeField] private Color approachColor = new Color(0.16f, 0.13f, 0.1f, 0.32f);
-    [SerializeField] private Color protectedZoneColor = new Color(0.06f, 0.18f, 0.32f, 0.38f);
+    [SerializeField] private Color enemyStagingColor = new Color(0.42f, 0.08f, 0.06f, 0.16f);
+    [SerializeField] private Color approachColor = new Color(0.16f, 0.13f, 0.1f, 0.1f);
+    [SerializeField] private Color protectedZoneColor = new Color(0.06f, 0.18f, 0.32f, 0.16f);
     [SerializeField] private Color contactLineColor = new Color(0.92f, 0.68f, 0.24f, 0.82f);
     [SerializeField] private Color footprintColor = new Color(0.01f, 0.01f, 0.01f, 0.58f);
     [SerializeField] private Color foundationColor = new Color(0.08f, 0.2f, 0.34f, 0.72f);
@@ -396,6 +396,11 @@ public sealed class GroundDefenseBattlefieldView : MonoBehaviour
             5);
         towerVisual.Root.transform.position = attackOrigin.position + towerOffset;
 
+        if (!SupportsCombatEvents)
+        {
+            return;
+        }
+
         float barWidth = Mathf.Max(1.2f, wallSize.x * 0.72f);
         wallHealthBar = GroundDefenseBillboardUtility.CreateBillboard(
             "WallHealthBar",
@@ -437,7 +442,8 @@ public sealed class GroundDefenseBattlefieldView : MonoBehaviour
                 defenderUv,
                 defenderSize,
                 Color.white,
-                10 + i);
+                10 + i,
+                flipX: true);
             Vector3 homePosition = GetDefenderHomePosition(i, activeDefenderCount);
             defenderVisuals[i] = defender;
             defenderStates[i] = new DefenderState

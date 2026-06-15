@@ -1,5 +1,25 @@
 # Ground Defense Flow Blueprint
 
+## 2026-06-15 Actual NavMesh Battle Flow
+
+```text
+Enemy spawns on hostile side
+-> NavMeshAgent runs across visible ground
+-> nearest living defender intercepts
+-> both use shared stats/health/basic attacks
+-> defeated unit dies and later reinforces
+-> surviving enemy reaches the wall
+-> enemy attack cadence damages authoritative wall health
+```
+
+`GroundDefenseNavMeshBattlefield` is now the normal `Gameplay` path. The previous zone/static-grammar/pooled-presentation path is disabled because it explained telemetry rather than producing an understandable battle. Later work may add tower/ranged attacks and formula-driven force density, but it must preserve this direct actor-to-target flow.
+
+The user accepted this runtime flow in Play Mode on 2026-06-15. Do not reopen movement, targeting, reinforcement, or wall-damage validation unless those contracts change. The next flow proof is visual: recognizable friendly/enemy models and a readable attacker -> action -> target exchange.
+
+## 2026-06-15 Static Noun Rendering Repair
+
+The flow remains paused before combat. Enemy, defender, tower, and wall now use runtime sprite cells instead of generated UV/material role quads. The defender faces the enemy, the wall health bar is hidden, and zone bands are reduced to supporting context. Validate this static read in both panel states before adding any action.
+
 ## 2026-06-14 Static Grammar Gate
 
 The visible ground flow is temporarily held before combat:
@@ -9,7 +29,7 @@ Enemy staging zone -> one hostile unit -> approach ground -> contact line
 -> one friendly defender -> fixed tower -> protected wall
 ```
 
-`DefenseRuntimeState` continues to advance resources, pressure, Hold/Push, wall state, and progression, but pooled actor motion and attacks are hidden. User validation confirmed the spatial bands but rejected the nouns: the visible output remains primitive rectangles/capsules/blocks. E0-A1 stays failed until the enemy, defender, tower, and wall silhouettes render recognizably.
+`DefenseRuntimeState` continues to advance resources, pressure, Hold/Push, wall state, and progression, but pooled actor motion and attacks are hidden. User validation confirmed the spatial bands but rejected the initial quad-rendered nouns. The 2026-06-15 sprite repair above now awaits the same paused-frame proof.
 
 ## 2026-06-13 Failed Readability Check And Required Battle Grammar
 

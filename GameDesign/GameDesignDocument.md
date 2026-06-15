@@ -1,12 +1,28 @@
 # Incremental Diablo Game Design Document
 
+## 2026-06-15 Actual NavMesh Ground Battle Reset
+
+- The prior implementation projected continuous-frontline telemetry through zones, cards, pooled placeholders, and presentation events. Player review correctly found that this did not explain what the objects were or why they moved.
+- The normal `Gameplay` path now uses an actual ground surface and runtime NavMesh with autonomous friendly/enemy combatants.
+- Each unit uses the shared `CharacterStats`, `Health`, `NavMeshAgent`, `CharacterMotor`, `CombatDriver`, and `CharacterActor` stack. Enemies fight defenders first and attack the wall when unopposed; defenders acquire and attack enemies; defeated units reinforce after a delay.
+- Enemy wall attacks now damage the authoritative `DefenseRuntimeState`. This remains automatic defense, not player-controlled RTS movement.
+- The old lane, actor projection, pool, static battlefield view, and combat presenter remain disabled technical debt. They are no longer the normal player-facing proof.
+- 2026-06-15 Play Mode evidence accepted the movement, engagement, death/reinforcement, wall approach, and wall-damage behavior. The next production gate is recognizable friendly/enemy models and attack ownership; the current placeholders are not visually sufficient.
+
+## 2026-06-15 E0-A1 Rendering Repair
+
+- The failed role quad/material path is replaced with runtime sprites, preserving the same one-enemy/one-defender/one-tower/one-wall proof.
+- The defender now faces the enemy, zone bands are subdued, and the static wall health bar is removed from the proof.
+- This moves the visible defense panel closer to readable RTS nouns without adding controls, attacks, waves, or density.
+- E0-A1 now needs one paused full/compressed panel validation before E0-A2 can begin.
+
 ## 2026-06-14 E0-A1 Static Grammar Checkpoint
 
 - The normal defense panel is now deliberately held at one hostile unit, one friendly unit, one tower, and one wall with visible staging, approach, contact, and protected ground regions.
 - Runtime actor motion, attacks, deaths, and reinforcements are hidden while this gate is active.
 - The continuous automatic frontline still owns pressure, Hold/Push, rewards, wall state, save/load, and progression. This is a presentation gate, not a second simulation or a manual RTS mode.
-- User validation failed: ground regions and the contact line are present, but the actor/structure output still reads as rectangles, a capsule-like shape, bars, and blocks rather than recognizable RTS nouns.
-- E0-A1 is `Validation failed`. Fix the visible silhouette/material/fallback path before E0-A2 adds any action.
+- User validation failed this initial quad-rendered checkpoint: ground regions and the contact line were present, but the actor/structure output read as rectangles, a capsule-like shape, bars, and blocks.
+- The 2026-06-15 sprite repair above is the current E0-A1 candidate. E0-A2 still cannot add action before acceptance.
 
 ## 2026-06-13 Ground Presentation Validation Result
 

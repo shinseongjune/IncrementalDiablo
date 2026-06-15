@@ -1,12 +1,34 @@
 # Ground Defense System Spec
 
+## 2026-06-15 Actual NavMesh Combat Foundation
+
+- `GroundDefenseNavMeshBattlefield` creates a visible ground cube spanning the existing enemy-spawn and wall anchors, builds a runtime `NavMeshSurface`, and spawns two defenders plus three enemies.
+- Spawned units are real gameplay actors composed from `CharacterStats`, `Health`, `NavMeshAgent`, `CharacterMotor`, `CombatDriver`, `EquipmentSlots`, `CharacterActor`, collider, and `GroundDefenseNavMeshUnit`.
+- Defenders hold a home position, acquire the nearest living enemy inside their leash, move into attack range, attack through `CombatDriver`, and return home when no target is available.
+- Enemies acquire living defenders first. When no defender survives, they move to the wall approach point and apply attack damage through `DefenseDirector.ApplyBattlefieldWallDamage`.
+- Death disables movement/collision, shows bounded feedback, removes the actor, and respawns the same side after a delay.
+- `DefenseRuntimeState` remains authoritative for wall health, breach, rewards, Hold/Push, progression, and save/load. The visible actors do not add manual waves, unit commands, or a second economy.
+- The legacy lane presenter, actor projection, enemy pool, static battlefield view, and combat presenter are disabled in `Gameplay`. Their zone/card/billboard presentation is not an acceptance target.
+
+### Accepted foundation and next gate
+
+The user confirmed the generated NavMesh, enemy/defender movement and engagement, death/reinforcement, enemy wall approach/attack, and wall-health loss in Play Mode on 2026-06-15. The next gate is recognizable friendly/enemy models and readable attack ownership in both panel states. Ranged/tower combat and formula-driven density remain subsequent gates.
+
+## 2026-06-15 E0-A1 Sprite Rendering Repair
+
+- The failed generated UV/material role quad path is replaced by runtime `Sprite.Create` cells rendered with `SpriteRenderer`.
+- The role sheet remains the source texture, but each enemy/defender/tower/wall cell now uses Unity's sprite alpha path instead of a custom role mesh/material.
+- The static defender is flipped to face the approaching enemy. Static zone alpha is reduced and the wall health bar is omitted so bars and colored rectangles cannot dominate the noun proof.
+- `StaticGrammar` still shows exactly one enemy, one defender, one tower, and one wall. Runtime attacks, casualties, reinforcements, and pooled density remain hidden.
+- E0-A1 is `Needs Unity Play Mode / Sprite rendering repair`. Acceptance requires paused screenshots in both panel states; E0-A2 remains blocked.
+
 ## 2026-06-14 E0-A1 Static Grammar Implementation
 
 - `GroundDefenseBattlefieldView` now has an explicit `StaticGrammar` presentation stage. `DefenseRuntimeState` and the pooled actor projection keep running, but the normal panel suppresses runtime enemy motion, attacks, casualties, and reinforcements until E0-A1 is accepted.
 - The generated battlefield contains `Zone_EnemyStaging`, `Zone_Approach`, `Line_Contact`, and `Zone_FriendlyDefense`, plus one enemy footprint, one defender footprint, and fixed tower/wall foundations.
 - The visible proof contains exactly one enemy, one defender, one tower, and one wall. Enemy/defender art retains opposing facing from the role sheet, structures remain larger and fixed, and the defender is now vertically offset so its feet sit on the ground instead of the billboard center intersecting the ground plane.
-- User validation failed: the zone bands and line appeared, but enemy/defender/tower/wall did not read as those concepts. The actual panel showed flat colored regions, capsule-like geometry, bars, and small blocks. Treat the role-sheet/runtime-material/fallback rendering path as the next defect. Zone color cannot substitute for recognizable silhouettes.
-- E0-A1 is `Next / Validation failed`. E0-A2 combat events and E0-A3 pooled density remain hidden behind that gate.
+- User validation of this initial quad-based path failed: the zone bands and line appeared, but enemy/defender/tower/wall did not read as those concepts. The actual panel showed flat colored regions, capsule-like geometry, bars, and small blocks.
+- The 2026-06-15 section above supersedes that rendering path. E0-A2 combat events and E0-A3 pooled density remain hidden until the repaired sprite proof passes.
 
 ## 2026-06-13 Play Mode Rejection And RTS Concept Contract
 

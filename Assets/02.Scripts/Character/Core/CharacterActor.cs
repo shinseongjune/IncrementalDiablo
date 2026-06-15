@@ -18,6 +18,11 @@ public class CharacterActor : MonoBehaviour
     public CombatDriver Combat { get; private set; }
     public EquipmentSlots Equipment { get; private set; }
 
+    public void ConfigureTeam(CharacterTeam nextTeam)
+    {
+        team = nextTeam;
+    }
+
     private void Awake()
     {
         Stats = GetComponent<CharacterStats>();

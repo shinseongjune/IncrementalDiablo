@@ -1,5 +1,27 @@
 # Implementation Roadmap
 
+## 2026-06-15 E0-A NavMesh Combat Reset
+
+1. Disable the rejected lane/actor/pool/static-zone/combat-presentation path in normal `Gameplay`.
+2. Build visible ground and a runtime NavMesh between the existing enemy-spawn and wall anchors.
+3. Spawn real defender/enemy actors with shared stats, health, movement, combat, and team components.
+4. Make defenders intercept enemies; make enemies fight defenders before attacking the wall.
+5. Route visible wall hits into authoritative wall health and breach state.
+6. Add bounded death and reinforcement behavior.
+7. Validate this live actor flow in full and compressed defense panels before adding tower/ranged attacks or formula-driven density.
+
+This replaces the static noun/zone proof as the active E0-A gate. The old projection remains disabled technical debt, not a second gameplay path.
+
+## 2026-06-15 E0-A1 Sprite Rendering Repair
+
+1. Replace generated UV/material role quads with runtime `Sprite.Create` and `SpriteRenderer`.
+2. Flip the defender toward the enemy so faction intent is readable before motion.
+3. Reduce zone-band alpha and hide the wall health bar during `StaticGrammar`.
+4. Keep exactly one enemy, one defender, one tower, and one wall.
+5. Validate the paused full and compressed panels before enabling E0-A2.
+
+This is a rendering-path repair, not a new composition or combat pass. E0-A2 attacks and E0-A3 density remain blocked.
+
 ## 2026-06-14 E0-A1 Validation-Failed Checkpoint
 
 E0-A1 is implemented as a bounded visual gate:

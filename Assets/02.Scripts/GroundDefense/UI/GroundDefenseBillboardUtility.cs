@@ -4,14 +4,14 @@ using UnityEngine.Rendering;
 
 public sealed class GroundDefenseBillboardHandle
 {
-    public GroundDefenseBillboardHandle(GameObject root, MeshRenderer renderer)
+    public GroundDefenseBillboardHandle(GameObject root, Renderer renderer)
     {
         Root = root;
         Renderer = renderer;
     }
 
     public GameObject Root { get; }
-    public MeshRenderer Renderer { get; }
+    public Renderer Renderer { get; }
 }
 
 public static class GroundDefenseBillboardUtility
@@ -20,11 +20,12 @@ public static class GroundDefenseBillboardUtility
         string name,
         Transform parent,
         Camera facingCamera,
-        Texture texture,
+        Texture2D texture,
         Rect uvRect,
         Vector2 size,
         Color color,
-        int sortingOrder)
+        int sortingOrder,
+        bool flipX = false)
     {
         GameObject root = new GameObject(name);
         root.transform.SetParent(parent, false);
@@ -32,14 +33,30 @@ public static class GroundDefenseBillboardUtility
         GroundDefenseBillboardFacing facing = root.AddComponent<GroundDefenseBillboardFacing>();
         facing.Configure(facingCamera);
 
-        MeshRenderer renderer = CreateQuad(
-            "Visual",
-            root.transform,
-            texture,
-            uvRect,
-            size,
-            color,
-            sortingOrder);
+        GameObject visual = new GameObject("Visual");
+        visual.transform.SetParent(root.transform, false);
+
+        Sprite sprite = CreateSprite(name, texture, uvRect);
+        SpriteRenderer renderer = visual.AddComponent<SpriteRenderer>();
+        renderer.sprite = sprite;
+        renderer.color = color;
+        renderer.flipX = flipX;
+        renderer.sortingOrder = sortingOrder;
+        renderer.shadowCastingMode = ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
+        renderer.lightProbeUsage = LightProbeUsage.Off;
+        renderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
+
+        Vector2 spriteSize = sprite.bounds.size;
+        visual.transform.localScale = new Vector3(
+            size.x / Mathf.Max(0.001f, spriteSize.x),
+            size.y / Mathf.Max(0.001f, spriteSize.y),
+            1f);
+
+        GroundDefenseGeneratedVisual resources =
+            root.GetComponent<GroundDefenseGeneratedVisual>() ??
+            root.AddComponent<GroundDefenseGeneratedVisual>();
+        resources.Track(sprite);
         return new GroundDefenseBillboardHandle(root, renderer);
     }
 
@@ -113,6 +130,47 @@ public static class GroundDefenseBillboardUtility
         }
 
         return Camera.main;
+    }
+
+    private static Sprite CreateSprite(string name, Texture2D texture, Rect uvRect)
+    {
+        Texture2D safeTexture = texture == null ? Texture2D.whiteTexture : texture;
+        Rect safeUv = ClampUvRect(uvRect);
+        Rect pixelRect = new Rect(
+            safeUv.xMin * safeTexture.width,
+            safeUv.yMin * safeTexture.height,
+            safeUv.width * safeTexture.width,
+            safeUv.height * safeTexture.height);
+        Sprite sprite = Sprite.Create(
+            safeTexture,
+            pixelRect,
+            new Vector2(0.5f, 0.5f),
+            100f,
+            0,
+            SpriteMeshType.FullRect);
+        sprite.name = $"{name}_RuntimeSprite";
+        return sprite;
+    }
+
+    private static Rect ClampUvRect(Rect uvRect)
+    {
+        float xMin = Mathf.Clamp01(Mathf.Min(uvRect.xMin, uvRect.xMax));
+        float xMax = Mathf.Clamp01(Mathf.Max(uvRect.xMin, uvRect.xMax));
+        float yMin = Mathf.Clamp01(Mathf.Min(uvRect.yMin, uvRect.yMax));
+        float yMax = Mathf.Clamp01(Mathf.Max(uvRect.yMin, uvRect.yMax));
+        if (xMax - xMin < 0.0001f)
+        {
+            xMin = Mathf.Min(xMin, 0.9999f);
+            xMax = xMin + 0.0001f;
+        }
+
+        if (yMax - yMin < 0.0001f)
+        {
+            yMin = Mathf.Min(yMin, 0.9999f);
+            yMax = yMin + 0.0001f;
+        }
+
+        return Rect.MinMaxRect(xMin, yMin, xMax, yMax);
     }
 
     public static void DestroyVisual(GameObject visual)

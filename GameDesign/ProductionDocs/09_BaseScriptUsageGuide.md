@@ -1,13 +1,30 @@
 # Base Script Usage Guide
 
+## 2026-06-15 NavMesh Ground Combat Usage
+
+- `GroundDefenseNavMeshBattlefield` is enabled on `Gameplay > DefenseRoot`. It builds `BattlefieldGround`, a child `NavMeshSurface`, the wall visual, and the initial forces at runtime.
+- `GroundDefenseNavMeshUnit` owns autonomous side behavior. Defenders call `FindNearestEnemy`, move through `CharacterMotor`, and attack through `CombatDriver`; enemies call `FindNearestDefender` and use the same combat path before falling back to wall attacks.
+- Runtime actor creation uses `CharacterStats.ConfigureBaseStats(...)` and `CharacterActor.ConfigureTeam(...)` so the generated actors use the same character contracts as dungeon combat.
+- `DefenseDirector.ApplyBattlefieldWallDamage(...)` is the only bridge from visible enemy wall attacks into authoritative wall state.
+- Do not enable `GroundDefenseLanePresenter`, `GroundDefenseActorRuntime`, `GroundDefenseEnemyPool`, `GroundDefenseBattlefieldView`, or `GroundDefenseCombatPresenter` in the normal scene while this path is under validation.
+- Validate with the top section of `06_UnitySceneAndPrefabSetupGuide.md`. Do not add manual wave lists or player unit commands.
+- The user accepted the runtime movement/combat/reinforcement/wall path on 2026-06-15. Preserve it while replacing placeholder role visuals with recognizable friendly/enemy models and readable attack ownership.
+
+## 2026-06-15 E0-A1 Sprite Usage
+
+- `GroundDefenseBillboardUtility.CreateBillboard(...)` now creates a runtime `Sprite` from the normalized sheet cell and renders it with `SpriteRenderer`.
+- `GroundDefenseBattlefieldView` flips only the defender cell so the two units face each other.
+- `StaticGrammar` omits the wall health bar and uses subdued zone colors. Combat/event APIs remain inactive.
+- Validate in `DefenseFocus` and the compressed panel before changing `PresentationStage`.
+
 ## 2026-06-14 E0-A1 Usage
 
 - `GroundDefenseBattlefieldView.PresentationStage` is `StaticGrammar` in `Gameplay`.
 - In this stage, `GroundDefenseCombatPresenter` releases/hides pooled runtime views and reports the single grammar-proof enemy instead. The actor runtime still projects the authoritative simulation in the background.
 - `GroundDefenseBattlefieldView` procedurally builds the four named battlefield regions, one enemy, one defender, tower/wall foundations, and unit footprints. No extra scene GameObject or Inspector reference is required.
 - Combat events, projectile pools, defender casualties, and reinforcements are intentionally inactive. Do not switch to `AutomaticBattle` until the E0-A1 paused-frame proof is accepted.
-- User validation failed because the visible nouns still render as primitive rectangles/capsules/blocks. Inspect the generated billboard material, UV, alpha, sorting, defense-camera visibility, and fallback renderers before changing cadence or enabling attacks.
-- The next implementation remains E0-A1 rendering repair. E0-A2 must not start until the paused noun proof passes.
+- User validation of the initial quad path failed because the visible nouns rendered as primitive rectangles/capsules/blocks.
+- The 2026-06-15 sprite usage section above supersedes that implementation. E0-A2 must not start until the paused noun proof passes.
 
 2026-06-13 E0-A battlefield scope: `GroundDefenseActorRuntime` exposes reusable actor lifecycle events, but the current presentation failed Play Mode readability. `GroundDefenseBattlefieldView` and `GroundDefenseCombatPresenter` are a technical checkpoint, not an accepted visual contract. The next implementation must first use one enemy, one defender, one tower, and one wall to prove static RTS noun separation and one Unit -> action -> target exchange. Do not increase capacity, cadence, or simultaneous projectiles until that proof passes in the full and compressed defense panels.
 
@@ -193,7 +210,7 @@
 | `DefenseHud` | `Assets/02.Scripts/GroundDefense/UI/DefenseHud.cs` | TMP 텍스트와 버튼을 연결해서 현재 상태와 강화 버튼을 보여준다 | Canvas 안의 HUD 오브젝트에 붙이고 Text/Button 슬롯을 연결한다. | 화면에 보이는 문구가 충분히 직관적인지 |
 | `GroundDefenseEnemyArchetype` | `Assets/02.Scripts/GroundDefense/Runtime/GroundDefenseEnemyArchetype.cs` | 풀링 지상 적의 프리팹, spawn weight, 역할 텍스처 UV/크기, 체력, 압박 비용, 피격 단위, 이동 속도, hit/defeat/wall-contact 피드백을 보관한다. | `Assets/05.ScriptableObjects/GroundDefense`에 에셋을 만들고 `GroundDefenseEnemyView` 프리팹과 시트 영역을 지정한다. 현재 에셋은 Grunt/Shield/Runner다. | 값이 수동 웨이브 목록이 되지 않는지, 실루엣과 스탯 역할이 일치하는지 |
 | `GroundDefenseEnemyPool` | `Assets/02.Scripts/GroundDefense/UI/GroundDefenseEnemyPool.cs` | 아키타입별 프리팹을 사전 생성하고 비활성 뷰를 재사용한다. | `DefenseRoot`에 붙이고 세 아키타입, `Prewarm Per Archetype = 3`, `Max Instances = 16`을 연결한다. | 처치/접촉 뒤 새 Instantiate가 계속 증가하지 않고 기존 뷰가 재사용되는지 |
-| `GroundDefenseBillboardUtility` | `Assets/02.Scripts/GroundDefense/UI/GroundDefenseBillboardUtility.cs` | 텍스처 시트 UV를 투명 runtime quad로 만들고 방어 패널 카메라를 향하게 한다. | 직접 배치하지 않는다. Enemy/Battlefield view가 사용한다. | 투명 배경, 카메라 facing, 런타임 mesh/material 정리가 정상인지 |
+| `GroundDefenseBillboardUtility` | `Assets/02.Scripts/GroundDefense/UI/GroundDefenseBillboardUtility.cs` | 텍스처 시트 UV를 runtime `Sprite`로 만들고 `SpriteRenderer`를 방어 패널 카메라에 향하게 한다. Ground band용 mesh quad 경로는 별도로 유지한다. | 직접 배치하지 않는다. Enemy/Battlefield view가 사용한다. | 셀 crop, 투명 배경, 카메라 facing, 좌우 반전, 런타임 sprite 정리가 정상인지 |
 | `GroundDefenseEnemyView` | `Assets/02.Scripts/GroundDefense/UI/GroundDefenseEnemyView.cs` | 현재 billboard role/health bridge를 표현한다. Archetype/pool 연결은 재사용 가능하지만 isolated billboard presentation은 교체 대상이다. | 신규 지상전에서는 facing/approach/attack/hit/death 상태를 가진 battlefield actor view로 승격하거나 교체한다. | 실제 교전선 안에서 역할, 공격, 피격, 사망이 읽히는지 |
 | `GroundDefenseBattlefieldView` | `Assets/02.Scripts/GroundDefense/UI/GroundDefenseBattlefieldView.cs` | 적 formation/contact 위치, 수비병, 탑 투사체, 근접 동작, 증원, 성벽 피해 표현을 위한 기술 기반이다. 현재 조합은 빠른 상하 이동과 출처 불명 투사체로 읽혀 시각 검증에 실패했다. | 다음 패스에서는 수량과 속도를 늘리지 말고 한 적, 한 수비병, 한 탑, 한 성벽의 정지 화면 분리를 먼저 증명한다. 기존 풀과 이벤트 연결은 재사용할 수 있다. | 전체/축소 패널의 정지 화면만 보고 네 개체의 진영과 기능을 설명할 수 있는지 |
 | `GroundDefenseCombatPresenter` | `Assets/02.Scripts/GroundDefense/UI/GroundDefenseCombatPresenter.cs` | actor runtime/pool과 battlefield event를 연결하는 재사용 가능한 브리지다. 현재 visual output은 공격 주체와 대상을 설명하지 못해 승인되지 않았다. | `Battlefield View`를 연결하되, 다음 패스는 정확히 한 공격자에서 한 대상으로 이어지는 단일 melee/projectile event만 재생한다. 정상 씬에서는 legacy pressure actors, attack pulses, wall flash를 비운다. | 공격자 자세/발사점, 경로, 대상 피격 반응이 하나의 `Unit -> action -> target` 문장으로 읽히는지 |

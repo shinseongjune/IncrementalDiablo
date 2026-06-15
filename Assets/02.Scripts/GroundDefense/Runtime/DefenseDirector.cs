@@ -210,6 +210,22 @@ public class DefenseDirector : MonoBehaviour
         return true;
     }
 
+    public void ApplyBattlefieldWallDamage(float amount)
+    {
+        if (runtime == null || amount <= 0f || runtime.WallHealth <= 0f)
+        {
+            return;
+        }
+
+        runtime.ApplyWallDamage(amount);
+        if (runtime.WallHealth <= 0f)
+        {
+            runtime.MarkBreached();
+        }
+
+        NotifyChanged();
+    }
+
     public DefenseSaveData CreateSaveData()
     {
         DefenseSaveData saveData = new DefenseSaveData();

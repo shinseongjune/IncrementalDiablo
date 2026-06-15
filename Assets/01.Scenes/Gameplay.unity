@@ -4926,6 +4926,7 @@ GameObject:
   - component: {fileID: 293513598}
   - component: {fileID: 293513599}
   - component: {fileID: 293513596}
+  - component: {fileID: 293513600}
   m_Layer: 0
   m_Name: DefenseRoot
   m_TagString: Untagged
@@ -4970,7 +4971,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 293513593}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6634ede7ad7f469caef2c3674ab37aa0, type: 3}
   m_Name:
@@ -5015,7 +5016,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 293513593}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9bbad0805306401383572a8e7730afae, type: 3}
   m_Name:
@@ -5044,7 +5045,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 293513593}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6891b61f9d924a10b0fd7d38c03add85, type: 3}
   m_Name:
@@ -5063,7 +5064,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 293513593}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 64912e028a8f41d5b70c2554254ae263, type: 3}
   m_Name:
@@ -5078,9 +5079,9 @@ MonoBehaviour:
   battlefieldWidth: 4.8
   contactLineWidth: 0.16
   groundVisualHeight: 0.025
-  enemyStagingColor: {r: 0.42, g: 0.08, b: 0.06, a: 0.38}
-  approachColor: {r: 0.16, g: 0.13, b: 0.1, a: 0.32}
-  protectedZoneColor: {r: 0.06, g: 0.18, b: 0.32, a: 0.38}
+  enemyStagingColor: {r: 0.42, g: 0.08, b: 0.06, a: 0.16}
+  approachColor: {r: 0.16, g: 0.13, b: 0.1, a: 0.1}
+  protectedZoneColor: {r: 0.06, g: 0.18, b: 0.32, a: 0.16}
   contactLineColor: {r: 0.92, g: 0.68, b: 0.24, a: 0.82}
   footprintColor: {r: 0.01, g: 0.01, b: 0.01, a: 0.58}
   foundationColor: {r: 0.08, g: 0.2, b: 0.34, a: 0.72}
@@ -5120,7 +5121,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 293513593}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: eae1ef090b54425e9a6ab00d27b80948, type: 3}
   m_Name:
@@ -5157,6 +5158,55 @@ MonoBehaviour:
   attackBoltLength: 0.8
   attackBoltThickness: 0.08
   refreshEveryFrame: 1
+--- !u!114 &293513600
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 293513593}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a4e18da87c345088a6ab4fd6c0b4994, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::GroundDefenseNavMeshBattlefield
+  defense: {fileID: 1045172322}
+  defenseCamera: {fileID: 198103830}
+  enemySpawnAnchor: {fileID: 1912540435}
+  wallAnchor: {fileID: 488788905}
+  readabilitySheet: {fileID: 2800000, guid: a041289685f941e8a40086ddca94abc3, type: 3}
+  battlefieldWidth: 8
+  groundHeight: 0.18
+  endPadding: 1.5
+  groundColor: {r: 0.16, g: 0.12, b: 0.08, a: 1}
+  defenderCount: 2
+  enemyCount: 3
+  unitSpacing: 1.5
+  defenderDistanceFromWall: 4
+  wallAttackDistance: 1.25
+  defenderEngageRadius: 7
+  defenderHealth: 90
+  defenderMoveSpeed: 3.2
+  defenderDamage: 12
+  defenderAttackRange: 1.5
+  defenderAttackCooldown: 0.85
+  enemyHealth: 55
+  enemyMoveSpeed: 2.8
+  enemyDamage: 8
+  enemyAttackRange: 1.35
+  enemyAttackCooldown: 1.05
+  enemyRespawnSeconds: 2.2
+  defenderRespawnSeconds: 3.5
+  defeatedBodySeconds: 0.65
+  enemyUv: {x: 0, y: 0.5, width: 0.33333334, height: 0.5}
+  defenderUv: {x: 0, y: 0, width: 0.33333334, height: 0.5}
+  wallUv: {x: 0.6666667, y: 0, width: 0.33333334, height: 0.5}
+  enemyVisualSize: {x: 1.65, y: 2.35}
+  defenderVisualSize: {x: 1.55, y: 2.2}
+  wallVisualSize: {x: 4.8, y: 3.5}
+  enemyVisualHeight: 1.18
+  defenderVisualHeight: 1.1
+  wallVisualHeight: 1.65
 --- !u!1 &293555882
 GameObject:
   m_ObjectHideFlags: 0

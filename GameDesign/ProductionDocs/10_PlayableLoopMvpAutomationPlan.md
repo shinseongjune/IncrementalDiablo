@@ -74,7 +74,7 @@ This document must not stop at the first MVP. When the current phase is complete
 | Phase B - 30-Minute Retention Slice | Completed 2026-05-17 after user confirmation that the normal player HUD slice was already done. | A new player can play about 30 minutes with at least three meaningful upgrade decisions, one failure/recovery moment, and no dev-console-only step. | Closed unless a regression appears. |
 | Phase C - First Real Game Slice | Completed 2026-06-06 from accumulated accepted evidence across P0-A through P0-D. The normal path now has visible defense behavior, direct-control prefab combat, authored rewards, overlays, crafting, and no silent calculation-combat clear. | One player-facing runtime slice contains a visible ground-defense lane, one direct-control dungeon room with at least one real enemy prefab, and authored item assets/definitions feeding the reward loop without relying on debug-only surfaces for the normal path. | Closed unless a regression appears. Residual overlay polish belongs to Phase E, not another Phase C acceptance loop. |
 | Phase D - Long-Horizon Systems Foundation | Completed 2026-06-11. The saved dungeon ladder, dungeon and ground formula bands, production item registry/save migration path, dominated-duplicate conversion sink, and formula-driven ground milestones are implemented. | Formula-driven dungeon tiers, ground scaling, item rarity/material sinks, and save migration hooks exist without hand-authored content ladders. | Closed unless a scaling, save, or economy regression appears. |
-| Phase E - Early Access Readiness Slice | Current phase. Long-horizon formulas exist, but player review rejected the abstract pooled billboard/pulse ground presentation. The approved replacement is an RTS-readable automatic defense battlefield based on the prepared references. | A 2-4 hour repeatable slice is playable with stable UI, recoverable failure, basic settings, readable onboarding, QA checklist, and no known progression blocker. | Validate the E0-A1 static battlefield grammar in both panel states. Only then implement the E0-A2 combat exchange and later restore E0-A3 density. |
+| Phase E - Early Access Readiness Slice | Current phase. Long-horizon formulas exist, but player review rejected the abstract pooled billboard/pulse/zone presentation. The approved replacement is an RTS-readable automatic defense battlefield made from actual autonomous combatants. | A 2-4 hour repeatable slice is playable with stable UI, recoverable failure, basic settings, readable onboarding, QA checklist, and no known progression blocker. | Validate the actual NavMesh battlefield foundation: enemies run toward defenders and then the wall, defenders intercept and attack, deaths respawn, and wall hits affect the authoritative defense state. |
 
 ## Phase Promotion Rule
 
@@ -130,10 +130,10 @@ Accepted runtime evidence is cumulative. Do not require another full-loop Play M
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase E - Early Access Readiness Slice |
-| Last meaningful movement | 2026-06-14: User Play Mode validation rejected the E0-A1 static grammar checkpoint. The zone bands and contact line appeared, but the visible actors/structures still read as colored rectangles, capsules, and small blocks rather than an enemy unit, friendly unit, tower, and wall. The screenshot is useful failure evidence, not acceptance. |
-| Next unlock | E0-A1 is `Next / Validation failed`. First diagnose why the prepared role silhouettes are not producing recognizable battlefield actors in the actual defense camera/panel path. Replace or correct the runtime billboard/fallback geometry so one enemy, one defender, one tower, and one wall are recognizable by silhouette and scale before relying on zone color. Do not implement E0-A2 attacks or restore pooled density yet. |
+| Last meaningful movement | 2026-06-15: User confirmed the actual NavMesh battle works in Play Mode: defenders and enemies move, engage, die/reinforce, surviving enemies reach the wall, and wall damage resolves. The prior abstract projection remains disabled. |
+| Next unlock | E0-A2 is `Next`: replace placeholder role visuals with clearly recognizable friendly/enemy combatants and make attack ownership readable at the actual panel scale. Preserve the accepted NavMesh movement, targeting, death/reinforcement, and wall-damage behavior. |
 | Loop coverage | Phases A-C remain cumulatively accepted. Phase D is complete with persistent dungeon depth, dungeon and ground formula bands, durable authored item identity, save migration, dominated-duplicate conversion, and formula-driven ground milestone rewards. |
-| Known blockers | No compile, save, scaling, item, or economy blocker is known. The E0-A1 blocker is now concrete: zone geometry renders, but the intended enemy/defender/tower/wall silhouettes do not read in the panel. Colored rectangles, capsules, bars, and small blocks cannot satisfy the static RTS noun gate. E0-A2 and E0-A3 remain blocked. |
+| Known blockers | No compile, runtime-combat, save, scaling, item, or economy blocker is known. Friendly/enemy models are not yet recognizable enough, so visual role identity and attacker-owned ranged feedback remain the active E0-A blocker. Formula-driven force density remains a later gate. |
 
 ## 3.1 Phase C MVP Completion Task List
 
@@ -187,6 +187,9 @@ Run Update Notes:
 - 2026-06-13: User validation failed that checkpoint. The player saw enemies appear rapidly and move top-to-bottom without understanding unit roles or combat, while a projectile-like object near the wall had no readable owner or target. E0-A returns to `Next / Validation failed`. Future implementation must prove static RTS nouns before motion: enemy unit, friendly unit, tower, and wall must be separable in one paused frame. It must then prove one deterministic Unit -> action -> target exchange before adding density, rapid reinforcements, or formula-scaled spectacle.
 - 2026-06-14: Implemented E0-A1 as an explicit `StaticGrammar` presentation stage. The authoritative frontline and pooled actor runtime continue in the background, but the visible panel now suppresses actor motion, attacks, casualties, and reinforcements. It shows exactly one enemy and one defender on grounded footprints, persistent tower/wall foundations, three ordered battlefield zones, and a fixed contact line. The defender height offset also fixes the prior half-submerged billboard placement. E0-A1 is `Needs Unity Play Mode` for a paused-frame check in `DefenseFocus` and the compressed panel; E0-A2 remains blocked until that proof passes.
 - 2026-06-14: User validation failed E0-A1. The screenshot shows that lines and spatial regions now exist, but the combat nouns remain unreadable: the panel is dominated by flat zone rectangles, a capsule-like actor, health-bar-like lines, and small block geometry. The prepared enemy/defender/tower/wall concepts are not recognizable at the actual camera/panel output. Preserve this checkpoint for diagnosis, return E0-A1 to `Next / Validation failed`, and investigate the role-silhouette rendering/fallback path before adding motion or attacks.
+- 2026-06-15: Repaired the E0-A1 role-rendering path without advancing combat. `GroundDefenseBillboardUtility` now creates cell sprites with `Sprite.Create` and renders them through `SpriteRenderer` instead of generated UV/material quads. The defender flips to face the approaching enemy, static zone alpha is reduced, and the wall health bar is omitted in `StaticGrammar`. E0-A1 is `Needs Unity Play Mode / Sprite rendering repair`; E0-A2 and E0-A3 remain blocked.
+- 2026-06-15: User review rejected that repair and the static-zone proof itself: the cylinder/cube meanings, motion, and region labels were still not understandable. The normal scene now disables the abstract lane/actor/pool/battlefield/presenter stack and enables an actual NavMesh battlefield. Runtime-generated units use `CharacterStats`, `Health`, `NavMeshAgent`, `CharacterMotor`, `CombatDriver`, and `CharacterActor`; defenders acquire enemies, enemies fight defenders before attacking the wall, defeats respawn, and wall attacks call the authoritative `DefenseDirector`. At this implementation checkpoint, the NavMesh foundation still awaited Play Mode validation.
+- 2026-06-15: User confirmed the NavMesh combat foundation works in Play Mode. Accepted evidence covers friendly/enemy movement, autonomous engagement, death/reinforcement, surviving enemies reaching the wall, and wall damage. The user also confirmed the remaining defect: absent recognizable models make faction/role identification difficult. E0-A1 is accepted; E0-A2 recognizable combatants and attack ownership is now `Next`.
 
 ## 3.2 Phase D Production Task List
 
@@ -206,21 +209,22 @@ Phase E converts the scalable systems into a repeatable, release-shaped slice. W
 
 | ID | Priority | Track | Current status | Completion criteria | Next update required |
 | --- | --- | --- | --- | --- | --- |
-| E0-A | P0 | RTS-readable automatic defense battlefield | Next / Validation failed | One fixed battlefield based on the prepared reference passes three ordered gates. E0-A1: a paused frame clearly separates enemy units, friendly units, tower, wall, enemy staging zone, contact line, and protected zone. E0-A2: one melee exchange and one attacker-owned projectile show Unit -> action -> target through approach, stop/contact, windup/launch, hit, and recovery. E0-A3: deaths, reinforcements, density, and wall attack/damage remain readable when formula-driven pressure is reintroduced. `DefenseRuntimeState` stays authoritative and no unit micromanagement or manual wave rows are added. | Repair E0-A1 rendering only. Verify why the prepared role sheet is not visible/readable through the defense camera and runtime material path; replace capsule/rectangle/block fallbacks with explicit recognizable enemy, defender, tower, and wall visuals. Zone bands may remain supporting context but cannot be the primary proof. |
+| E0-A | P0 | RTS-readable automatic defense battlefield | In Progress / NavMesh foundation accepted | One actual NavMesh battlefield uses real autonomous combatants. E0-A1 is accepted: enemies and defenders move, engage, die/reinforce, surviving enemies attack the wall, and wall health changes through the authoritative runtime. E0-A2 must add recognizable friendly/enemy models and readable attack ownership. E0-A3 later connects role mix and force density to formulas without unit micromanagement or manual wave rows. | Build recognizable friendly/enemy actor visuals or prefabs around the accepted character/NavMesh stack. Validate faction, role, attack source, target, hit, and death in full and compressed panels before adding density. |
 
 ### E0-A Ordered Implementation Gates
 
-1. `E0-A1 - Static RTS battlefield grammar`
-   - In one paused screenshot, a reviewer can point to enemy unit, friendly unit, tower, wall, enemy staging zone, contact line, and protected zone without motion or diagnostic text.
-   - Units are ground-anchored with readable feet/shadow, faction treatment, facing, body scale, and weapon role. Buildings are persistent, larger, and visually rooted to authored positions.
-   - Camera composition shows travel across battlefield depth or width toward a contact line. A fast top-to-bottom conveyor is a failure.
-2. `E0-A2 - One readable combat exchange`
-   - Start with one enemy, one defender, one tower, and one wall.
-   - Melee reads as approach -> stop at contact -> windup -> strike -> target reaction -> recovery.
-   - A projectile is attacker-owned: visible tower/muzzle -> launch -> travel -> enemy impact. A projectile appearing near the wall or without a visible source/target is a failure.
-3. `E0-A3 - Automatic battle density`
-   - Only after E0-A1 and E0-A2 pass, restore multiple archetypes, deaths, reinforcements, and formula-driven density.
-   - Cadence must leave enough time to recognize spawn, movement, attack, hit, and death. More simultaneous motion is not progress if concepts become ambiguous.
+1. `E0-A1 - Actual NavMesh battlefield`
+   - Generate one visible ground surface and NavMesh in the defense world.
+   - Spawn actual friendly/enemy actors using `CharacterStats`, `Health`, `NavMeshAgent`, `CharacterMotor`, `CombatDriver`, and `CharacterActor`.
+   - Enemies run toward defenders, fight them, then attack the wall when unopposed. Defenders acquire enemies, move, attack, die, and reinforce.
+   - Accepted in Play Mode on 2026-06-15.
+2. `E0-A2 - Readable combat ownership`
+   - Friendly and enemy models must be recognizable without relying on placeholder shape or motion alone.
+   - Melee reads as approach -> stop at range -> attack -> target reaction -> death/recovery.
+   - Add one visible ranged/tower source only after the melee and wall path work. Its projectile must show Unit -> action -> target.
+3. `E0-A3 - Formula-driven battle scale`
+   - Connect force count/role selection and reinforcement cadence to the existing frontline formulas without authored wave rows.
+   - Cadence must leave enough time to recognize movement, attack, hit, death, and wall pressure.
 
 ## 3.3 Progress Assessment Against Game-Form Plan
 
@@ -231,13 +235,13 @@ Speed assessment:
 - Good: save/load, real dungeon combat, authored reward continuity, normal overlays, visible ground behavior, and the first persistent depth ladder now support progression beyond a fixed one-room proof.
 - Good: the first formula band has been observed against the real spawned prefab and authored reward path in Play Mode, so the depth ladder is now a meaningful risk/reward choice rather than only saved structure.
 - Good: the automatic defense half now scales through the same kind of bounded, exportable profile as the dungeon ladder, including visible band milestones rather than manual wave rows.
-- Current checkpoint: the event, pooling, and wall-damage plumbing remains available, and `StaticGrammar` successfully creates zone bands and a contact line. User validation still failed because the intended unit/building silhouettes are not recognizable in the actual panel; flat rectangles, a capsule-like actor, and small blocks dominate the read. The next pass must fix the visible asset/material/fallback path before any motion, attack, or density work.
+- Current checkpoint: the actual NavMesh movement, melee engagement, death/reinforcement, and wall-damage path is accepted. The next proof is recognizable friendly/enemy models plus readable attack ownership in both panel states.
 
 Direction assessment:
 
 - Correct direction: the project is still preserving the intended PC incremental action RPG shape: automatic ground defense, direct-control dungeon combat, loot, equipment, crafting/salvage, save/load, and long-term progression.
 - Current risk: production scope can drift into a full RTS. Prevent that by separating visual language from controls: use formations, contact, projectiles, casualties, and reinforcements, while keeping authored tower positions, automatic unit behavior, formula scaling, and high-level upgrade/Hold/Push decisions.
-- Operating rule: E0-A must proceed in evidence order. First author one enemy, one defender, one tower, and one wall that remain distinguishable in a paused full-size and compressed panel. Then add one deterministic attacker-owned projectile or melee exchange with a visible source, action path, target, impact, and reaction. Only after both proofs pass may the implementation add role variety, casualties, reinforcements, or density. Do not build unit selection, movement commands, focus fire, production queues, worker economy, free tower placement, or hand-authored wave lists.
+- Operating rule: E0-A must proceed from real gameplay objects, not explanatory bands or diagnostic geometry. First validate actual ground, NavMesh movement, defender interception, enemy targeting, melee damage, death/respawn, and wall attacks. Then add one deterministic attacker-owned ranged exchange. Only after those paths pass may the implementation add role variety and formula-driven density. Do not build unit selection, movement commands, focus fire, production queues, worker economy, free tower placement, or hand-authored wave lists.
 
 ## 4. MVP Task Queue
 
