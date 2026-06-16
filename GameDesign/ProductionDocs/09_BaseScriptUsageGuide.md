@@ -1,5 +1,12 @@
 # Base Script Usage Guide
 
+## 2026-06-16 E0-A2 Readable Ownership Usage
+
+- `GroundDefenseBillboardUtility.CreateBillboard(...)` now attempts to build a dark-matte cutout runtime sprite from the requested readability-sheet cell before falling back to the source texture sprite path.
+- `GroundDefenseNavMeshBattlefield` remains the normal `Gameplay > DefenseRoot` path. It still builds the runtime ground/NavMesh and force actors, then adds generated faction bases plus blue defender shield badges and red enemy threat badges to each actor.
+- `GroundDefenseNavMeshUnit` draws a short `AttackOwnershipLine` from attacker to target when a melee or wall hit succeeds. The target flashes and recoils during the same window.
+- User Play Mode feedback accepted this path on 2026-06-17. Preserve it while adding E0-A3 force scale; reopen only for readability regressions.
+
 ## 2026-06-15 NavMesh Ground Combat Usage
 
 - `GroundDefenseNavMeshBattlefield` is enabled on `Gameplay > DefenseRoot`. It builds `BattlefieldGround`, a child `NavMeshSurface`, the wall visual, and the initial forces at runtime.
@@ -8,29 +15,29 @@
 - `DefenseDirector.ApplyBattlefieldWallDamage(...)` is the only bridge from visible enemy wall attacks into authoritative wall state.
 - Do not enable `GroundDefenseLanePresenter`, `GroundDefenseActorRuntime`, `GroundDefenseEnemyPool`, `GroundDefenseBattlefieldView`, or `GroundDefenseCombatPresenter` in the normal scene while this path is under validation.
 - Validate with the top section of `06_UnitySceneAndPrefabSetupGuide.md`. Do not add manual wave lists or player unit commands.
-- The user accepted the runtime movement/combat/reinforcement/wall path on 2026-06-15. Preserve it while replacing placeholder role visuals with recognizable friendly/enemy models and readable attack ownership.
+- The user accepted the runtime movement/combat/reinforcement/wall path on 2026-06-15 and the readable-ownership path on 2026-06-17. Preserve both while adding E0-A3 density.
 
 ## 2026-06-15 E0-A1 Sprite Usage
 
-- `GroundDefenseBillboardUtility.CreateBillboard(...)` now creates a runtime `Sprite` from the normalized sheet cell and renders it with `SpriteRenderer`.
+- `GroundDefenseBillboardUtility.CreateBillboard(...)` creates a runtime `Sprite` from the normalized sheet cell and renders it with `SpriteRenderer`.
 - `GroundDefenseBattlefieldView` flips only the defender cell so the two units face each other.
 - `StaticGrammar` omits the wall health bar and uses subdued zone colors. Combat/event APIs remain inactive.
-- Validate in `DefenseFocus` and the compressed panel before changing `PresentationStage`.
+- This static sprite path was superseded by the accepted actual NavMesh battlefield. Keep the section as implementation history only.
 
 ## 2026-06-14 E0-A1 Usage
 
 - `GroundDefenseBattlefieldView.PresentationStage` is `StaticGrammar` in `Gameplay`.
 - In this stage, `GroundDefenseCombatPresenter` releases/hides pooled runtime views and reports the single grammar-proof enemy instead. The actor runtime still projects the authoritative simulation in the background.
 - `GroundDefenseBattlefieldView` procedurally builds the four named battlefield regions, one enemy, one defender, tower/wall foundations, and unit footprints. No extra scene GameObject or Inspector reference is required.
-- Combat events, projectile pools, defender casualties, and reinforcements are intentionally inactive. Do not switch to `AutomaticBattle` until the E0-A1 paused-frame proof is accepted.
+- Combat events, projectile pools, defender casualties, and reinforcements were intentionally inactive for this historical static proof.
 - User validation of the initial quad path failed because the visible nouns rendered as primitive rectangles/capsules/blocks.
-- The 2026-06-15 sprite usage section above supersedes that implementation. E0-A2 must not start until the paused noun proof passes.
+- The accepted actual NavMesh battlefield supersedes this implementation. E0-A2 now uses real actors rather than the paused static-zone proof.
 
 2026-06-13 E0-A battlefield scope: `GroundDefenseActorRuntime` exposes reusable actor lifecycle events, but the current presentation failed Play Mode readability. `GroundDefenseBattlefieldView` and `GroundDefenseCombatPresenter` are a technical checkpoint, not an accepted visual contract. The next implementation must first use one enemy, one defender, one tower, and one wall to prove static RTS noun separation and one Unit -> action -> target exchange. Do not increase capacity, cadence, or simultaneous projectiles until that proof passes in the full and compressed defense panels.
 
 ## 2026-06-12 E0-A Direction And Reuse Boundary
 
-- The rejected pooled billboard/pulse-derived path is not eligible for acceptance. The current E0-A1 `StaticGrammar` path is the only active validation target.
+- The rejected pooled billboard/pulse-derived path is not eligible for acceptance. The accepted active route is actual NavMesh actors with readable ownership; E0-A3 should scale that route rather than revive the projection stack.
 - Reuse `GroundDefenseEnemyArchetype` for enemy role identity/stats, `GroundDefenseActorRuntime` for transient health/travel/defeat/contact state, and `GroundDefenseEnemyPool` for bounded instances.
 - Replace isolated billboard presentation with battlefield units that have facing, approach, attack/contact, hit reaction, death, and reinforcement states.
 - Replace `GroundDefenseCombatPresenter` attack pulses/bolts with projectiles or melee actions owned by a visible attacker and target.

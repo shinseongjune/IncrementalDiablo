@@ -1,5 +1,21 @@
 # Ground Defense Flow Blueprint
 
+## 2026-06-16 E0-A2 Readable Ownership Flow
+
+```text
+Enemy spawns on hostile side
+-> enemy cutout sprite, red base, and threat badge identify its faction
+-> defender cutout sprite, blue base, and shield badge identify its faction
+-> NavMesh movement brings attacker and target into range
+-> attacker stops and faces target
+-> short attacker-to-target line appears during the hit
+-> target flashes/recoils, then recovers or dies
+-> surviving enemy reaches the wall and the hit line points to the wall
+-> authoritative wall health drops
+```
+
+This flow preserves the 2026-06-15 accepted movement, targeting, death/reinforcement, and wall-damage behavior. User Play Mode feedback accepted it on 2026-06-17. E0-A3 can now add formula-driven role mix and density, but added spectacle must keep the low-density `attacker -> action -> target` read intact.
+
 ## 2026-06-15 Actual NavMesh Battle Flow
 
 ```text
@@ -14,11 +30,11 @@ Enemy spawns on hostile side
 
 `GroundDefenseNavMeshBattlefield` is now the normal `Gameplay` path. The previous zone/static-grammar/pooled-presentation path is disabled because it explained telemetry rather than producing an understandable battle. Later work may add tower/ranged attacks and formula-driven force density, but it must preserve this direct actor-to-target flow.
 
-The user accepted this runtime flow in Play Mode on 2026-06-15. Do not reopen movement, targeting, reinforcement, or wall-damage validation unless those contracts change. The next flow proof is visual: recognizable friendly/enemy models and a readable attacker -> action -> target exchange.
+The user accepted this runtime flow in Play Mode on 2026-06-15. Do not reopen movement, targeting, reinforcement, or wall-damage validation unless those contracts change. The 2026-06-16 section above is the accepted visual ownership proof.
 
 ## 2026-06-15 Static Noun Rendering Repair
 
-The flow remains paused before combat. Enemy, defender, tower, and wall now use runtime sprite cells instead of generated UV/material role quads. The defender faces the enemy, the wall health bar is hidden, and zone bands are reduced to supporting context. Validate this static read in both panel states before adding any action.
+The historical static flow remained paused before combat. Enemy, defender, tower, and wall used runtime sprite cells instead of generated UV/material role quads. The accepted actual NavMesh battlefield superseded this route, so it is no longer the active validation path.
 
 ## 2026-06-14 Static Grammar Gate
 
@@ -29,7 +45,7 @@ Enemy staging zone -> one hostile unit -> approach ground -> contact line
 -> one friendly defender -> fixed tower -> protected wall
 ```
 
-`DefenseRuntimeState` continues to advance resources, pressure, Hold/Push, wall state, and progression, but pooled actor motion and attacks are hidden. User validation confirmed the spatial bands but rejected the initial quad-rendered nouns. The 2026-06-15 sprite repair above now awaits the same paused-frame proof.
+`DefenseRuntimeState` continued to advance resources, pressure, Hold/Push, wall state, and progression, but pooled actor motion and attacks were hidden. User validation confirmed the spatial bands but rejected the initial quad-rendered nouns. The accepted actual NavMesh battlefield superseded this paused-frame proof.
 
 ## 2026-06-13 Failed Readability Check And Required Battle Grammar
 

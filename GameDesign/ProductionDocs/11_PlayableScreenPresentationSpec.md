@@ -1,5 +1,13 @@
 # Playable Screen Presentation Spec
 
+## 2026-06-16 E0-A2 Readable Ownership
+
+- The accepted defense view keeps the accepted NavMesh battle behavior and changes only actor readability and hit ownership.
+- Role-sheet actors should render as cutout sprites rather than dark rectangular cards. Each actor also has a faction base and a shape-coded badge: defender shield versus enemy threat marker.
+- Every successful melee or wall hit should briefly show an attacker-to-target line, while the target flashes/recoils. The viewer should be able to name the attacker, target, and hit without relying on HUD diagnostics.
+- User Play Mode feedback accepted this path on 2026-06-17. Treat friendly/enemy identity, approach, stop-at-range, attack source, target reaction, death/reinforcement, enemy wall hit, and visible wall-health loss as cumulative evidence unless a later change regresses them.
+- E0-A3 may add formula-driven density, but the added count/roles/cadence must not hide the accepted ownership read at actual panel scale.
+
 ## 2026-06-15 Live NavMesh Battle Contract
 
 - The defense panel must now explain itself through real behavior: hostile actors enter across visible ground, friendly actors intercept them, both exchange attacks, defeated actors leave, reinforcements return, and surviving hostiles attack the wall.
@@ -7,14 +15,14 @@
 - Full and compressed panel acceptance requires readable source, movement destination, target choice, attack contact, death, reinforcement side, and wall damage. HUD text may confirm wall health but cannot substitute for the visible event.
 - Current visuals may use the prepared sprite sheet, but the sprites are attached to actual NavMesh actors rather than floating presentation cards.
 - Camera framing and final art remain editor-sensitive. The fixed behavioral contract is enemy -> defender -> wall and defender -> enemy, with no individual unit controls.
-- 2026-06-15 Play Mode result: the behavioral contract passed, but the lack of recognizable friendly/enemy models still makes faction identity difficult. Model/silhouette identity and attack ownership are the next presentation gate.
+- 2026-06-15 Play Mode result: the behavioral contract passed, but the lack of recognizable friendly/enemy models still made faction identity difficult. The 2026-06-16 readable-ownership path above was accepted on 2026-06-17.
 
 ## 2026-06-15 E0-A1 Sprite Panel Repair
 
 - Enemy, defender, tower, and wall cells now render through `SpriteRenderer` rather than generated UV/material quads.
 - The defender faces the enemy. The wall health bar is hidden in `StaticGrammar`, and zone bands use lower alpha so object silhouettes own the read.
 - Full and compressed panel acceptance is unchanged: a paused screenshot must identify all four nouns without labels, motion, health bars, or diagnostic copy.
-- E0-A2 remains blocked until both panel states pass.
+- This static sprite panel repair was superseded by the accepted actual NavMesh battlefield. E0-A2 now validates readable ownership on real actors instead.
 
 ## 2026-06-14 E0-A1 Static Panel Contract
 

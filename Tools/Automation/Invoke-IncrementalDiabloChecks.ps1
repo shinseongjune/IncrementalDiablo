@@ -467,11 +467,17 @@ if ((Test-Path -LiteralPath $groundNavMeshBattlefieldPath) -and
     [void](Assert-TextContains "Ground battlefield creates defender force" $groundNavMeshBattlefieldText "GroundDefenseNavMeshUnitSide.Defender")
     [void](Assert-TextContains "Ground battlefield creates enemy force" $groundNavMeshBattlefieldText "GroundDefenseNavMeshUnitSide.Enemy")
     [void](Assert-TextContains "Ground battlefield routes wall damage" $groundNavMeshBattlefieldText "ApplyBattlefieldWallDamage")
+    [void](Assert-TextContains "Ground battlefield adds ownership markers" $groundNavMeshBattlefieldText "BuildOwnershipMarker")
+    [void](Assert-TextContains "Ground battlefield creates defender shield badge" $groundNavMeshBattlefieldText "DefenderShieldBadge")
+    [void](Assert-TextContains "Ground battlefield creates enemy threat badge" $groundNavMeshBattlefieldText "EnemyThreatBadge")
     [void](Assert-TextContains "Defenders acquire enemy targets" $groundNavMeshUnitText "FindNearestEnemy")
     [void](Assert-TextContains "Enemies acquire defender targets" $groundNavMeshUnitText "FindNearestDefender")
     [void](Assert-TextContains "Units move through character motor" $groundNavMeshUnitText "actor.Motor.TryMoveTo")
     [void](Assert-TextContains "Units attack through combat driver" $groundNavMeshUnitText "actor.Combat.TryBasicAttack")
     [void](Assert-TextContains "Enemies attack the wall in place" $groundNavMeshUnitText "TryPlayBasicAttackInPlace")
+    [void](Assert-TextContains "Units draw attack ownership line" $groundNavMeshUnitText "AttackOwnershipLine")
+    [void](Assert-TextContains "Units show attacker-owned hits" $groundNavMeshUnitText "ShowAttackOwnership")
+    [void](Assert-TextContains "Units show target reaction" $groundNavMeshUnitText "hitRecoil")
 }
 
 if ((Test-Path -LiteralPath $groundActorRuntimePath) -and
@@ -508,6 +514,8 @@ if ((Test-Path -LiteralPath $groundActorRuntimePath) -and
     [void](Assert-TextContains "Ground enemy view exposes health bar feedback" $groundEnemyViewText "UpdateHealthBar")
     [void](Assert-TextContains "Ground billboard utility faces defense camera" $groundBillboardUtilityText "GroundDefenseBillboardFacing")
     [void](Assert-TextContains "Ground billboard utility creates runtime sprites" $groundBillboardUtilityText "Sprite.Create(")
+    [void](Assert-TextContains "Ground billboard utility cuts dark sprite matte" $groundBillboardUtilityText "TryCreateCutoutTexture")
+    [void](Assert-TextContains "Ground billboard utility softens black sheet background" $groundBillboardUtilityText "ApplyDarkMatteCutout")
     [void](Assert-TextContains "Ground billboard utility uses SpriteRenderer" $groundBillboardUtilityText "SpriteRenderer renderer")
     [void](Assert-TextContains "Ground billboard utility supports role facing" $groundBillboardUtilityText "renderer.flipX = flipX")
     [void](Assert-TextContains "Ground battlefield creates wall-bound feedback" $groundBattlefieldViewText '"DefenseWall"')
@@ -557,7 +565,7 @@ if (Test-Path -LiteralPath $planPath) {
         "D0-C | P0 | Item registry and save migration | Done",
         "D0-D | P0 | Duplicate-item sink and conversion | Done",
         "D1-A | P1 | Formula-driven ground scaling | Done",
-        "E0-A | P0 | RTS-readable automatic defense battlefield | In Progress / NavMesh foundation accepted",
+        "E0-A | P0 | RTS-readable automatic defense battlefield | In Progress / E0-A2 readable ownership accepted",
         "RTS-readable automatic defense",
         "actual NavMesh battlefield",
         "CharacterStats",

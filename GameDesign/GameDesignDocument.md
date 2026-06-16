@@ -1,5 +1,12 @@
 # Incremental Diablo Game Design Document
 
+## 2026-06-16 E0-A2 Readable Ownership
+
+- The accepted NavMesh ground battle now has a first readable-ownership pass: role-sheet sprites are cut out from the black sheet background, actors receive defender/enemy faction bases and shape-coded badges, and melee/wall hits draw a short attacker-to-target line with target recoil.
+- This is still automatic ground defense. The player does not select units, issue movement commands, focus fire, place towers, or manage waves.
+- User Play Mode feedback accepted this path on 2026-06-17. Friendly/enemy identity, attacker, target, hit reaction, death/reinforcement, and wall damage are cumulative evidence unless a later change regresses them.
+- E0-A3 is next: formula-driven density and role mix must preserve the accepted ownership read at full and compressed panel scale.
+
 ## 2026-06-15 Actual NavMesh Ground Battle Reset
 
 - The prior implementation projected continuous-frontline telemetry through zones, cards, pooled placeholders, and presentation events. Player review correctly found that this did not explain what the objects were or why they moved.
@@ -7,14 +14,14 @@
 - Each unit uses the shared `CharacterStats`, `Health`, `NavMeshAgent`, `CharacterMotor`, `CombatDriver`, and `CharacterActor` stack. Enemies fight defenders first and attack the wall when unopposed; defenders acquire and attack enemies; defeated units reinforce after a delay.
 - Enemy wall attacks now damage the authoritative `DefenseRuntimeState`. This remains automatic defense, not player-controlled RTS movement.
 - The old lane, actor projection, pool, static battlefield view, and combat presenter remain disabled technical debt. They are no longer the normal player-facing proof.
-- 2026-06-15 Play Mode evidence accepted the movement, engagement, death/reinforcement, wall approach, and wall-damage behavior. The next production gate is recognizable friendly/enemy models and attack ownership; the current placeholders are not visually sufficient.
+- 2026-06-15 Play Mode evidence accepted the movement, engagement, death/reinforcement, wall approach, and wall-damage behavior. The 2026-06-16 E0-A2 path above was accepted on 2026-06-17.
 
 ## 2026-06-15 E0-A1 Rendering Repair
 
 - The failed role quad/material path is replaced with runtime sprites, preserving the same one-enemy/one-defender/one-tower/one-wall proof.
 - The defender now faces the enemy, zone bands are subdued, and the static wall health bar is removed from the proof.
 - This moves the visible defense panel closer to readable RTS nouns without adding controls, attacks, waves, or density.
-- E0-A1 now needs one paused full/compressed panel validation before E0-A2 can begin.
+- This static repair was superseded by the accepted actual NavMesh battlefield and the E0-A2 readable-ownership candidate above.
 
 ## 2026-06-14 E0-A1 Static Grammar Checkpoint
 
@@ -22,7 +29,7 @@
 - Runtime actor motion, attacks, deaths, and reinforcements are hidden while this gate is active.
 - The continuous automatic frontline still owns pressure, Hold/Push, rewards, wall state, save/load, and progression. This is a presentation gate, not a second simulation or a manual RTS mode.
 - User validation failed this initial quad-rendered checkpoint: ground regions and the contact line were present, but the actor/structure output read as rectangles, a capsule-like shape, bars, and blocks.
-- The 2026-06-15 sprite repair above is the current E0-A1 candidate. E0-A2 still cannot add action before acceptance.
+- The static-zone proof is no longer the active route. E0-A now proceeds through real NavMesh actors.
 
 ## 2026-06-13 Ground Presentation Validation Result
 

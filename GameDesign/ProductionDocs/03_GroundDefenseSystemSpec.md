@@ -10,9 +10,17 @@
 - `DefenseRuntimeState` remains authoritative for wall health, breach, rewards, Hold/Push, progression, and save/load. The visible actors do not add manual waves, unit commands, or a second economy.
 - The legacy lane presenter, actor projection, enemy pool, static battlefield view, and combat presenter are disabled in `Gameplay`. Their zone/card/billboard presentation is not an acceptance target.
 
-### Accepted foundation and next gate
+### Accepted foundation and current gate
 
-The user confirmed the generated NavMesh, enemy/defender movement and engagement, death/reinforcement, enemy wall approach/attack, and wall-health loss in Play Mode on 2026-06-15. The next gate is recognizable friendly/enemy models and readable attack ownership in both panel states. Ranged/tower combat and formula-driven density remain subsequent gates.
+The user confirmed the generated NavMesh, enemy/defender movement and engagement, death/reinforcement, enemy wall approach/attack, and wall-health loss in Play Mode on 2026-06-15. The user then confirmed the 2026-06-16 E0-A2 readability candidate on 2026-06-17: role-sheet sprites are cut out from the dark background, generated units get faction bases plus defender shield/enemy threat badges, and melee/wall hits draw a short attacker-to-target ownership line with target recoil. E0-A3 formula-driven density is the next gate. Ranged/tower combat remains a later ownership proof if it is added.
+
+## 2026-06-16 E0-A2 Readable Ownership
+
+- `GroundDefenseBillboardUtility` creates a readable runtime sprite by copying the requested sheet cell and cutting out near-black matte pixels when the source texture is readable. If texture readback is unavailable, it falls back to the previous `Sprite.Create` path.
+- `GroundDefenseNavMeshBattlefield` keeps the accepted runtime ground/NavMesh, two-defender/three-enemy force counts, targeting, death/reinforcement, and wall-damage behavior. It adds code-generated faction bases plus a blue defender shield badge and red enemy threat badge to each spawned actor.
+- `GroundDefenseNavMeshUnit` now shows attack ownership on every successful melee or wall strike by drawing a short source-to-target line for the attack window. The target also flashes and recoils, so the hit is not readable only through health bars or HUD text.
+- E0-A2 was accepted from user Play Mode feedback on 2026-06-17. Do not reopen it unless actor identity, attack ownership, target reaction, death/reinforcement, or wall damage regresses.
+- E0-A3 may now add role mix, force counts, and reinforcement cadence from formulas, but it must preserve the accepted readability at actual panel scale.
 
 ## 2026-06-15 E0-A1 Sprite Rendering Repair
 
@@ -20,7 +28,7 @@ The user confirmed the generated NavMesh, enemy/defender movement and engagement
 - The role sheet remains the source texture, but each enemy/defender/tower/wall cell now uses Unity's sprite alpha path instead of a custom role mesh/material.
 - The static defender is flipped to face the approaching enemy. Static zone alpha is reduced and the wall health bar is omitted so bars and colored rectangles cannot dominate the noun proof.
 - `StaticGrammar` still shows exactly one enemy, one defender, one tower, and one wall. Runtime attacks, casualties, reinforcements, and pooled density remain hidden.
-- E0-A1 is `Needs Unity Play Mode / Sprite rendering repair`. Acceptance requires paused screenshots in both panel states; E0-A2 remains blocked.
+- This checkpoint was superseded by the accepted actual NavMesh foundation and the 2026-06-16 E0-A2 candidate above. Keep it as history for the failed static-zone approach.
 
 ## 2026-06-14 E0-A1 Static Grammar Implementation
 
@@ -28,7 +36,7 @@ The user confirmed the generated NavMesh, enemy/defender movement and engagement
 - The generated battlefield contains `Zone_EnemyStaging`, `Zone_Approach`, `Line_Contact`, and `Zone_FriendlyDefense`, plus one enemy footprint, one defender footprint, and fixed tower/wall foundations.
 - The visible proof contains exactly one enemy, one defender, one tower, and one wall. Enemy/defender art retains opposing facing from the role sheet, structures remain larger and fixed, and the defender is now vertically offset so its feet sit on the ground instead of the billboard center intersecting the ground plane.
 - User validation of this initial quad-based path failed: the zone bands and line appeared, but enemy/defender/tower/wall did not read as those concepts. The actual panel showed flat colored regions, capsule-like geometry, bars, and small blocks.
-- The 2026-06-15 section above supersedes that rendering path. E0-A2 combat events and E0-A3 pooled density remain hidden until the repaired sprite proof passes.
+- The accepted actual NavMesh foundation supersedes this static rendering path. E0-A2 now proceeds through real actors, not through the static-zone proof.
 
 ## 2026-06-13 Play Mode Rejection And RTS Concept Contract
 

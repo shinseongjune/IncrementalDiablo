@@ -1,5 +1,23 @@
 # Unity Scene And Prefab Setup Guide
 
+## 2026-06-16 E0-A2 Readable Ownership Handoff
+
+No new scene GameObject, prefab, or Inspector reference is required. `Gameplay > DefenseRoot > GroundDefenseNavMeshBattlefield` generates the added visuals at runtime.
+
+Focused Play Mode validation:
+
+1. Open `Gameplay`, enter Play Mode, and start in `DefenseFocus`.
+2. Confirm the enemy and defender sprites no longer read as dark rectangular cards. The character body should be visible against the battlefield ground.
+3. Confirm every generated actor has a ground faction base and shape-coded badge: blue defender shield versus red enemy threat marker.
+4. Watch one defender/enemy melee exchange. Confirm the attacker stops, faces the target, a short attacker-to-target line appears, and the target flashes/recoils.
+5. Allow defenders to fall. Confirm surviving enemies move to the wall, their wall hit line points to the wall, and the wall health visibly drops.
+6. Confirm death/reinforcement still works as accepted on 2026-06-15 and that no inert duplicates remain.
+7. Start a dungeon to compress the defense panel, then repeat identity, attack-line, target-reaction, and wall-hit checks at side-panel scale.
+
+2026-06-17 result: the user confirmed this works well enough in Play Mode. No repeat of this E0-A2 ownership check is required unless actor identity, ownership line readability, target reaction, death/reinforcement, or wall-hit feedback changes.
+
+Fixed for the accepted gate: existing anchors, generated ground/NavMesh, two defenders, three enemies, shared character stack, automatic targeting, no unit commands, cutout role-sheet sprites, faction base/badge markers, and short attack ownership lines. Adjustable during E0-A3 review: badge size/height, base radius, sprite scale, attack-line width/duration, force count, role mix, reinforcement cadence, and camera framing. E0-A3 must prove added density does not obscure the accepted reads.
+
 ## 2026-06-15 NavMesh Ground Battle Handoff
 
 `Gameplay > DefenseRoot` now has `GroundDefenseNavMeshBattlefield` enabled. `GroundDefenseLanePresenter`, `GroundDefenseActorRuntime`, `GroundDefenseEnemyPool`, `GroundDefenseBattlefieldView`, and `GroundDefenseCombatPresenter` are disabled.
@@ -17,7 +35,7 @@ Focused Play Mode validation:
 
 Fixed for this gate: existing enemy/wall anchors, runtime-generated ground/NavMesh, two defenders, three enemies, shared character component stack, automatic targeting, and no unit commands. Adjustable after review: ground width, unit spacing, movement speed, attack range/cooldown, respawn delay, sprite scale, and camera framing. Do not reposition anchors or change panel composition unless the live view proves a specific crop or pathing defect.
 
-2026-06-15 result: the user confirmed this behavior works. No repeat of this foundation check is required unless movement, targeting, respawn, or wall damage changes. The next authoring handoff is recognizable friendly/enemy models and attack-source readability at full and compressed panel scale.
+2026-06-15 result: the user confirmed this behavior works. No repeat of this foundation check is required unless movement, targeting, respawn, or wall damage changes. The 2026-06-16 handoff above is the current recognizable friendly/enemy and attack-source readability check.
 
 ## 2026-06-15 E0-A1 Sprite Rendering Handoff
 

@@ -36,7 +36,7 @@ public static class GroundDefenseBillboardUtility
         GameObject visual = new GameObject("Visual");
         visual.transform.SetParent(root.transform, false);
 
-        Sprite sprite = CreateSprite(name, texture, uvRect);
+        Sprite sprite = CreateSprite(name, texture, uvRect, out Texture2D generatedTexture);
         SpriteRenderer renderer = visual.AddComponent<SpriteRenderer>();
         renderer.sprite = sprite;
         renderer.color = color;
@@ -57,6 +57,7 @@ public static class GroundDefenseBillboardUtility
             root.GetComponent<GroundDefenseGeneratedVisual>() ??
             root.AddComponent<GroundDefenseGeneratedVisual>();
         resources.Track(sprite);
+        resources.Track(generatedTexture);
         return new GroundDefenseBillboardHandle(root, renderer);
     }
 
@@ -132,10 +133,29 @@ public static class GroundDefenseBillboardUtility
         return Camera.main;
     }
 
-    private static Sprite CreateSprite(string name, Texture2D texture, Rect uvRect)
+    private static Sprite CreateSprite(
+        string name,
+        Texture2D texture,
+        Rect uvRect,
+        out Texture2D generatedTexture)
     {
+        generatedTexture = null;
         Texture2D safeTexture = texture == null ? Texture2D.whiteTexture : texture;
         Rect safeUv = ClampUvRect(uvRect);
+        if (TryCreateCutoutTexture(name, safeTexture, safeUv, out Texture2D cutoutTexture))
+        {
+            generatedTexture = cutoutTexture;
+            Sprite cutoutSprite = Sprite.Create(
+                cutoutTexture,
+                new Rect(0f, 0f, cutoutTexture.width, cutoutTexture.height),
+                new Vector2(0.5f, 0.5f),
+                100f,
+                0,
+                SpriteMeshType.FullRect);
+            cutoutSprite.name = $"{name}_CutoutRuntimeSprite";
+            return cutoutSprite;
+        }
+
         Rect pixelRect = new Rect(
             safeUv.xMin * safeTexture.width,
             safeUv.yMin * safeTexture.height,
@@ -150,6 +170,83 @@ public static class GroundDefenseBillboardUtility
             SpriteMeshType.FullRect);
         sprite.name = $"{name}_RuntimeSprite";
         return sprite;
+    }
+
+    private static bool TryCreateCutoutTexture(
+        string name,
+        Texture2D source,
+        Rect uvRect,
+        out Texture2D cutoutTexture)
+    {
+        cutoutTexture = null;
+        if (source == null)
+        {
+            return false;
+        }
+
+        int x = Mathf.Clamp(
+            Mathf.FloorToInt(uvRect.xMin * source.width),
+            0,
+            source.width - 1);
+        int y = Mathf.Clamp(
+            Mathf.FloorToInt(uvRect.yMin * source.height),
+            0,
+            source.height - 1);
+        int width = Mathf.Clamp(
+            Mathf.CeilToInt(uvRect.width * source.width),
+            1,
+            source.width - x);
+        int height = Mathf.Clamp(
+            Mathf.CeilToInt(uvRect.height * source.height),
+            1,
+            source.height - y);
+
+        Color[] pixels;
+        try
+        {
+            pixels = source.GetPixels(x, y, width, height);
+        }
+        catch (UnityException)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            pixels[i] = ApplyDarkMatteCutout(pixels[i]);
+        }
+
+        cutoutTexture = new Texture2D(width, height, TextureFormat.RGBA32, false)
+        {
+            name = $"{name}_CutoutRuntimeTexture",
+            filterMode = source.filterMode,
+            wrapMode = TextureWrapMode.Clamp
+        };
+        cutoutTexture.SetPixels(pixels);
+        cutoutTexture.Apply(false, true);
+        return true;
+    }
+
+    private static Color ApplyDarkMatteCutout(Color pixel)
+    {
+        if (pixel.a <= 0.01f)
+        {
+            return Color.clear;
+        }
+
+        float brightness = Mathf.Max(pixel.r, pixel.g, pixel.b);
+        if (brightness <= 0.045f)
+        {
+            pixel.a = 0f;
+            return pixel;
+        }
+
+        if (brightness < 0.095f)
+        {
+            pixel.a *= Mathf.InverseLerp(0.045f, 0.095f, brightness);
+        }
+
+        return pixel;
     }
 
     private static Rect ClampUvRect(Rect uvRect)

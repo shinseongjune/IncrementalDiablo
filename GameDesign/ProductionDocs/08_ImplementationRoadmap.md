@@ -1,5 +1,17 @@
 # Implementation Roadmap
 
+## 2026-06-16 E0-A2 Readable Ownership
+
+1. Preserve the accepted NavMesh battle foundation: generated ground/NavMesh, two defenders, three enemies, shared character stack, automatic targeting, death/reinforcement, and authoritative wall damage.
+2. Cut out the dark background from readability-sheet role sprites when the source texture is readable, with fallback to the prior source-sprite path.
+3. Add code-generated faction ownership markers to each actor: base ring plus defender shield or enemy threat badge.
+4. On every successful melee or wall hit, draw a short attacker-to-target line and apply target flash/recoil.
+5. User Play Mode feedback accepted friendly/enemy identity, attack source, target, hit reaction, death/reinforcement, and wall damage on 2026-06-17.
+6. E0-A3 may now add formula-driven role mix and density at low cadence first.
+7. Add tower/ranged fire only if it preserves the accepted melee/wall ownership read and clearly shows Unit -> action -> target.
+
+Status: E0-A2 accepted. E0-A3 formula-driven battle scale is next.
+
 ## 2026-06-15 E0-A NavMesh Combat Reset
 
 1. Disable the rejected lane/actor/pool/static-zone/combat-presentation path in normal `Gameplay`.
@@ -8,9 +20,9 @@
 4. Make defenders intercept enemies; make enemies fight defenders before attacking the wall.
 5. Route visible wall hits into authoritative wall health and breach state.
 6. Add bounded death and reinforcement behavior.
-7. Validate this live actor flow in full and compressed defense panels before adding tower/ranged attacks or formula-driven density.
+7. User accepted this live actor flow in Play Mode on 2026-06-15. Preserve it unless movement, targeting, respawn, or wall damage changes.
 
-This replaces the static noun/zone proof as the active E0-A gate. The old projection remains disabled technical debt, not a second gameplay path.
+This replaces the static noun/zone proof as the active E0-A foundation. The old projection remains disabled technical debt, not a second gameplay path. The 2026-06-16 section above records the accepted E0-A2 readability gate.
 
 ## 2026-06-15 E0-A1 Sprite Rendering Repair
 
@@ -18,9 +30,9 @@ This replaces the static noun/zone proof as the active E0-A gate. The old projec
 2. Flip the defender toward the enemy so faction intent is readable before motion.
 3. Reduce zone-band alpha and hide the wall health bar during `StaticGrammar`.
 4. Keep exactly one enemy, one defender, one tower, and one wall.
-5. Validate the paused full and compressed panels before enabling E0-A2.
+5. This paused route was superseded by the actual NavMesh actor route.
 
-This is a rendering-path repair, not a new composition or combat pass. E0-A2 attacks and E0-A3 density remain blocked.
+This was a rendering-path repair checkpoint, not the active composition or combat pass. E0-A2 now proceeds through actual NavMesh actors.
 
 ## 2026-06-14 E0-A1 Validation-Failed Checkpoint
 
@@ -30,9 +42,9 @@ E0-A1 is implemented as a bounded visual gate:
 2. One enemy, one defender, one tower, and one wall remain persistently visible.
 3. Enemy staging, approach, contact, and protected ground regions are rendered as ordered battlefield space.
 4. Unit footprints and structure foundations provide ground ownership; the defender billboard is corrected to sit above the ground plane.
-5. E0-A2 attacks and E0-A3 density remain disabled until the paused full/compressed panel proof passes.
+5. E0-A2 attacks and E0-A3 density remained disabled for this historical static proof.
 
-User evidence rejected this checkpoint. The zone bands and contact line render, but the intended enemy, defender, tower, and wall remain unrecognizable in the actual panel and read as primitive rectangles/capsules/blocks. The next implementation must diagnose the role-sheet material, UV, alpha, sorting, camera, and primitive fallback path. Do not implement E0-A2 or add density.
+User evidence rejected this checkpoint. The zone bands and contact line rendered, but the intended enemy, defender, tower, and wall remained unrecognizable in the actual panel and read as primitive rectangles/capsules/blocks. The actual NavMesh actor route superseded this proof.
 
 ## 2026-06-13 E0-A Rejected Checkpoint And Rebuild Order
 

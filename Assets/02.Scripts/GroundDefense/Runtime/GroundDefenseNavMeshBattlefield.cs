@@ -58,6 +58,14 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
     [SerializeField, Min(0f)] private float defenderVisualHeight = 1.1f;
     [SerializeField, Min(0f)] private float wallVisualHeight = 1.65f;
 
+    [Header("Readable Ownership")]
+    [SerializeField] private Color enemyOwnershipColor = new Color(1f, 0.16f, 0.08f, 1f);
+    [SerializeField] private Color defenderOwnershipColor = new Color(0.15f, 0.42f, 1f, 1f);
+    [SerializeField, Min(0.05f)] private float ownershipBaseRadius = 0.62f;
+    [SerializeField, Min(0.01f)] private float ownershipBaseHeight = 0.04f;
+    [SerializeField] private Vector2 ownershipBadgeSize = new Vector2(0.5f, 0.64f);
+    [SerializeField, Min(0f)] private float ownershipBadgeHeight = 2.25f;
+
     private readonly List<GroundDefenseNavMeshUnit> defenders =
         new List<GroundDefenseNavMeshUnit>();
     private readonly List<GroundDefenseNavMeshUnit> enemies =
@@ -318,6 +326,7 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
         visual.Root.transform.localPosition =
             Vector3.up * (isDefender ? defenderVisualHeight : enemyVisualHeight);
 
+        BuildOwnershipMarker(unitObject.transform, isDefender);
         unit.Configure(this, side, hit.position, visual.Root.transform, visual.Renderer);
         if (isDefender)
         {
@@ -348,6 +357,141 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
         return enemySpawnAnchor.position +
                travelDirection * 0.8f +
                sideOffset;
+    }
+
+    private void BuildOwnershipMarker(Transform parent, bool isDefender)
+    {
+        Color color = isDefender ? defenderOwnershipColor : enemyOwnershipColor;
+        BuildOwnershipBase(parent, color);
+        BuildOwnershipBadge(parent, isDefender, color);
+    }
+
+    private void BuildOwnershipBase(Transform parent, Color color)
+    {
+        GameObject baseObject = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        baseObject.name = "FactionBase";
+        baseObject.transform.SetParent(parent, false);
+        baseObject.transform.localPosition = Vector3.up * (ownershipBaseHeight * 0.5f);
+        baseObject.transform.localScale = new Vector3(
+            ownershipBaseRadius,
+            ownershipBaseHeight,
+            ownershipBaseRadius);
+
+        Collider baseCollider = baseObject.GetComponent<Collider>();
+        if (baseCollider != null)
+        {
+            Destroy(baseCollider);
+        }
+
+        Renderer renderer = baseObject.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            Material material = CreateOwnershipMaterial("FactionBase", color);
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+
+            GroundDefenseGeneratedVisual resources =
+                parent.GetComponent<GroundDefenseGeneratedVisual>() ??
+                parent.gameObject.AddComponent<GroundDefenseGeneratedVisual>();
+            resources.Track(material);
+        }
+    }
+
+    private void BuildOwnershipBadge(Transform parent, bool isDefender, Color color)
+    {
+        GameObject badge = new GameObject(isDefender ? "DefenderShieldBadge" : "EnemyThreatBadge");
+        badge.transform.SetParent(parent, false);
+        badge.transform.localPosition = Vector3.up * ownershipBadgeHeight;
+
+        GroundDefenseBillboardFacing facing = badge.AddComponent<GroundDefenseBillboardFacing>();
+        facing.Configure(defenseCamera);
+
+        Mesh mesh = isDefender
+            ? CreateShieldBadgeMesh(ownershipBadgeSize)
+            : CreateThreatBadgeMesh(ownershipBadgeSize);
+        MeshFilter filter = badge.AddComponent<MeshFilter>();
+        filter.sharedMesh = mesh;
+
+        MeshRenderer renderer = badge.AddComponent<MeshRenderer>();
+        Material material = CreateOwnershipMaterial(badge.name, color);
+        renderer.sharedMaterial = material;
+        renderer.shadowCastingMode = ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
+        renderer.sortingOrder = isDefender ? 24 : 23;
+
+        GroundDefenseGeneratedVisual resources =
+            parent.GetComponent<GroundDefenseGeneratedVisual>() ??
+            parent.gameObject.AddComponent<GroundDefenseGeneratedVisual>();
+        resources.Track(mesh);
+        resources.Track(material);
+    }
+
+    private static Mesh CreateShieldBadgeMesh(Vector2 size)
+    {
+        float halfWidth = size.x * 0.5f;
+        float halfHeight = size.y * 0.5f;
+        Mesh mesh = new Mesh
+        {
+            name = "GroundDefense_DefenderShieldBadge_RuntimeMesh",
+            vertices = new[]
+            {
+                new Vector3(-halfWidth, halfHeight * 0.55f, 0f),
+                new Vector3(halfWidth, halfHeight * 0.55f, 0f),
+                new Vector3(halfWidth * 0.82f, -halfHeight * 0.18f, 0f),
+                new Vector3(0f, -halfHeight, 0f),
+                new Vector3(-halfWidth * 0.82f, -halfHeight * 0.18f, 0f)
+            },
+            triangles = new[] { 0, 1, 2, 0, 2, 4, 4, 2, 3 }
+        };
+        mesh.RecalculateBounds();
+        return mesh;
+    }
+
+    private static Mesh CreateThreatBadgeMesh(Vector2 size)
+    {
+        float halfWidth = size.x * 0.5f;
+        float halfHeight = size.y * 0.5f;
+        Mesh mesh = new Mesh
+        {
+            name = "GroundDefense_EnemyThreatBadge_RuntimeMesh",
+            vertices = new[]
+            {
+                new Vector3(0f, halfHeight, 0f),
+                new Vector3(halfWidth, -halfHeight * 0.2f, 0f),
+                new Vector3(halfWidth * 0.28f, -halfHeight * 0.2f, 0f),
+                new Vector3(halfWidth * 0.28f, -halfHeight, 0f),
+                new Vector3(-halfWidth * 0.28f, -halfHeight, 0f),
+                new Vector3(-halfWidth * 0.28f, -halfHeight * 0.2f, 0f),
+                new Vector3(-halfWidth, -halfHeight * 0.2f, 0f)
+            },
+            triangles = new[] { 0, 1, 2, 0, 2, 5, 0, 5, 6, 2, 3, 4, 2, 4, 5 }
+        };
+        mesh.RecalculateBounds();
+        return mesh;
+    }
+
+    private static Material CreateOwnershipMaterial(string name, Color color)
+    {
+        Shader shader = Shader.Find("Universal Render Pipeline/Unlit") ??
+                        Shader.Find("Sprites/Default") ??
+                        Shader.Find("Standard");
+        Material material = new Material(shader)
+        {
+            name = $"{name}_RuntimeMaterial",
+            color = color
+        };
+        if (material.HasProperty("_BaseColor"))
+        {
+            material.SetColor("_BaseColor", color);
+        }
+
+        if (material.HasProperty("_Color"))
+        {
+            material.SetColor("_Color", color);
+        }
+
+        return material;
     }
 
     private IEnumerator ReplaceDefeatedUnit(GroundDefenseNavMeshUnit unit)

@@ -12,6 +12,8 @@ public sealed class GroundDefenseNavMeshUnit : MonoBehaviour
 {
     private static readonly int BaseColorProperty = Shader.PropertyToID("_BaseColor");
     private static readonly int ColorProperty = Shader.PropertyToID("_Color");
+    private const float AttackFeedbackSeconds = 0.2f;
+    private const float HitFeedbackSeconds = 0.18f;
 
     private GroundDefenseNavMeshBattlefield battlefield;
     private GroundDefenseNavMeshUnitSide side;
@@ -25,12 +27,18 @@ public sealed class GroundDefenseNavMeshUnit : MonoBehaviour
     private MaterialPropertyBlock propertyBlock;
     private float attackFeedbackRemaining;
     private float hitFeedbackRemaining;
+    private LineRenderer attackOwnershipLine;
+    private Material attackLineMaterial;
+    private Vector3 attackLineEnd;
     private bool deathReported;
 
     public GroundDefenseNavMeshUnitSide Side => side;
     public CharacterActor Actor => actor;
     public Health Health => actor == null ? null : actor.Health;
     public Vector3 HomePosition => homePosition;
+    public Vector3 VisualHitPosition => visualRoot == null
+        ? transform.position + Vector3.up * 1.1f
+        : visualRoot.position;
     public bool IsAlive => Health != null && Health.IsAlive;
 
     private void Awake()
@@ -43,6 +51,7 @@ public sealed class GroundDefenseNavMeshUnit : MonoBehaviour
     private void Update()
     {
         TickVisualFeedback();
+        TickAttackOwnershipLine();
 
         if (battlefield == null || actor == null || actor.Health == null)
         {
@@ -83,11 +92,12 @@ public sealed class GroundDefenseNavMeshUnit : MonoBehaviour
         visualRoot = nextVisualRoot;
         visualRenderer = nextVisualRenderer;
         baseVisualScale = visualRoot == null ? Vector3.one : visualRoot.localScale;
+        CreateAttackOwnershipLine(unitSide);
     }
 
     public void PlayHitFeedback()
     {
-        hitFeedbackRemaining = 0.16f;
+        hitFeedbackRemaining = HitFeedbackSeconds;
     }
 
     private void UpdateDefender()
@@ -133,8 +143,9 @@ public sealed class GroundDefenseNavMeshUnit : MonoBehaviour
         actor.Motor.FaceToward(target.transform.position);
         if (actor.Combat.TryBasicAttack(target.Health))
         {
-            attackFeedbackRemaining = 0.14f;
+            attackFeedbackRemaining = AttackFeedbackSeconds;
             target.PlayHitFeedback();
+            ShowAttackOwnership(target.VisualHitPosition);
         }
     }
 
@@ -152,7 +163,8 @@ public sealed class GroundDefenseNavMeshUnit : MonoBehaviour
         actor.Motor.FaceToward(battlefield.WallPosition);
         if (actor.Combat.TryPlayBasicAttackInPlace())
         {
-            attackFeedbackRemaining = 0.14f;
+            attackFeedbackRemaining = AttackFeedbackSeconds;
+            ShowAttackOwnership(battlefield.WallPosition + Vector3.up * 1.25f);
             battlefield.ApplyEnemyWallHit(actor.Stats.GetValue(StatId.AttackDamage));
         }
     }
@@ -205,8 +217,11 @@ public sealed class GroundDefenseNavMeshUnit : MonoBehaviour
         {
             float pulse = attackFeedbackRemaining <= 0f
                 ? 1f
-                : Mathf.Lerp(1f, 1.14f, attackFeedbackRemaining / 0.14f);
-            visualRoot.localScale = baseVisualScale * pulse;
+                : Mathf.Lerp(1f, 1.14f, attackFeedbackRemaining / AttackFeedbackSeconds);
+            float hitRecoil = hitFeedbackRemaining <= 0f
+                ? 1f
+                : Mathf.Lerp(1f, 0.88f, hitFeedbackRemaining / HitFeedbackSeconds);
+            visualRoot.localScale = baseVisualScale * pulse * hitRecoil;
         }
 
         if (!deathReported)
@@ -214,6 +229,83 @@ public sealed class GroundDefenseNavMeshUnit : MonoBehaviour
             SetVisualColor(hitFeedbackRemaining > 0f
                 ? new Color(1f, 0.55f, 0.32f, 1f)
                 : Color.white);
+        }
+    }
+
+    private void CreateAttackOwnershipLine(GroundDefenseNavMeshUnitSide unitSide)
+    {
+        if (attackOwnershipLine != null)
+        {
+            return;
+        }
+
+        GameObject lineObject = new GameObject("AttackOwnershipLine");
+        lineObject.transform.SetParent(transform, false);
+
+        attackOwnershipLine = lineObject.AddComponent<LineRenderer>();
+        attackOwnershipLine.positionCount = 2;
+        attackOwnershipLine.useWorldSpace = true;
+        attackOwnershipLine.widthMultiplier = 0.12f;
+        attackOwnershipLine.numCapVertices = 2;
+        attackOwnershipLine.alignment = LineAlignment.View;
+        attackOwnershipLine.sortingOrder = unitSide == GroundDefenseNavMeshUnitSide.Defender
+            ? 32
+            : 31;
+
+        Shader shader = Shader.Find("Sprites/Default") ??
+                        Shader.Find("Universal Render Pipeline/Unlit") ??
+                        Shader.Find("Standard");
+        attackLineMaterial = new Material(shader)
+        {
+            name = "GroundDefenseAttackOwnershipLine_RuntimeMaterial"
+        };
+        attackOwnershipLine.sharedMaterial = attackLineMaterial;
+        attackOwnershipLine.enabled = false;
+    }
+
+    private void ShowAttackOwnership(Vector3 targetPosition)
+    {
+        attackLineEnd = targetPosition;
+        if (attackOwnershipLine != null)
+        {
+            attackOwnershipLine.enabled = true;
+        }
+    }
+
+    private void TickAttackOwnershipLine()
+    {
+        if (attackOwnershipLine == null)
+        {
+            return;
+        }
+
+        bool visible = attackFeedbackRemaining > 0f && !deathReported;
+        attackOwnershipLine.enabled = visible;
+        if (!visible)
+        {
+            return;
+        }
+
+        Color baseColor = side == GroundDefenseNavMeshUnitSide.Defender
+            ? new Color(0.35f, 0.7f, 1f, 1f)
+            : new Color(1f, 0.28f, 0.12f, 1f);
+        float alpha = Mathf.Clamp01(attackFeedbackRemaining / AttackFeedbackSeconds);
+        Color startColor = baseColor;
+        Color endColor = Color.white;
+        startColor.a = alpha;
+        endColor.a = alpha;
+
+        attackOwnershipLine.startColor = startColor;
+        attackOwnershipLine.endColor = endColor;
+        attackOwnershipLine.SetPosition(0, VisualHitPosition);
+        attackOwnershipLine.SetPosition(1, attackLineEnd);
+    }
+
+    private void OnDestroy()
+    {
+        if (attackLineMaterial != null)
+        {
+            Destroy(attackLineMaterial);
         }
     }
 
