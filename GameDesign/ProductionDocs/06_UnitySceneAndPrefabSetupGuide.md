@@ -1,5 +1,21 @@
 # Unity Scene And Prefab Setup Guide
 
+## 2026-06-17 E0-A3 Formula-Driven Battle Scale Handoff
+
+No new GameObject, prefab, or Inspector reference is required. `Gameplay > DefenseRoot > GroundDefenseNavMeshBattlefield` keeps the accepted runtime ground/NavMesh and now derives visual force scale from the existing `DefenseDirector` Frontline profile.
+
+Focused Play Mode validation:
+
+1. Open `Gameplay`, enter Play Mode, and start in `DefenseFocus` at the default Frontline Level 1 state.
+2. Confirm the baseline still reads like the accepted E0-A2 proof: two defenders, three enemies, cutout actors, faction bases/badges, attacker-to-target hit lines, target recoil, death/reinforcement, enemy wall hits, and visible wall-health loss.
+3. For the density check, temporarily use a higher Frontline band through a test save or Inspector starting level, such as Frontline Level 11 or 21. This is validation setup only; do not save it as the production scene default.
+4. Confirm higher bands add bounded enemy count and shield/runner role variety without hiding the defender/enemy ownership markers or source-target hit lines.
+5. Confirm reinforcements feel more frequent but still leave enough time to see approach, stop-at-range, hit, target reaction, death, and wall pressure.
+6. Start a dungeon to compress the defense panel and repeat the added count/role/cadence read at side-panel scale.
+7. Reject the pass if density turns the panel into unreadable motion, if role badges overlap enough to hide bodies, if attacker and target cannot be named, or if wall damage becomes understandable only through HUD text.
+
+Fixed for this gate: automatic NavMesh actors, no unit selection/movement/focus-fire, no manual wave rows, authoritative `DefenseRuntimeState`, and formula-derived force scaling. Adjustable after review: `maxFormulaDefenders`, `maxFormulaEnemies`, role multipliers, minimum respawn seconds, badge scale/height, unit spacing, and camera framing.
+
 ## 2026-06-16 E0-A2 Readable Ownership Handoff
 
 No new scene GameObject, prefab, or Inspector reference is required. `Gameplay > DefenseRoot > GroundDefenseNavMeshBattlefield` generates the added visuals at runtime.

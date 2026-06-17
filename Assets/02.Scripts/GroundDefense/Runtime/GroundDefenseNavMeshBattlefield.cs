@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.AI.Navigation;
@@ -27,6 +28,16 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
     [SerializeField, Min(1f)] private float defenderDistanceFromWall = 4f;
     [SerializeField, Min(0.2f)] private float wallAttackDistance = 1.25f;
     [SerializeField, Min(0.5f)] private float defenderEngageRadius = 7f;
+
+    [Header("Formula Scale")]
+    [SerializeField] private bool useFormulaDrivenForceScale = true;
+    [SerializeField, Min(1)] private int maxFormulaDefenders = 4;
+    [SerializeField, Min(1)] private int maxFormulaEnemies = 6;
+    [SerializeField, Min(1)] private int extraEnemyEveryLevelsInBand = 5;
+    [SerializeField, Range(0f, 1f)] private float formulaCadenceStrength = 0.28f;
+    [SerializeField, Min(0.1f)] private float minimumEnemyRespawnSeconds = 0.9f;
+    [SerializeField, Min(0.1f)] private float minimumDefenderRespawnSeconds = 1.6f;
+    [SerializeField] private GroundDefenseNavMeshEnemyRole[] enemyRoles;
 
     [Header("Defender Stats")]
     [SerializeField, Min(1f)] private float defenderHealth = 90f;
@@ -77,6 +88,7 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
     private Material groundMaterial;
     private Vector3 travelDirection;
     private Vector3 sideDirection;
+    private GroundDefenseVisualForceProfile activeForceProfile;
     private bool shuttingDown;
 
     public Vector3 WallPosition => wallAnchor == null ? transform.position : wallAnchor.position;
@@ -87,7 +99,30 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
 
     private void Start()
     {
+        ResolveReferences();
         BuildBattlefield();
+    }
+
+    private void OnValidate()
+    {
+        defenderCount = Mathf.Max(1, defenderCount);
+        enemyCount = Mathf.Max(1, enemyCount);
+        maxFormulaDefenders = Mathf.Max(defenderCount, maxFormulaDefenders);
+        maxFormulaEnemies = Mathf.Max(enemyCount, maxFormulaEnemies);
+        extraEnemyEveryLevelsInBand = Mathf.Max(1, extraEnemyEveryLevelsInBand);
+        formulaCadenceStrength = Mathf.Clamp01(formulaCadenceStrength);
+        minimumEnemyRespawnSeconds = Mathf.Max(0.1f, minimumEnemyRespawnSeconds);
+        minimumDefenderRespawnSeconds = Mathf.Max(0.1f, minimumDefenderRespawnSeconds);
+
+        if (enemyRoles == null || enemyRoles.Length == 0)
+        {
+            enemyRoles = CreateDefaultEnemyRoles();
+        }
+
+        for (int i = 0; i < enemyRoles.Length; i++)
+        {
+            enemyRoles[i]?.Validate();
+        }
     }
 
     private void OnDisable()
@@ -102,6 +137,8 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
         {
             return;
         }
+
+        RefreshFormulaForceScale();
 
         float wallHealth = defense.Runtime.WallHealthPercent;
         wallVisual.Renderer.transform.localScale =
@@ -158,6 +195,7 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
     {
         ClearBattlefield();
         shuttingDown = false;
+        ResolveReferences();
 
         if (enemySpawnAnchor == null ||
             wallAnchor == null ||
@@ -169,6 +207,7 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
             return;
         }
 
+        activeForceProfile = EvaluateVisualForceProfile();
         defenseCamera = GroundDefenseBillboardUtility.FindDefenseCamera(defenseCamera);
         travelDirection = wallAnchor.position - enemySpawnAnchor.position;
         travelDirection.y = 0f;
@@ -183,14 +222,20 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
         BuildGroundAndNavMesh();
         BuildWall();
 
-        for (int i = 0; i < defenderCount; i++)
+        for (int i = 0; i < activeForceProfile.DefenderCount; i++)
         {
-            SpawnUnit(GroundDefenseNavMeshUnitSide.Defender, i, defenderCount);
+            SpawnUnit(
+                GroundDefenseNavMeshUnitSide.Defender,
+                i,
+                activeForceProfile.DefenderCount);
         }
 
-        for (int i = 0; i < enemyCount; i++)
+        for (int i = 0; i < activeForceProfile.EnemyCount; i++)
         {
-            SpawnUnit(GroundDefenseNavMeshUnitSide.Enemy, i, enemyCount);
+            SpawnUnit(
+                GroundDefenseNavMeshUnitSide.Enemy,
+                i,
+                activeForceProfile.EnemyCount);
         }
     }
 
@@ -285,12 +330,15 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
             unitObject.AddComponent<GroundDefenseNavMeshUnit>();
 
         bool isDefender = side == GroundDefenseNavMeshUnitSide.Defender;
+        GroundDefenseNavMeshEnemyRole enemyRole = isDefender
+            ? null
+            : GetEnemyRoleForSlot(slotIndex);
         stats.ConfigureBaseStats(
-            isDefender ? defenderHealth : enemyHealth,
-            isDefender ? defenderMoveSpeed : enemyMoveSpeed,
-            isDefender ? defenderDamage : enemyDamage,
+            isDefender ? defenderHealth : enemyHealth * enemyRole.HealthMultiplier,
+            isDefender ? defenderMoveSpeed : enemyMoveSpeed * enemyRole.MoveSpeedMultiplier,
+            isDefender ? defenderDamage : enemyDamage * enemyRole.DamageMultiplier,
             isDefender ? defenderAttackRange : enemyAttackRange,
-            isDefender ? defenderAttackCooldown : enemyAttackCooldown);
+            isDefender ? defenderAttackCooldown : enemyAttackCooldown * enemyRole.AttackCooldownMultiplier);
         health.Refill();
         actor.ConfigureTeam(isDefender ? CharacterTeam.Player : CharacterTeam.Enemy);
 
@@ -318,13 +366,13 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
                 unitObject.transform,
                 defenseCamera,
                 readabilitySheet,
-                isDefender ? defenderUv : enemyUv,
-                isDefender ? defenderVisualSize : enemyVisualSize,
+                isDefender ? defenderUv : enemyRole.VisualUv,
+                isDefender ? defenderVisualSize : enemyRole.VisualSize,
                 Color.white,
                 isDefender ? 12 : 10,
                 flipX: isDefender);
         visual.Root.transform.localPosition =
-            Vector3.up * (isDefender ? defenderVisualHeight : enemyVisualHeight);
+            Vector3.up * (isDefender ? defenderVisualHeight : enemyRole.VisualHeight);
 
         BuildOwnershipMarker(unitObject.transform, isDefender);
         unit.Configure(this, side, hit.position, visual.Root.transform, visual.Renderer);
@@ -336,6 +384,133 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
         {
             enemies.Add(unit);
         }
+    }
+
+    private void RefreshFormulaForceScale()
+    {
+        GroundDefenseVisualForceProfile nextProfile = EvaluateVisualForceProfile();
+        if (activeForceProfile.RequiresRebuild(nextProfile))
+        {
+            BuildBattlefield();
+            return;
+        }
+
+        activeForceProfile = nextProfile;
+    }
+
+    private GroundDefenseVisualForceProfile EvaluateVisualForceProfile()
+    {
+        GroundDefenseBalanceProfile progression = defense == null
+            ? GroundDefenseBalanceModel.Evaluate(1)
+            : defense.CurrentProgressionProfile;
+
+        if (!useFormulaDrivenForceScale)
+        {
+            return new GroundDefenseVisualForceProfile(
+                defenderCount,
+                enemyCount,
+                0,
+                enemyRespawnSeconds,
+                defenderRespawnSeconds,
+                progression.FrontlineLevel,
+                progression.BandNumber);
+        }
+
+        int bandBonus = Mathf.Max(0, progression.BandNumber - 1);
+        int levelBonus = Mathf.Max(0, progression.LevelInBand / extraEnemyEveryLevelsInBand);
+        int scaledEnemyCount = Mathf.Clamp(
+            enemyCount + bandBonus + levelBonus,
+            1,
+            Mathf.Max(enemyCount, maxFormulaEnemies));
+        int scaledDefenderCount = Mathf.Clamp(
+            defenderCount + bandBonus / 2,
+            1,
+            Mathf.Max(defenderCount, maxFormulaDefenders));
+        int availableRoleCount = Mathf.Max(1, GetEnemyRoles().Length);
+        int roleTier = Mathf.Clamp(
+            progression.BandNumber - 1,
+            0,
+            availableRoleCount - 1);
+        float incomingCadenceScale = Mathf.Pow(
+            Mathf.Max(1f, progression.IncomingPressureMultiplier),
+            formulaCadenceStrength);
+        float defenderCadenceScale = Mathf.Pow(
+            Mathf.Max(1f, progression.DefenseOutputMultiplier),
+            formulaCadenceStrength);
+
+        return new GroundDefenseVisualForceProfile(
+            scaledDefenderCount,
+            scaledEnemyCount,
+            roleTier,
+            Mathf.Max(minimumEnemyRespawnSeconds, enemyRespawnSeconds / incomingCadenceScale),
+            Mathf.Max(minimumDefenderRespawnSeconds, defenderRespawnSeconds / defenderCadenceScale),
+            progression.FrontlineLevel,
+            progression.BandNumber);
+    }
+
+    private GroundDefenseNavMeshEnemyRole GetEnemyRoleForSlot(int slotIndex)
+    {
+        GroundDefenseNavMeshEnemyRole[] roles = GetEnemyRoles();
+        int availableRoleCount = Mathf.Clamp(
+            activeForceProfile.EnemyRoleTier + 1,
+            1,
+            roles.Length);
+        int totalWeight = 0;
+        for (int i = 0; i < availableRoleCount; i++)
+        {
+            totalWeight += roles[i].SpawnWeight;
+        }
+
+        int selector = totalWeight <= 0
+            ? 0
+            : Mathf.Abs(slotIndex * 2 + activeForceProfile.BandNumber) % totalWeight;
+        for (int i = 0; i < availableRoleCount; i++)
+        {
+            int nextWeight = roles[i].SpawnWeight;
+            if (selector < nextWeight)
+            {
+                return roles[i];
+            }
+
+            selector -= nextWeight;
+        }
+
+        return roles[0];
+    }
+
+    private GroundDefenseNavMeshEnemyRole[] GetEnemyRoles()
+    {
+        if (enemyRoles == null || enemyRoles.Length == 0)
+        {
+            enemyRoles = CreateDefaultEnemyRoles();
+        }
+
+        for (int i = 0; i < enemyRoles.Length; i++)
+        {
+            if (enemyRoles[i] == null)
+            {
+                enemyRoles[i] = CreateBaselineEnemyRole();
+            }
+
+            enemyRoles[i].Validate();
+        }
+
+        return enemyRoles;
+    }
+
+    private GroundDefenseNavMeshEnemyRole[] CreateDefaultEnemyRoles()
+    {
+        GroundDefenseNavMeshEnemyRole[] roles = GroundDefenseNavMeshEnemyRole.CreateDefaults();
+        roles[0] = CreateBaselineEnemyRole();
+        return roles;
+    }
+
+    private GroundDefenseNavMeshEnemyRole CreateBaselineEnemyRole()
+    {
+        return GroundDefenseNavMeshEnemyRole.CreateGrunt(
+            enemyUv,
+            enemyVisualSize,
+            enemyVisualHeight);
     }
 
     private Vector3 GetSpawnPosition(
@@ -509,15 +684,15 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
         }
 
         float respawnDelay = side == GroundDefenseNavMeshUnitSide.Defender
-            ? defenderRespawnSeconds
-            : enemyRespawnSeconds;
+            ? activeForceProfile.DefenderRespawnSeconds
+            : activeForceProfile.EnemyRespawnSeconds;
         yield return new WaitForSeconds(respawnDelay);
 
         if (!shuttingDown && generatedRoot != null)
         {
             int desiredCount = side == GroundDefenseNavMeshUnitSide.Defender
-                ? defenderCount
-                : enemyCount;
+                ? activeForceProfile.DefenderCount
+                : activeForceProfile.EnemyCount;
             SpawnUnit(side, Mathf.Min(slotIndex, desiredCount - 1), desiredCount);
         }
     }
@@ -597,5 +772,176 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
         }
 
         groundMaterial = null;
+    }
+
+    private void ResolveReferences()
+    {
+        if (defense == null)
+        {
+            defense = FindAnyObjectByType<DefenseDirector>();
+        }
+    }
+}
+
+[Serializable]
+public sealed class GroundDefenseNavMeshEnemyRole
+{
+    [SerializeField] private string id;
+    [SerializeField, Min(1)] private int spawnWeight = 1;
+    [SerializeField] private Rect visualUv;
+    [SerializeField] private Vector2 visualSize;
+    [SerializeField, Min(0f)] private float visualHeight;
+    [SerializeField, Min(0.05f)] private float healthMultiplier = 1f;
+    [SerializeField, Min(0.05f)] private float moveSpeedMultiplier = 1f;
+    [SerializeField, Min(0f)] private float damageMultiplier = 1f;
+    [SerializeField, Min(0.05f)] private float attackCooldownMultiplier = 1f;
+
+    public Rect VisualUv => visualUv;
+    public Vector2 VisualSize => visualSize;
+    public float VisualHeight => visualHeight;
+    public int SpawnWeight => spawnWeight;
+    public float HealthMultiplier => healthMultiplier;
+    public float MoveSpeedMultiplier => moveSpeedMultiplier;
+    public float DamageMultiplier => damageMultiplier;
+    public float AttackCooldownMultiplier => attackCooldownMultiplier;
+
+    public GroundDefenseNavMeshEnemyRole()
+    {
+        id = "grunt";
+        spawnWeight = 1;
+        visualUv = new Rect(0f, 0.5f, 0.33333334f, 0.5f);
+        visualSize = new Vector2(1.65f, 2.35f);
+        visualHeight = 1.18f;
+        Validate();
+    }
+
+    private GroundDefenseNavMeshEnemyRole(
+        string nextId,
+        int nextSpawnWeight,
+        Rect nextVisualUv,
+        Vector2 nextVisualSize,
+        float nextVisualHeight,
+        float nextHealthMultiplier,
+        float nextMoveSpeedMultiplier,
+        float nextDamageMultiplier,
+        float nextAttackCooldownMultiplier)
+    {
+        id = nextId;
+        spawnWeight = nextSpawnWeight;
+        visualUv = nextVisualUv;
+        visualSize = nextVisualSize;
+        visualHeight = nextVisualHeight;
+        healthMultiplier = nextHealthMultiplier;
+        moveSpeedMultiplier = nextMoveSpeedMultiplier;
+        damageMultiplier = nextDamageMultiplier;
+        attackCooldownMultiplier = nextAttackCooldownMultiplier;
+        Validate();
+    }
+
+    public static GroundDefenseNavMeshEnemyRole[] CreateDefaults()
+    {
+        return new[]
+        {
+            CreateGrunt(),
+            new GroundDefenseNavMeshEnemyRole(
+                "shield",
+                1,
+                new Rect(0.33333334f, 0.5f, 0.33333334f, 0.5f),
+                new Vector2(2.1f, 2.6f),
+                1.3f,
+                1.45f,
+                0.82f,
+                0.95f,
+                1.1f),
+            new GroundDefenseNavMeshEnemyRole(
+                "runner",
+                2,
+                new Rect(0.6666667f, 0.5f, 0.33333334f, 0.5f),
+                new Vector2(2f, 2.1f),
+                1.05f,
+                0.65f,
+                1.2f,
+                0.8f,
+                0.82f)
+        };
+    }
+
+    public static GroundDefenseNavMeshEnemyRole CreateGrunt()
+    {
+        return CreateGrunt(
+            new Rect(0f, 0.5f, 0.33333334f, 0.5f),
+            new Vector2(1.65f, 2.35f),
+            1.18f);
+    }
+
+    public static GroundDefenseNavMeshEnemyRole CreateGrunt(
+        Rect visualUv,
+        Vector2 visualSize,
+        float visualHeight)
+    {
+        return new GroundDefenseNavMeshEnemyRole(
+            "grunt",
+            4,
+            visualUv,
+            visualSize,
+            visualHeight,
+            1f,
+            1f,
+            1f,
+            1f);
+    }
+
+    public void Validate()
+    {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            id = "grunt";
+        }
+
+        spawnWeight = Mathf.Max(1, spawnWeight);
+        visualSize = new Vector2(
+            Mathf.Max(0.1f, visualSize.x),
+            Mathf.Max(0.1f, visualSize.y));
+        visualHeight = Mathf.Max(0f, visualHeight);
+        healthMultiplier = Mathf.Max(0.05f, healthMultiplier);
+        moveSpeedMultiplier = Mathf.Max(0.05f, moveSpeedMultiplier);
+        damageMultiplier = Mathf.Max(0f, damageMultiplier);
+        attackCooldownMultiplier = Mathf.Max(0.05f, attackCooldownMultiplier);
+    }
+}
+
+public readonly struct GroundDefenseVisualForceProfile
+{
+    public int DefenderCount { get; }
+    public int EnemyCount { get; }
+    public int EnemyRoleTier { get; }
+    public float EnemyRespawnSeconds { get; }
+    public float DefenderRespawnSeconds { get; }
+    public int FrontlineLevel { get; }
+    public int BandNumber { get; }
+
+    public GroundDefenseVisualForceProfile(
+        int defenderCount,
+        int enemyCount,
+        int enemyRoleTier,
+        float enemyRespawnSeconds,
+        float defenderRespawnSeconds,
+        int frontlineLevel,
+        int bandNumber)
+    {
+        DefenderCount = Mathf.Max(1, defenderCount);
+        EnemyCount = Mathf.Max(1, enemyCount);
+        EnemyRoleTier = Mathf.Max(0, enemyRoleTier);
+        EnemyRespawnSeconds = Mathf.Max(0.1f, enemyRespawnSeconds);
+        DefenderRespawnSeconds = Mathf.Max(0.1f, defenderRespawnSeconds);
+        FrontlineLevel = Mathf.Max(1, frontlineLevel);
+        BandNumber = Mathf.Max(1, bandNumber);
+    }
+
+    public bool RequiresRebuild(GroundDefenseVisualForceProfile other)
+    {
+        return DefenderCount != other.DefenderCount ||
+               EnemyCount != other.EnemyCount ||
+               EnemyRoleTier != other.EnemyRoleTier;
     }
 }

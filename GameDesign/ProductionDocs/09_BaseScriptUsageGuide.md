@@ -1,5 +1,14 @@
 # Base Script Usage Guide
 
+## 2026-06-17 E0-A3 Formula-Driven Battle Scale Usage
+
+- `GroundDefenseNavMeshBattlefield` evaluates `DefenseDirector.CurrentProgressionProfile` through `EvaluateVisualForceProfile()` before spawning and while the battlefield is running.
+- `useFormulaDrivenForceScale` keeps the accepted Level 1 baseline, then scales visual enemy/defender counts from the Frontline band and within-band level. `maxFormulaDefenders` and `maxFormulaEnemies` cap readability.
+- `GroundDefenseNavMeshEnemyRole` stores deterministic role data for the NavMesh battlefield: sheet UV, size/height, spawn weight, health, movement, damage, and attack-cooldown multipliers. The first role uses the previous accepted enemy cell so the baseline remains stable.
+- `GetEnemyRoleForSlot(...)` chooses role mix from the available formula role tier. This is not a wave list; it derives the visible role set from progression and slot index.
+- Reinforcement timing now uses the active visual force profile. Enemy cadence follows incoming-pressure scale, defender cadence follows defense-output scale, and minimum respawn seconds prevent unreadable rapid churn.
+- The code path is ready for Play Mode review, not accepted. Validate with the 2026-06-17 section of `06_UnitySceneAndPrefabSetupGuide.md` before promoting E0-A3.
+
 ## 2026-06-16 E0-A2 Readable Ownership Usage
 
 - `GroundDefenseBillboardUtility.CreateBillboard(...)` now attempts to build a dark-matte cutout runtime sprite from the requested readability-sheet cell before falling back to the source texture sprite path.

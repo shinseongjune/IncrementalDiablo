@@ -130,10 +130,10 @@ Accepted runtime evidence is cumulative. Do not require another full-loop Play M
 | Field | Current value |
 | --- | --- |
 | Current phase | Phase E - Early Access Readiness Slice |
-| Last meaningful movement | 2026-06-17: User confirmed the E0-A2 readable-ownership candidate works in Play Mode. Accepted evidence now covers recognizable friendly/enemy ownership markers, attacker-to-target hit readability, target reaction, death/reinforcement continuity, and enemy wall-hit/wall-health feedback on top of the accepted NavMesh battle. |
-| Next unlock | E0-A3 is `Next`: connect force count, role mix, and reinforcement cadence to formula-driven frontline scale while preserving readable movement, attack ownership, death/reinforcement, wall damage, and no RTS unit micromanagement. |
+| Last meaningful movement | 2026-06-17: E0-A3 formula-driven battle scale is code-ready. `GroundDefenseNavMeshBattlefield` now derives visual force count, enemy role tier, and reinforcement cadence from the existing Frontline Level band/profile while preserving the accepted NavMesh movement, ownership markers, attacker-owned hit lines, target reaction, death/reinforcement, and wall-damage path. |
+| Next unlock | E0-A3 needs Unity Play Mode validation: confirm the default Level 1 read still matches the accepted two-defender/three-enemy baseline, then review a higher Frontline band for added enemy count, shield/runner role mix, faster bounded reinforcement cadence, and preserved `Unit -> action -> target` readability in both `DefenseFocus` and the compressed panel. |
 | Loop coverage | Phases A-C remain cumulatively accepted. Phase D is complete with persistent dungeon depth, dungeon and ground formula bands, durable authored item identity, save migration, dominated-duplicate conversion, and formula-driven ground milestone rewards. |
-| Known blockers | No compile, runtime-combat, save, scaling, item, or economy blocker is known. E0-A3 must add formula-driven density carefully so the accepted unit identity, attack ownership, target reaction, death/reinforcement, and wall damage remain readable at full and compressed panel scale. |
+| Known blockers | No compile, runtime-combat, save, item, or economy blocker is known. E0-A3 changes visual density at higher Frontline bands, so acceptance is blocked only on focused Unity Play Mode readability judgment at full and compressed panel scale. |
 
 ## 3.1 Phase C MVP Completion Task List
 
@@ -192,6 +192,7 @@ Run Update Notes:
 - 2026-06-15: User confirmed the NavMesh combat foundation works in Play Mode. Accepted evidence covers friendly/enemy movement, autonomous engagement, death/reinforcement, surviving enemies reaching the wall, and wall damage. The user also confirmed the remaining defect: absent recognizable models make faction/role identification difficult. E0-A1 is accepted; E0-A2 recognizable combatants and attack ownership is now `Next`.
 - 2026-06-16: Implemented the E0-A2 readable-ownership candidate without changing the accepted NavMesh behavior. `GroundDefenseBillboardUtility` now creates dark-matte cutout runtime sprites from the readability sheet, `GroundDefenseNavMeshBattlefield` adds generated faction bases plus defender shield/enemy threat badges, and `GroundDefenseNavMeshUnit` draws short attacker-to-target ownership lines with target recoil on melee and wall hits. E0-A2 is `Needs Unity Play Mode` for full and compressed panel readability validation before adding tower/ranged fire or density.
 - 2026-06-17: User confirmed the E0-A2 readable-ownership candidate works. Accepted evidence covers the readable friendly/enemy ownership treatment and attacker-owned hit path while preserving the already accepted NavMesh movement, targeting, death/reinforcement, and wall-damage behavior. E0-A2 is accepted; E0-A3 formula-driven battle scale is now `Next`.
+- 2026-06-17: Implemented the E0-A3 formula-driven battle-scale candidate. `GroundDefenseNavMeshBattlefield` now evaluates `DefenseDirector.CurrentProgressionProfile` to derive visual enemy/defender counts, enemy role unlock tier, deterministic slot role mix, and bounded reinforcement cadence. The scene baseline remains two defenders and three enemies at Level 1; higher Frontline bands add density and shield/runner variants without manual wave rows or unit controls. E0-A3 is `Needs Unity Play Mode` for density readability in `DefenseFocus` and the compressed defense panel.
 
 ## 3.2 Phase D Production Task List
 
@@ -211,7 +212,7 @@ Phase E converts the scalable systems into a repeatable, release-shaped slice. W
 
 | ID | Priority | Track | Current status | Completion criteria | Next update required |
 | --- | --- | --- | --- | --- | --- |
-| E0-A | P0 | RTS-readable automatic defense battlefield | In Progress / E0-A2 readable ownership accepted | One actual NavMesh battlefield uses real autonomous combatants. E0-A1 is accepted: enemies and defenders move, engage, die/reinforce, surviving enemies attack the wall, and wall health changes through the authoritative runtime. E0-A2 is accepted: cutout friendly/enemy actors, generated faction markers, attacker-owned melee/wall-hit lines, and target recoil read well enough in Play Mode. E0-A3 now connects role mix and force density to formulas without unit micromanagement or manual wave rows. | Build formula-driven force count, role mix, and reinforcement cadence around the accepted character/NavMesh stack. Validate that density does not obscure faction, attack source, target, hit, death/reinforcement, or wall damage in full and compressed panels. |
+| E0-A | P0 | RTS-readable automatic defense battlefield | Needs Unity Play Mode / E0-A3 formula-driven battle scale | One actual NavMesh battlefield uses real autonomous combatants. E0-A1 is accepted: enemies and defenders move, engage, die/reinforce, surviving enemies attack the wall, and wall health changes through the authoritative runtime. E0-A2 is accepted: cutout friendly/enemy actors, generated faction markers, attacker-owned melee/wall-hit lines, and target recoil read well enough in Play Mode. E0-A3 is implemented: force count, deterministic enemy role mix, and reinforcement cadence now follow the Frontline formula profile without unit micromanagement or manual wave rows. | Focused Play Mode check: default Level 1 must still read like the accepted baseline; a higher Frontline band must show added density/roles/cadence without obscuring faction, attack source, target, hit, death/reinforcement, or wall damage in full and compressed panels. |
 
 ### E0-A Ordered Implementation Gates
 
@@ -226,8 +227,9 @@ Phase E converts the scalable systems into a repeatable, release-shaped slice. W
    - Accepted in Play Mode on 2026-06-17 with cutout role-sheet sprites, faction base/badge markers, attacker-to-target hit lines, and target recoil.
    - Add one visible ranged/tower source only after the melee and wall path work in both panel states. Its projectile must show Unit -> action -> target.
 3. `E0-A3 - Formula-driven battle scale`
-   - Connect force count/role selection and reinforcement cadence to the existing frontline formulas without authored wave rows.
+   - Implemented on 2026-06-17: force count/role selection and reinforcement cadence connect to the existing frontline formulas without authored wave rows.
    - Cadence must leave enough time to recognize movement, attack, hit, death, and wall pressure.
+   - Needs focused Play Mode acceptance in both `DefenseFocus` and the compressed defense panel.
 
 ## 3.3 Progress Assessment Against Game-Form Plan
 
@@ -238,7 +240,7 @@ Speed assessment:
 - Good: save/load, real dungeon combat, authored reward continuity, normal overlays, visible ground behavior, and the first persistent depth ladder now support progression beyond a fixed one-room proof.
 - Good: the first formula band has been observed against the real spawned prefab and authored reward path in Play Mode, so the depth ladder is now a meaningful risk/reward choice rather than only saved structure.
 - Good: the automatic defense half now scales through the same kind of bounded, exportable profile as the dungeon ladder, including visible band milestones rather than manual wave rows.
-- Current checkpoint: the actual NavMesh movement, melee engagement, readable attack ownership, death/reinforcement, and wall-damage path is accepted. The next proof is formula-driven force density that preserves those reads in both panel states.
+- Current checkpoint: the actual NavMesh movement, melee engagement, readable attack ownership, death/reinforcement, and wall-damage path is accepted. The E0-A3 code now adds formula-driven force density/roles/cadence; the next proof is focused Play Mode readability in both panel states.
 
 Direction assessment:
 

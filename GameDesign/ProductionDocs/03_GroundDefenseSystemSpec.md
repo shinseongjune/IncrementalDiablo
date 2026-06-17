@@ -1,5 +1,13 @@
 # Ground Defense System Spec
 
+## 2026-06-17 E0-A3 Formula-Driven Battle Scale Candidate
+
+- `GroundDefenseNavMeshBattlefield` now evaluates `DefenseDirector.CurrentProgressionProfile` and keeps the accepted Level 1 baseline at two defenders and three enemies.
+- Higher Frontline bands add conservative visual density through formula-derived enemy/defender counts capped by `maxFormulaEnemies` and `maxFormulaDefenders`; this is not a hand-authored wave list.
+- Enemy role mix is deterministic per slot and unlocks from the existing role-sheet cells: baseline grunt first, shield variant in the next role tier, and runner variant after that. Role stats adjust health, movement, damage, and attack cadence while preserving the same `CharacterStats`/`CombatDriver` path.
+- Enemy and defender reinforcement delays now scale from the same Frontline profile through bounded cadence multipliers, with minimum respawn times to keep movement, contact, hit, death, and wall pressure readable.
+- This checkpoint is code-ready but not accepted. It needs focused Play Mode review in `DefenseFocus` and the compressed defense panel, especially at a higher Frontline band where extra roles and density appear.
+
 ## 2026-06-15 Actual NavMesh Combat Foundation
 
 - `GroundDefenseNavMeshBattlefield` creates a visible ground cube spanning the existing enemy-spawn and wall anchors, builds a runtime `NavMeshSurface`, and spawns two defenders plus three enemies.
@@ -12,7 +20,7 @@
 
 ### Accepted foundation and current gate
 
-The user confirmed the generated NavMesh, enemy/defender movement and engagement, death/reinforcement, enemy wall approach/attack, and wall-health loss in Play Mode on 2026-06-15. The user then confirmed the 2026-06-16 E0-A2 readability candidate on 2026-06-17: role-sheet sprites are cut out from the dark background, generated units get faction bases plus defender shield/enemy threat badges, and melee/wall hits draw a short attacker-to-target ownership line with target recoil. E0-A3 formula-driven density is the next gate. Ranged/tower combat remains a later ownership proof if it is added.
+The user confirmed the generated NavMesh, enemy/defender movement and engagement, death/reinforcement, enemy wall approach/attack, and wall-health loss in Play Mode on 2026-06-15. The user then confirmed the 2026-06-16 E0-A2 readability candidate on 2026-06-17: role-sheet sprites are cut out from the dark background, generated units get faction bases plus defender shield/enemy threat badges, and melee/wall hits draw a short attacker-to-target ownership line with target recoil. E0-A3 formula-driven density is implemented and needs focused Play Mode readability review. Ranged/tower combat remains a later ownership proof if it is added.
 
 ## 2026-06-16 E0-A2 Readable Ownership
 
@@ -20,7 +28,7 @@ The user confirmed the generated NavMesh, enemy/defender movement and engagement
 - `GroundDefenseNavMeshBattlefield` keeps the accepted runtime ground/NavMesh, two-defender/three-enemy force counts, targeting, death/reinforcement, and wall-damage behavior. It adds code-generated faction bases plus a blue defender shield badge and red enemy threat badge to each spawned actor.
 - `GroundDefenseNavMeshUnit` now shows attack ownership on every successful melee or wall strike by drawing a short source-to-target line for the attack window. The target also flashes and recoils, so the hit is not readable only through health bars or HUD text.
 - E0-A2 was accepted from user Play Mode feedback on 2026-06-17. Do not reopen it unless actor identity, attack ownership, target reaction, death/reinforcement, or wall damage regresses.
-- E0-A3 may now add role mix, force counts, and reinforcement cadence from formulas, but it must preserve the accepted readability at actual panel scale.
+- E0-A3 now adds role mix, force counts, and reinforcement cadence from formulas, but it must preserve the accepted readability at actual panel scale before it can be accepted.
 
 ## 2026-06-15 E0-A1 Sprite Rendering Repair
 

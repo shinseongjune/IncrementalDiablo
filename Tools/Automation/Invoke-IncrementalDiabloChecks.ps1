@@ -470,6 +470,11 @@ if ((Test-Path -LiteralPath $groundNavMeshBattlefieldPath) -and
     [void](Assert-TextContains "Ground battlefield adds ownership markers" $groundNavMeshBattlefieldText "BuildOwnershipMarker")
     [void](Assert-TextContains "Ground battlefield creates defender shield badge" $groundNavMeshBattlefieldText "DefenderShieldBadge")
     [void](Assert-TextContains "Ground battlefield creates enemy threat badge" $groundNavMeshBattlefieldText "EnemyThreatBadge")
+    [void](Assert-TextContains "Ground battlefield evaluates formula force scale" $groundNavMeshBattlefieldText "EvaluateVisualForceProfile")
+    [void](Assert-TextContains "Ground battlefield consumes frontline profile" $groundNavMeshBattlefieldText "defense.CurrentProgressionProfile")
+    [void](Assert-TextContains "Ground battlefield caps scaled enemy density" $groundNavMeshBattlefieldText "maxFormulaEnemies")
+    [void](Assert-TextContains "Ground battlefield selects formula role mix" $groundNavMeshBattlefieldText "GetEnemyRoleForSlot")
+    [void](Assert-TextContains "Ground battlefield scales reinforcement cadence" $groundNavMeshBattlefieldText "formulaCadenceStrength")
     [void](Assert-TextContains "Defenders acquire enemy targets" $groundNavMeshUnitText "FindNearestEnemy")
     [void](Assert-TextContains "Enemies acquire defender targets" $groundNavMeshUnitText "FindNearestDefender")
     [void](Assert-TextContains "Units move through character motor" $groundNavMeshUnitText "actor.Motor.TryMoveTo")
@@ -565,12 +570,13 @@ if (Test-Path -LiteralPath $planPath) {
         "D0-C | P0 | Item registry and save migration | Done",
         "D0-D | P0 | Duplicate-item sink and conversion | Done",
         "D1-A | P1 | Formula-driven ground scaling | Done",
-        "E0-A | P0 | RTS-readable automatic defense battlefield | In Progress / E0-A2 readable ownership accepted",
+        "E0-A | P0 | RTS-readable automatic defense battlefield | Needs Unity Play Mode / E0-A3 formula-driven battle scale",
         "RTS-readable automatic defense",
         "actual NavMesh battlefield",
         "CharacterStats",
         "NavMeshAgent",
         "Unit -> action -> target",
+        "formula-driven battle scale",
         "reinforcements",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
         "12_PrototypeDebtRegister.md",

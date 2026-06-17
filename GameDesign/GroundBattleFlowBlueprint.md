@@ -1,5 +1,18 @@
 # Ground Defense Flow Blueprint
 
+## 2026-06-17 E0-A3 Formula-Driven Scale Flow
+
+```text
+Frontline profile changes
+-> visual force profile derives count, role tier, and respawn cadence
+-> default band keeps the accepted low-density battle
+-> higher bands add bounded enemies and role variety
+-> autonomous units still acquire, move, stop, attack, react, die, reinforce, or attack wall
+-> every visible hit must still read as Unit -> action -> target
+```
+
+This flow adds spectacle through formulas, not authored wave rows or player unit commands. The accepted E0-A2 ownership markers and attack lines remain the proof mechanism. E0-A3 needs Play Mode acceptance before it can be marked done.
+
 ## 2026-06-16 E0-A2 Readable Ownership Flow
 
 ```text

@@ -1,12 +1,20 @@
 # Playable Screen Presentation Spec
 
+## 2026-06-17 E0-A3 Formula-Driven Battle Scale
+
+- The defense view now keeps the accepted Level 1 two-defender/three-enemy baseline, then uses the Frontline formula profile to add bounded density at higher bands.
+- Added enemies must not become a swarm that hides ownership. The accepted reads still own the presentation: faction base/badge, attacker-to-target hit line, target flash/recoil, death/reinforcement side, enemy wall-hit line, and visible wall-health loss.
+- Role mix is formula-tiered and deterministic rather than wave-authored. The baseline role remains the accepted grunt-like enemy, with shield and runner variants appearing only as the Frontline profile advances.
+- Reinforcement cadence can tighten as pressure/output multipliers rise, but minimum respawn windows are fixed so one complete `Unit -> action -> target` exchange remains observable.
+- Acceptance requires one normal `DefenseFocus` check and one compressed defense-panel check. Review the default baseline first, then a higher Frontline band that shows added count/roles/cadence.
+
 ## 2026-06-16 E0-A2 Readable Ownership
 
 - The accepted defense view keeps the accepted NavMesh battle behavior and changes only actor readability and hit ownership.
 - Role-sheet actors should render as cutout sprites rather than dark rectangular cards. Each actor also has a faction base and a shape-coded badge: defender shield versus enemy threat marker.
 - Every successful melee or wall hit should briefly show an attacker-to-target line, while the target flashes/recoils. The viewer should be able to name the attacker, target, and hit without relying on HUD diagnostics.
 - User Play Mode feedback accepted this path on 2026-06-17. Treat friendly/enemy identity, approach, stop-at-range, attack source, target reaction, death/reinforcement, enemy wall hit, and visible wall-health loss as cumulative evidence unless a later change regresses them.
-- E0-A3 may add formula-driven density, but the added count/roles/cadence must not hide the accepted ownership read at actual panel scale.
+- E0-A3 now adds formula-driven density in code, but the added count/roles/cadence must not hide the accepted ownership read at actual panel scale during Play Mode review.
 
 ## 2026-06-15 Live NavMesh Battle Contract
 

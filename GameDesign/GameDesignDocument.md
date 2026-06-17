@@ -1,5 +1,12 @@
 # Incremental Diablo Game Design Document
 
+## 2026-06-17 E0-A3 Formula-Driven Battle Scale
+
+- The accepted automatic NavMesh defense now has a formula-driven scale candidate: visual force count, role mix, and reinforcement cadence derive from the existing Frontline Level profile instead of a fixed wave list.
+- The default early view remains the accepted two-defender/three-enemy baseline. Higher Frontline bands can add enemies, eventually add defender count, unlock shield/runner enemy roles, and tighten bounded reinforcement timing.
+- This preserves the product boundary: units are autonomous, the player does not select or move them, and `DefenseRuntimeState` remains the authority for wall health, pressure, rewards, progression, save/load, and offline simulation.
+- E0-A3 is not accepted until Unity Play Mode confirms that added density keeps the accepted friendly/enemy identity, attacker-to-target ownership line, target reaction, death/reinforcement, and wall-damage readability in both full and compressed defense views.
+
 ## 2026-06-16 E0-A2 Readable Ownership
 
 - The accepted NavMesh ground battle now has a first readable-ownership pass: role-sheet sprites are cut out from the black sheet background, actors receive defender/enemy faction bases and shape-coded badges, and melee/wall hits draw a short attacker-to-target line with target recoil.
