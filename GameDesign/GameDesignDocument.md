@@ -1,18 +1,25 @@
 # Incremental Diablo Game Design Document
 
+## 2026-06-19 E0-A3 Review Path
+
+- The automatic NavMesh defense can now preview higher formula bands through a review-only Frontline Level override on `GroundDefenseNavMeshBattlefield`.
+- This does not change the authoritative `DefenseRuntimeState`, save/load data, reward economy, offline simulation, or player progression. It only lets Play Mode review reach the high-density visual profile without a test save.
+- `PlayableLoopHud` labels the view as `E0-A3 review scale` while the override is active so the reviewer can distinguish visual review from real progression.
+- Product direction is unchanged: formula-driven automatic ground defense, no individual unit orders, no manual wave rows, and no RTS micromanagement. User Play Mode feedback accepted the E0-A3 readable-density path on 2026-06-19.
+
 ## 2026-06-17 E0-A3 Formula-Driven Battle Scale
 
 - The accepted automatic NavMesh defense now has a formula-driven scale candidate: visual force count, role mix, and reinforcement cadence derive from the existing Frontline Level profile instead of a fixed wave list.
 - The default early view remains the accepted two-defender/three-enemy baseline. Higher Frontline bands can add enemies, eventually add defender count, unlock shield/runner enemy roles, and tighten bounded reinforcement timing.
 - This preserves the product boundary: units are autonomous, the player does not select or move them, and `DefenseRuntimeState` remains the authority for wall health, pressure, rewards, progression, save/load, and offline simulation.
-- E0-A3 is not accepted until Unity Play Mode confirms that added density keeps the accepted friendly/enemy identity, attacker-to-target ownership line, target reaction, death/reinforcement, and wall-damage readability in both full and compressed defense views.
+- User Play Mode feedback accepted E0-A3 on 2026-06-19: added density keeps the accepted friendly/enemy identity, attacker-to-target ownership line, target reaction, death/reinforcement, and wall-damage readability well enough to move on.
 
 ## 2026-06-16 E0-A2 Readable Ownership
 
 - The accepted NavMesh ground battle now has a first readable-ownership pass: role-sheet sprites are cut out from the black sheet background, actors receive defender/enemy faction bases and shape-coded badges, and melee/wall hits draw a short attacker-to-target line with target recoil.
 - This is still automatic ground defense. The player does not select units, issue movement commands, focus fire, place towers, or manage waves.
 - User Play Mode feedback accepted this path on 2026-06-17. Friendly/enemy identity, attacker, target, hit reaction, death/reinforcement, and wall damage are cumulative evidence unless a later change regresses them.
-- E0-A3 is next: formula-driven density and role mix must preserve the accepted ownership read at full and compressed panel scale.
+- E0-A3 is accepted. The next visual production risk is camera/reference-image framing while preserving the accepted ownership read at full and compressed panel scale.
 
 ## 2026-06-15 Actual NavMesh Ground Battle Reset
 

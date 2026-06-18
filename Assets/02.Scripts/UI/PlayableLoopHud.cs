@@ -18,6 +18,7 @@ public class PlayableLoopHud : MonoBehaviour
     [SerializeField] private CurrencyWallet wallet;
     [SerializeField] private DefenseSaveManager saveManager;
     [SerializeField] private GroundDefenseCombatPresenter groundCombatPresenter;
+    [SerializeField] private GroundDefenseNavMeshBattlefield groundBattlefield;
     [SerializeField] private PlayableScreenLayoutController screenLayout;
     [SerializeField] private PanelCameraRenderTarget dungeonPanelRenderTarget;
     [SerializeField] private DungeonViewportInputRouter dungeonViewportInputRouter;
@@ -28,6 +29,9 @@ public class PlayableLoopHud : MonoBehaviour
 
     [Header("Dungeon Viewport Diagnostics")]
     [SerializeField] private bool showDungeonViewportDiagnostics = true;
+
+    [Header("Ground Battlefield Review")]
+    [SerializeField] private bool showGroundBattlefieldReviewStatus = true;
 
     [Header("Defense Alerts")]
     [SerializeField] private bool showDefenseAlertInSummary = true;
@@ -416,9 +420,10 @@ public class PlayableLoopHud : MonoBehaviour
         string groundCombatText = !showGroundCombatDiagnostics || groundCombatPresenter == null
             ? string.Empty
             : $"\n{groundCombatPresenter.LastCombatMessage}";
+        string groundBattlefieldReviewText = BuildGroundBattlefieldReviewText();
         string screenText = screenLayout == null ? string.Empty : $"\n{BuildScreenLayoutText()}";
         return $"Frontline Lv.{runtime.FrontlineLevel} / {runtime.State} / {runtime.Mode} / Wall {Mathf.CeilToInt(runtime.WallHealth)}/{Mathf.CeilToInt(runtime.WallMaxHealth)}\n" +
-               $"Pressure {pressureText} / Progress {progressText}\n{balanceText}\n{upgradeText}{alertText}{groundCombatText}{screenText}";
+               $"Pressure {pressureText} / Progress {progressText}\n{balanceText}\n{upgradeText}{alertText}{groundCombatText}{groundBattlefieldReviewText}{screenText}";
     }
 
     private string BuildDungeonText()
@@ -800,6 +805,18 @@ public class PlayableLoopHud : MonoBehaviour
         return $"{prefix} Watch the defense side panel while fighting.";
     }
 
+    private string BuildGroundBattlefieldReviewText()
+    {
+        if (!showGroundBattlefieldReviewStatus ||
+            groundBattlefield == null ||
+            !groundBattlefield.UsesReviewFrontlineLevelOverride)
+        {
+            return string.Empty;
+        }
+
+        return $"\nE0-A3 review scale: {groundBattlefield.VisualScaleSummary}";
+    }
+
     private string BuildMessageText(string actionHint)
     {
         if (string.IsNullOrWhiteSpace(actionHint))
@@ -1027,6 +1044,11 @@ public class PlayableLoopHud : MonoBehaviour
         if (groundCombatPresenter == null || force)
         {
             groundCombatPresenter = FindAnyObjectByType<GroundDefenseCombatPresenter>();
+        }
+
+        if (groundBattlefield == null || force)
+        {
+            groundBattlefield = FindAnyObjectByType<GroundDefenseNavMeshBattlefield>();
         }
 
         if (screenLayout == null || force)

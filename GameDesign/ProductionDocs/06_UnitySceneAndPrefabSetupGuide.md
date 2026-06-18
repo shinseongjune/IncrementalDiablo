@@ -1,20 +1,22 @@
 # Unity Scene And Prefab Setup Guide
 
-## 2026-06-17 E0-A3 Formula-Driven Battle Scale Handoff
+## 2026-06-19 E0-A3 Formula-Driven Battle Scale Handoff
 
-No new GameObject, prefab, or Inspector reference is required. `Gameplay > DefenseRoot > GroundDefenseNavMeshBattlefield` keeps the accepted runtime ground/NavMesh and now derives visual force scale from the existing `DefenseDirector` Frontline profile.
+No new GameObject, prefab, or Inspector reference is required. `Gameplay > DefenseRoot > GroundDefenseNavMeshBattlefield` keeps the accepted runtime ground/NavMesh and derives visual force scale from the existing `DefenseDirector` Frontline profile. It also exposes a non-save E0-A3 review override so higher Frontline bands can be inspected without editing the real save/progression state.
 
-Focused Play Mode validation:
+Focused Play Mode validation, now accepted on 2026-06-19:
 
-1. Open `Gameplay`, enter Play Mode, and start in `DefenseFocus` at the default Frontline Level 1 state.
+1. Open `Gameplay`, enter Play Mode, and start in `DefenseFocus` with `GroundDefenseNavMeshBattlefield > Use Review Frontline Level Override` off.
 2. Confirm the baseline still reads like the accepted E0-A2 proof: two defenders, three enemies, cutout actors, faction bases/badges, attacker-to-target hit lines, target recoil, death/reinforcement, enemy wall hits, and visible wall-health loss.
-3. For the density check, temporarily use a higher Frontline band through a test save or Inspector starting level, such as Frontline Level 11 or 21. This is validation setup only; do not save it as the production scene default.
-4. Confirm higher bands add bounded enemy count and shield/runner role variety without hiding the defender/enemy ownership markers or source-target hit lines.
-5. Confirm reinforcements feel more frequent but still leave enough time to see approach, stop-at-range, hit, target reaction, death, and wall pressure.
-6. Start a dungeon to compress the defense panel and repeat the added count/role/cadence read at side-panel scale.
-7. Reject the pass if density turns the panel into unreadable motion, if role badges overlap enough to hide bodies, if attacker and target cannot be named, or if wall damage becomes understandable only through HUD text.
+3. Select `Gameplay > DefenseRoot > GroundDefenseNavMeshBattlefield` and run the component context menu `E0-A3 Review/Use Full Role Mix Band`. This sets the review visual profile to Frontline Level 21 only for the battlefield presentation.
+4. Confirm the HUD summary shows `E0-A3 review scale` with Level 21, the higher band, added force count, role tier, and bounded respawn cadence. If the line does not appear, the review override is not active.
+5. Confirm the higher band adds bounded enemy count and shield/runner role variety without hiding the defender/enemy ownership markers or source-target hit lines.
+6. Confirm reinforcements feel more frequent but still leave enough time to see approach, stop-at-range, hit, target reaction, death, and wall pressure.
+7. Start a dungeon to compress the defense panel and repeat the added count/role/cadence read at side-panel scale.
+8. Run `E0-A3 Review/Clear Frontline Level Override` before ending the review or before judging normal progression.
+9. Reject future regression or camera-composition passes if density turns the panel into unreadable motion, if role badges overlap enough to hide bodies, if attacker and target cannot be named, or if wall damage becomes understandable only through HUD text.
 
-Fixed for this gate: automatic NavMesh actors, no unit selection/movement/focus-fire, no manual wave rows, authoritative `DefenseRuntimeState`, and formula-derived force scaling. Adjustable after review: `maxFormulaDefenders`, `maxFormulaEnemies`, role multipliers, minimum respawn seconds, badge scale/height, unit spacing, and camera framing.
+Fixed for this accepted gate: automatic NavMesh actors, no unit selection/movement/focus-fire, no manual wave rows, authoritative `DefenseRuntimeState`, and formula-derived force scaling. Adjustable for E0-B camera/reference composition: camera position/angle/orthographic size, panel crop, badge scale/height, base radius, sprite scale, attack-line width/duration, unit spacing, and only then force/role/cadence values if the camera pass exposes a readability regression.
 
 ## 2026-06-16 E0-A2 Readable Ownership Handoff
 
@@ -32,7 +34,7 @@ Focused Play Mode validation:
 
 2026-06-17 result: the user confirmed this works well enough in Play Mode. No repeat of this E0-A2 ownership check is required unless actor identity, ownership line readability, target reaction, death/reinforcement, or wall-hit feedback changes.
 
-Fixed for the accepted gate: existing anchors, generated ground/NavMesh, two defenders, three enemies, shared character stack, automatic targeting, no unit commands, cutout role-sheet sprites, faction base/badge markers, and short attack ownership lines. Adjustable during E0-A3 review: badge size/height, base radius, sprite scale, attack-line width/duration, force count, role mix, reinforcement cadence, and camera framing. E0-A3 must prove added density does not obscure the accepted reads.
+Fixed for the accepted gate: existing anchors, generated ground/NavMesh, two defenders, three enemies, shared character stack, automatic targeting, no unit commands, cutout role-sheet sprites, faction base/badge markers, and short attack ownership lines. E0-A3 proved on 2026-06-19 that added density does not obscure the accepted reads. Adjustable during E0-B camera/reference composition: badge size/height, base radius, sprite scale, attack-line width/duration, force count, role mix, reinforcement cadence, and camera framing.
 
 ## 2026-06-15 NavMesh Ground Battle Handoff
 

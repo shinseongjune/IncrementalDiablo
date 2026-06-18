@@ -7,9 +7,9 @@
 3. Use `DefenseDirector.CurrentProgressionProfile` to derive visual enemy/defender count, enemy role tier, deterministic role mix, and bounded reinforcement cadence.
 4. Use formula-derived scale only for presentation density; `DefenseRuntimeState` remains the wall/pressure/reward/progression authority.
 5. Do not add unit selection, movement orders, focus fire, production queues, free tower placement, or authored wave rows.
-6. Needs focused Unity Play Mode review in `DefenseFocus` and the compressed panel before E0-A3 can be accepted.
+6. User Play Mode feedback accepted E0-A3 in `DefenseFocus` and the compressed panel on 2026-06-19.
 
-Status: E0-A3 code-ready, pending Play Mode density readability validation.
+Status: E0-A3 accepted. Next risk is E0-B camera/reference-image composition while preserving the accepted read.
 
 ## 2026-06-16 E0-A2 Readable Ownership
 
@@ -18,10 +18,10 @@ Status: E0-A3 code-ready, pending Play Mode density readability validation.
 3. Add code-generated faction ownership markers to each actor: base ring plus defender shield or enemy threat badge.
 4. On every successful melee or wall hit, draw a short attacker-to-target line and apply target flash/recoil.
 5. User Play Mode feedback accepted friendly/enemy identity, attack source, target, hit reaction, death/reinforcement, and wall damage on 2026-06-17.
-6. E0-A3 now adds formula-driven role mix and density at low cadence first, pending Play Mode readability validation.
+6. E0-A3 now adds formula-driven role mix and density at low cadence first, accepted from user Play Mode feedback on 2026-06-19.
 7. Add tower/ranged fire only if it preserves the accepted melee/wall ownership read and clearly shows Unit -> action -> target.
 
-Status: E0-A2 accepted. E0-A3 formula-driven battle scale is code-ready and needs Play Mode validation.
+Status: E0-A2 accepted. E0-A3 formula-driven battle scale is also accepted; camera/reference composition is the next Phase E presentation risk.
 
 ## 2026-06-15 E0-A NavMesh Combat Reset
 

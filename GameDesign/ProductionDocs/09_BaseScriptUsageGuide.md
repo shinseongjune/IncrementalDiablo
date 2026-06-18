@@ -1,5 +1,13 @@
 # Base Script Usage Guide
 
+## 2026-06-19 E0-A3 Review Override Usage
+
+- `GroundDefenseNavMeshBattlefield` has a validation-only review Frontline Level override. It affects `EvaluateVisualForceProfile()` but does not write to `DefenseRuntimeState`, save data, resources, rewards, or offline progression.
+- Use the component context menu methods for focused review: `E0-A3 Review/Use Baseline Frontline Level`, `E0-A3 Review/Use Shield Role Band`, `E0-A3 Review/Use Full Role Mix Band`, and `E0-A3 Review/Clear Frontline Level Override`.
+- Level 11 previews the first added role tier; Level 21 previews the full current enemy role mix with more force density.
+- `PlayableLoopHud` auto-finds the battlefield and shows `E0-A3 review scale` only while the override is enabled. If the line is absent, the view is using real runtime progression.
+- Clear the override before normal progression or save/load checks. Use it only for E0-A3 regression review or the next camera/reference-composition pass; it is not acceptance evidence for economy, rewards, or long-horizon pacing.
+
 ## 2026-06-17 E0-A3 Formula-Driven Battle Scale Usage
 
 - `GroundDefenseNavMeshBattlefield` evaluates `DefenseDirector.CurrentProgressionProfile` through `EvaluateVisualForceProfile()` before spawning and while the battlefield is running.
@@ -7,14 +15,14 @@
 - `GroundDefenseNavMeshEnemyRole` stores deterministic role data for the NavMesh battlefield: sheet UV, size/height, spawn weight, health, movement, damage, and attack-cooldown multipliers. The first role uses the previous accepted enemy cell so the baseline remains stable.
 - `GetEnemyRoleForSlot(...)` chooses role mix from the available formula role tier. This is not a wave list; it derives the visible role set from progression and slot index.
 - Reinforcement timing now uses the active visual force profile. Enemy cadence follows incoming-pressure scale, defender cadence follows defense-output scale, and minimum respawn seconds prevent unreadable rapid churn.
-- The code path is ready for Play Mode review, not accepted. Validate with the 2026-06-17 section of `06_UnitySceneAndPrefabSetupGuide.md` before promoting E0-A3.
+- User Play Mode feedback accepted this code path on 2026-06-19. Validate with the 2026-06-19 section of `06_UnitySceneAndPrefabSetupGuide.md` only when checking regressions or camera/composition changes.
 
 ## 2026-06-16 E0-A2 Readable Ownership Usage
 
 - `GroundDefenseBillboardUtility.CreateBillboard(...)` now attempts to build a dark-matte cutout runtime sprite from the requested readability-sheet cell before falling back to the source texture sprite path.
 - `GroundDefenseNavMeshBattlefield` remains the normal `Gameplay > DefenseRoot` path. It still builds the runtime ground/NavMesh and force actors, then adds generated faction bases plus blue defender shield badges and red enemy threat badges to each actor.
 - `GroundDefenseNavMeshUnit` draws a short `AttackOwnershipLine` from attacker to target when a melee or wall hit succeeds. The target flashes and recoils during the same window.
-- User Play Mode feedback accepted this path on 2026-06-17. Preserve it while adding E0-A3 force scale; reopen only for readability regressions.
+- User Play Mode feedback accepted this path on 2026-06-17 and accepted the E0-A3 force scale on 2026-06-19. Preserve both; reopen only for readability regressions.
 
 ## 2026-06-15 NavMesh Ground Combat Usage
 
@@ -24,7 +32,7 @@
 - `DefenseDirector.ApplyBattlefieldWallDamage(...)` is the only bridge from visible enemy wall attacks into authoritative wall state.
 - Do not enable `GroundDefenseLanePresenter`, `GroundDefenseActorRuntime`, `GroundDefenseEnemyPool`, `GroundDefenseBattlefieldView`, or `GroundDefenseCombatPresenter` in the normal scene while this path is under validation.
 - Validate with the top section of `06_UnitySceneAndPrefabSetupGuide.md`. Do not add manual wave lists or player unit commands.
-- The user accepted the runtime movement/combat/reinforcement/wall path on 2026-06-15 and the readable-ownership path on 2026-06-17. Preserve both while adding E0-A3 density.
+- The user accepted the runtime movement/combat/reinforcement/wall path on 2026-06-15, the readable-ownership path on 2026-06-17, and E0-A3 readable density on 2026-06-19. Preserve all three while tuning camera/reference composition.
 
 ## 2026-06-15 E0-A1 Sprite Usage
 

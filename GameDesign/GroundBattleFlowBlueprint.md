@@ -1,5 +1,18 @@
 # Ground Defense Flow Blueprint
 
+## 2026-06-19 E0-A3 Review Flow
+
+```text
+Reviewer enables a review-only visual Frontline Level
+-> battlefield evaluates that level's force profile
+-> generated NavMesh units rebuild only when force count or role tier changes
+-> HUD labels the active E0-A3 review scale
+-> reviewer checks full and compressed panel readability
+-> reviewer clears the override before normal progression checks
+```
+
+The review level is not a gameplay state. It does not modify `DefenseRuntimeState`, rewards, save data, offline progress, Hold/Push mode, or player unlocks. It exists only to make the high-band density proof reachable in Play Mode.
+
 ## 2026-06-17 E0-A3 Formula-Driven Scale Flow
 
 ```text
@@ -11,7 +24,7 @@ Frontline profile changes
 -> every visible hit must still read as Unit -> action -> target
 ```
 
-This flow adds spectacle through formulas, not authored wave rows or player unit commands. The accepted E0-A2 ownership markers and attack lines remain the proof mechanism. E0-A3 needs Play Mode acceptance before it can be marked done.
+This flow adds spectacle through formulas, not authored wave rows or player unit commands. The accepted E0-A2 ownership markers and attack lines remain the proof mechanism. User Play Mode feedback accepted E0-A3 on 2026-06-19; future camera/reference composition work must preserve this read.
 
 ## 2026-06-16 E0-A2 Readable Ownership Flow
 
@@ -27,7 +40,7 @@ Enemy spawns on hostile side
 -> authoritative wall health drops
 ```
 
-This flow preserves the 2026-06-15 accepted movement, targeting, death/reinforcement, and wall-damage behavior. User Play Mode feedback accepted it on 2026-06-17. E0-A3 can now add formula-driven role mix and density, but added spectacle must keep the low-density `attacker -> action -> target` read intact.
+This flow preserves the 2026-06-15 accepted movement, targeting, death/reinforcement, and wall-damage behavior. User Play Mode feedback accepted it on 2026-06-17. E0-A3 formula-driven role mix and density were accepted on 2026-06-19; camera and composition changes must keep the low-density and high-density `attacker -> action -> target` read intact.
 
 ## 2026-06-15 Actual NavMesh Battle Flow
 

@@ -472,6 +472,9 @@ if ((Test-Path -LiteralPath $groundNavMeshBattlefieldPath) -and
     [void](Assert-TextContains "Ground battlefield creates enemy threat badge" $groundNavMeshBattlefieldText "EnemyThreatBadge")
     [void](Assert-TextContains "Ground battlefield evaluates formula force scale" $groundNavMeshBattlefieldText "EvaluateVisualForceProfile")
     [void](Assert-TextContains "Ground battlefield consumes frontline profile" $groundNavMeshBattlefieldText "defense.CurrentProgressionProfile")
+    [void](Assert-TextContains "Ground battlefield supports E0-A3 review override" $groundNavMeshBattlefieldText "useReviewFrontlineLevelOverride")
+    [void](Assert-TextContains "Ground battlefield isolates review profile from save state" $groundNavMeshBattlefieldText "GetVisualProgressionProfile")
+    [void](Assert-TextContains "Playable HUD labels E0-A3 review scale" $playableHudText "E0-A3 review scale")
     [void](Assert-TextContains "Ground battlefield caps scaled enemy density" $groundNavMeshBattlefieldText "maxFormulaEnemies")
     [void](Assert-TextContains "Ground battlefield selects formula role mix" $groundNavMeshBattlefieldText "GetEnemyRoleForSlot")
     [void](Assert-TextContains "Ground battlefield scales reinforcement cadence" $groundNavMeshBattlefieldText "formulaCadenceStrength")
@@ -570,7 +573,8 @@ if (Test-Path -LiteralPath $planPath) {
         "D0-C | P0 | Item registry and save migration | Done",
         "D0-D | P0 | Duplicate-item sink and conversion | Done",
         "D1-A | P1 | Formula-driven ground scaling | Done",
-        "E0-A | P0 | RTS-readable automatic defense battlefield | Needs Unity Play Mode / E0-A3 formula-driven battle scale",
+        "E0-A | P0 | RTS-readable automatic defense battlefield | Done / E0-A3 accepted",
+        "E0-B | P0 | Defense camera and reference composition pass | Next / Needs Unity Editor composition judgment",
         "RTS-readable automatic defense",
         "actual NavMesh battlefield",
         "CharacterStats",
