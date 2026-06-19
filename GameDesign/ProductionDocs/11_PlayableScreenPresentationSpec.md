@@ -1,5 +1,19 @@
 # Playable Screen Presentation Spec
 
+## 2026-06-19 E0-B Manual Review Feedback
+
+- User review: the current defense view is readable, but the improvement from the setup pass is not visually obvious.
+- The reference image reads as enemy pressure massing from the top/far side of the screen toward the lower protected wall. E0-B should try to reproduce that read.
+- Preferred next attempt: camera and viewport composition first. Rotate/reposition `Camera_DefensePanel`, adjust orthographic size, and crop the defense viewport so the accepted NavMesh battlefield reads as top-to-bottom pressure without changing combat ownership, saves, formulas, or adding manual waves.
+- If camera-only composition cannot preserve the accepted `attacker -> action -> target` read, stop and propose options before changing anchors: either rotate/reposition the battlefield anchors, build a dedicated presentation projection, or accept a different reference hierarchy.
+
+## 2026-06-19 E0-B Static Viewport Contract
+
+- E0-B still requires Unity Editor composition judgment for actual defense camera position, angle, orthographic size, and panel crop.
+- The deterministic bridge is now guarded: `RawImage_DungeonViewport` and `RawImage_DefenseViewport` must each have a `PanelCameraRenderTarget` with a non-empty source camera and target image.
+- `PanelCameraRenderTarget` exposes `Render Target/Apply Now` from the component context menu so the reviewer can rebind the viewport after camera or panel edits without changing gameplay state.
+- This support does not accept E0-B by itself. The manual pass must still compare against `GameDesign/References/2026-05-17_FinalGameplayScreenConcept.png` and preserve the accepted actor identity, source-target ownership, target reaction, death/reinforcement, wall damage, and high-band density in both `DefenseFocus` and the compressed panel.
+
 ## 2026-06-19 E0-A3 Review Override
 
 - The E0-A3 density review no longer requires a test save or production starting-level edit. `GroundDefenseNavMeshBattlefield` can preview a review-only visual Frontline Level while leaving the authoritative runtime level unchanged.

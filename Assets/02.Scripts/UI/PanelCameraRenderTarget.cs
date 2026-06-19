@@ -97,6 +97,7 @@ public class PanelCameraRenderTarget : MonoBehaviour
         }
     }
 
+    [ContextMenu("Render Target/Apply Now")]
     public void ApplyNow()
     {
         ResolveReferences();

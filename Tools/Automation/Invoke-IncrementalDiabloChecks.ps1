@@ -96,6 +96,54 @@ function Get-SceneBehaviourBlocks {
     return [regex]::Matches($SceneText, $pattern)
 }
 
+function Get-SceneGameObjectChunk {
+    param(
+        [string]$SceneText,
+        [string]$GameObjectName
+    )
+
+    $escapedGameObjectName = [regex]::Escape($GameObjectName)
+    $pattern = "(?ms)^--- !u!1 &\d+\r?\nGameObject:.*?m_Name:\s+${escapedGameObjectName}\r?\n.*?(?=^--- !u!1 &|\z)"
+    return [regex]::Match($SceneText, $pattern)
+}
+
+function Assert-SceneNamedRenderTargetBridge {
+    param(
+        [string]$Name,
+        [string]$SceneText,
+        [string]$RawImageName
+    )
+
+    $chunk = Get-SceneGameObjectChunk $SceneText $RawImageName
+    if (-not $chunk.Success) {
+        Add-Result $Name "FAIL" "Missing GameObject: $RawImageName"
+        return $false
+    }
+
+    if (-not $chunk.Value.Contains("m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.RawImage")) {
+        Add-Result $Name "FAIL" "$RawImageName is missing RawImage."
+        return $false
+    }
+
+    if (-not $chunk.Value.Contains("m_EditorClassIdentifier: Assembly-CSharp::PanelCameraRenderTarget")) {
+        Add-Result $Name "FAIL" "$RawImageName is missing PanelCameraRenderTarget."
+        return $false
+    }
+
+    if ($chunk.Value -notmatch "(?m)^\s*sourceCamera:\s+\{fileID:\s+(?!0\})\d+") {
+        Add-Result $Name "FAIL" "$RawImageName render target has no source camera."
+        return $false
+    }
+
+    if ($chunk.Value -notmatch "(?m)^\s*targetImage:\s+\{fileID:\s+(?!0\})\d+") {
+        Add-Result $Name "FAIL" "$RawImageName render target has no target RawImage."
+        return $false
+    }
+
+    Add-Result $Name "PASS" "$RawImageName has RawImage + PanelCameraRenderTarget with source camera and target image."
+    return $true
+}
+
 function Assert-SceneBehaviourReference {
     param(
         [string]$Name,
@@ -286,6 +334,8 @@ if (Test-Path -LiteralPath $scenePath) {
         @{ Name = "Scene has dungeon panel camera"; Token = "m_Name: Camera_DungeonPanel" },
         @{ Name = "Scene has dungeon render target"; Token = "m_EditorClassIdentifier: Assembly-CSharp::PanelCameraRenderTarget" },
         @{ Name = "Scene has dungeon input router"; Token = "m_EditorClassIdentifier: Assembly-CSharp::DungeonViewportInputRouter" },
+        @{ Name = "Scene has defense RawImage viewport"; Token = "m_Name: RawImage_DefenseViewport" },
+        @{ Name = "Scene has defense panel camera"; Token = "m_Name: Camera_DefensePanel" },
         @{ Name = "Scene has previous dungeon depth button"; Token = "m_Name: Button_DungeonDepthPrevious" },
         @{ Name = "Scene has next dungeon depth button"; Token = "m_Name: Button_DungeonDepthNext" },
         @{ Name = "Scene initializes selected dungeon depth"; Token = "selectedDepth: 1" },
@@ -298,6 +348,8 @@ if (Test-Path -LiteralPath $scenePath) {
 
     [void](Assert-SceneBehaviourReference "Dungeon render target source camera" $sceneText "PanelCameraRenderTarget" "sourceCamera")
     [void](Assert-SceneBehaviourReference "Dungeon render target RawImage" $sceneText "PanelCameraRenderTarget" "targetImage")
+    [void](Assert-SceneNamedRenderTargetBridge "Dungeon viewport render bridge" $sceneText "RawImage_DungeonViewport")
+    [void](Assert-SceneNamedRenderTargetBridge "Defense viewport render bridge" $sceneText "RawImage_DefenseViewport")
     [void](Assert-SceneBehaviourReference "Dungeon input router RawImage" $sceneText "DungeonViewportInputRouter" "viewportImage")
     [void](Assert-SceneBehaviourReference "Dungeon input router camera" $sceneText "DungeonViewportInputRouter" "viewportCamera")
     [void](Assert-SceneBehaviourReference "Dungeon input router player" $sceneText "DungeonViewportInputRouter" "player")
@@ -581,6 +633,7 @@ if (Test-Path -LiteralPath $planPath) {
         "NavMeshAgent",
         "Unit -> action -> target",
         "formula-driven battle scale",
+        "RawImage_DefenseViewport",
         "reinforcements",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
         "12_PrototypeDebtRegister.md",

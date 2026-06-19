@@ -1,5 +1,12 @@
 # Ground Defense System Spec
 
+## 2026-06-19 E0-B Reference Orientation Feedback
+
+- User review after E0-B setup: the battle is readable, but the composition change is not obvious and does not yet match the reference image's top-to-bottom enemy pressure read.
+- The next camera/composition attempt should present the accepted NavMesh battlefield with hostile pressure at the top/far side of the screen, contact in the middle/lower middle, and the protected wall/defenders on the lower side.
+- This is a camera and scene-composition target, not a combat-rule change. Preserve `DefenseRuntimeState`, `GroundDefenseBalanceModel`, automatic targeting, attacker-owned hit lines, formula-driven density, and the no-micromanagement boundary.
+- If camera-only framing cannot achieve the reference read, propose scene-anchor rotation/repositioning or a dedicated presentation projection before changing the accepted E0-A combat path.
+
 ## 2026-06-19 E0-A3 Review Override
 
 - `GroundDefenseNavMeshBattlefield` now has a non-save E0-A3 review Frontline Level override. It changes only the visual force profile used by the generated NavMesh battlefield.

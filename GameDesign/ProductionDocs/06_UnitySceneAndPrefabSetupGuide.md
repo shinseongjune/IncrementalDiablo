@@ -1,5 +1,21 @@
 # Unity Scene And Prefab Setup Guide
 
+## 2026-06-19 E0-B Camera Composition Prep
+
+No autonomous camera/framing value is chosen here. The local harness now verifies that the existing `RawImage_DungeonViewport` and `RawImage_DefenseViewport` each keep a `PanelCameraRenderTarget` with a wired source camera and target image, so the manual composition pass can focus on visual judgment instead of silent scene-wiring drift.
+
+Focused manual pass:
+
+1. Open `Gameplay`, enter Play Mode, and start in `DefenseFocus` with the E0-A3 review override off.
+2. If either viewport appears blank after camera or panel edits, select its `PanelCameraRenderTarget` and run `Render Target/Apply Now`.
+3. Tune only editor-authored presentation values first: defense camera position, angle, orthographic size, and panel crop.
+4. Target the reference orientation before deeper presentation work: enemy formation should read from the top/far side of the screen, pressure should travel downward/toward the lower contact area, and defender/tower/wall ownership should read near the lower protected side.
+5. Compare against `GameDesign/References/2026-05-17_FinalGameplayScreenConcept.png`: enemy formation should read on the far side, defender/tower/wall ownership should read near the protected side, and the contact line should stay legible without HUD text.
+6. Run `E0-A3 Review/Use Full Role Mix Band`, then repeat the check in `DefenseFocus` and after starting a dungeon so the defense view is compressed.
+7. Run `E0-A3 Review/Clear Frontline Level Override` before judging normal progression or save/load.
+
+Fixed for this pass: no unit selection, movement orders, focus fire, manual wave rows, new presentation abstraction, or save-state change. Adjustable by the reviewer: camera position/angle/orthographic size, panel crop, unit spacing, badge scale/height, base radius, sprite scale, and attack-line width/duration. If the top-to-bottom reference read requires moving `EnemySpawnAnchor` or `WallAnchor`, stop and record that as a separate scene-composition decision before editing.
+
 ## 2026-06-19 E0-A3 Formula-Driven Battle Scale Handoff
 
 No new GameObject, prefab, or Inspector reference is required. `Gameplay > DefenseRoot > GroundDefenseNavMeshBattlefield` keeps the accepted runtime ground/NavMesh and derives visual force scale from the existing `DefenseDirector` Frontline profile. It also exposes a non-save E0-A3 review override so higher Frontline bands can be inspected without editing the real save/progression state.

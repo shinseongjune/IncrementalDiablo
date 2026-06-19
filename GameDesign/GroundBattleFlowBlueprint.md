@@ -1,5 +1,9 @@
 # Ground Defense Flow Blueprint
 
+## 2026-06-19 E0-B Reference Composition Note
+
+The accepted NavMesh battle should next be framed closer to the saved reference image: enemies read from the top/far side of the defense view, then press downward/toward the lower protected wall. This is a camera/composition problem first. Do not reinterpret it as permission to add manual waves, unit selection, focus fire, or a second combat simulation.
+
 ## 2026-06-19 E0-A3 Review Flow
 
 ```text

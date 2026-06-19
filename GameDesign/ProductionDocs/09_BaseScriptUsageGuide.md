@@ -1,5 +1,12 @@
 # Base Script Usage Guide
 
+## 2026-06-19 E0-B Viewport Review Usage
+
+- `PanelCameraRenderTarget` now exposes `Render Target/Apply Now` from its component context menu. Use it on `RawImage_DefenseViewport` or `RawImage_DungeonViewport` after camera/panel edits if the rendered image does not refresh during the E0-B composition review.
+- The automation harness checks both named viewport bridges separately. A generic `PanelCameraRenderTarget` somewhere in the scene is no longer enough; the named `RawImage` object must keep its own target image and source camera.
+- This is setup support only. It does not choose camera framing, crop, scale, or final layout values; those still require Unity Editor Play Mode judgment against the screen reference.
+- The current E0-B target is a camera/composition read where enemy pressure appears from the top/far side of the defense view and pushes toward a lower protected wall. Treat this as camera/panel composition first, not a reason to change combat logic or author manual waves.
+
 ## 2026-06-19 E0-A3 Review Override Usage
 
 - `GroundDefenseNavMeshBattlefield` has a validation-only review Frontline Level override. It affects `EvaluateVisualForceProfile()` but does not write to `DefenseRuntimeState`, save data, resources, rewards, or offline progression.
