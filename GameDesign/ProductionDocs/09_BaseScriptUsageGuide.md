@@ -1,5 +1,11 @@
 # Base Script Usage Guide
 
+## 2026-06-20 E0-B Camera Starting Preset Usage
+
+- `Camera_DefensePanel` now begins the E0-B review at Position `(-3.56, 11.21, 69.31)`, Rotation `(67.419, 90, 0)`, Orthographic Size `10.25` so the existing enemy-spawn-to-wall route occupies the vertical screen axis.
+- This changes no script contract. Use `PanelCameraRenderTarget > Render Target/Apply Now` if the defense image does not refresh after the scene reload, then judge Level 1 and the Level 21 review profile in both panel states.
+- If the candidate fails, restore the documented pre-preset camera values; do not move combat anchors as a follow-up without a separate decision.
+
 ## 2026-06-19 E0-B Viewport Review Usage
 
 - `PanelCameraRenderTarget` now exposes `Render Target/Apply Now` from its component context menu. Use it on `RawImage_DefenseViewport` or `RawImage_DungeonViewport` after camera/panel edits if the rendered image does not refresh during the E0-B composition review.

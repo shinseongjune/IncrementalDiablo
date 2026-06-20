@@ -1,5 +1,13 @@
 # Playable Screen Presentation Spec
 
+## 2026-06-20 E0-B Anchor-Derived Camera Starting Preset
+
+- Applied a reversible `Camera_DefensePanel` starting preset rather than moving the accepted NavMesh battlefield: position `(-3.56, 11.21, 69.31)`, rotation `(67.419, 90, 0)`, and orthographic size `10.25`.
+- The unchanged anchors are at world `X=9.15` (enemy spawn) and `X=-6.95` (wall), both at `Z=69.31`. The camera now looks along that `+X -> -X` pressure axis, mapping the enemy side to the top/far screen region and the wall/defender side to the lower protected region.
+- The enlarged vertical field includes the generated lane's anchor-to-anchor length plus its runtime end padding. It does not change unit roles, movement, targeting, damage, force formulas, review overrides, save data, UI anchors, or the render-target bridge.
+- This is a comparison candidate, not acceptance. In Play Mode, judge Level 1 and the Level 21 review profile in both `DefenseFocus` and the compressed panel; retain it only if source-target ownership, target reaction, death/reinforcement, and wall damage remain obvious.
+- If the candidate fails, restore the pre-preset camera values `position (0, 11.21, 62.8)`, `rotation (67.419, 4.02, 3.605)`, and `orthographic size 5` before proposing any anchor edit.
+
 ## 2026-06-19 E0-B Manual Review Feedback
 
 - User review: the current defense view is readable, but the improvement from the setup pass is not visually obvious.

@@ -1,18 +1,22 @@
 # Unity Scene And Prefab Setup Guide
 
-## 2026-06-19 E0-B Camera Composition Prep
+## 2026-06-20 E0-B Camera Composition Starting Preset
 
-No autonomous camera/framing value is chosen here. The local harness now verifies that the existing `RawImage_DungeonViewport` and `RawImage_DefenseViewport` each keep a `PanelCameraRenderTarget` with a wired source camera and target image, so the manual composition pass can focus on visual judgment instead of silent scene-wiring drift.
+The local harness verifies that the existing `RawImage_DungeonViewport` and `RawImage_DefenseViewport` each keep a `PanelCameraRenderTarget` with a wired source camera and target image, so the manual composition pass can focus on visual judgment instead of silent scene-wiring drift.
+
+`Gameplay > Camera_DefensePanel` now has a conservative anchor-derived starting preset: Position `(-3.56, 11.21, 69.31)`, Rotation `(67.419, 90, 0)`, Orthographic Size `10.25`. It looks along the unchanged enemy-spawn-to-wall travel axis, making the spawn side (`X=9.15`) screen-top/far and the wall side (`X=-6.95`) screen-bottom/protected. No ground anchor, unit, formula, NavMesh, or UI layout value changed.
 
 Focused manual pass:
 
-1. Open `Gameplay`, enter Play Mode, and start in `DefenseFocus` with the E0-A3 review override off.
+1. Open `Gameplay`, confirm the listed `Camera_DefensePanel` starting values, enter Play Mode, and start in `DefenseFocus` with the E0-A3 review override off.
 2. If either viewport appears blank after camera or panel edits, select its `PanelCameraRenderTarget` and run `Render Target/Apply Now`.
 3. Tune only editor-authored presentation values first: defense camera position, angle, orthographic size, and panel crop.
 4. Target the reference orientation before deeper presentation work: enemy formation should read from the top/far side of the screen, pressure should travel downward/toward the lower contact area, and defender/tower/wall ownership should read near the lower protected side.
 5. Compare against `GameDesign/References/2026-05-17_FinalGameplayScreenConcept.png`: enemy formation should read on the far side, defender/tower/wall ownership should read near the protected side, and the contact line should stay legible without HUD text.
 6. Run `E0-A3 Review/Use Full Role Mix Band`, then repeat the check in `DefenseFocus` and after starting a dungeon so the defense view is compressed.
 7. Run `E0-A3 Review/Clear Frontline Level Override` before judging normal progression or save/load.
+
+If this candidate fails to make the hierarchy obvious, restore `Camera_DefensePanel` to Position `(0, 11.21, 62.8)`, Rotation `(67.419, 4.02, 3.605)`, Orthographic Size `5`, then record whether the next proposal should rotate/reposition the anchors. Do not move `EnemySpawnAnchor` or `WallAnchor` in the same pass.
 
 Fixed for this pass: no unit selection, movement orders, focus fire, manual wave rows, new presentation abstraction, or save-state change. Adjustable by the reviewer: camera position/angle/orthographic size, panel crop, unit spacing, badge scale/height, base radius, sprite scale, and attack-line width/duration. If the top-to-bottom reference read requires moving `EnemySpawnAnchor` or `WallAnchor`, stop and record that as a separate scene-composition decision before editing.
 

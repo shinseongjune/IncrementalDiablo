@@ -626,7 +626,7 @@ if (Test-Path -LiteralPath $planPath) {
         "D0-D | P0 | Duplicate-item sink and conversion | Done",
         "D1-A | P1 | Formula-driven ground scaling | Done",
         "E0-A | P0 | RTS-readable automatic defense battlefield | Done / E0-A3 accepted",
-        "E0-B | P0 | Defense camera and reference composition pass | Next / Needs Unity Editor composition judgment",
+        "E0-B | P0 | Defense camera and reference composition pass | In Progress / Anchor-derived starting preset applied",
         "RTS-readable automatic defense",
         "actual NavMesh battlefield",
         "CharacterStats",

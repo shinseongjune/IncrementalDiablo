@@ -1,5 +1,11 @@
 # Incremental Diablo Game Design Document
 
+## 2026-06-20 E0-B Camera Composition Candidate
+
+- E0-B now has an anchor-derived, reversible defense-camera starting preset: it maps the existing enemy-spawn side to the top/far region of the view and the existing wall/defender side to the lower protected region.
+- This is presentation-only and leaves the accepted autonomous NavMesh battle, combat ownership, formula-driven density, saves, rewards, and no-micromanagement product boundary unchanged.
+- It remains unaccepted until the focused Level 1 and Level 21 review comparison confirms the hierarchy in both `DefenseFocus` and the compressed defense panel.
+
 ## 2026-06-19 E0-A3 Review Path
 
 - The automatic NavMesh defense can now preview higher formula bands through a review-only Frontline Level override on `GroundDefenseNavMeshBattlefield`.
