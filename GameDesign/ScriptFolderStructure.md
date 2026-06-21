@@ -1,110 +1,29 @@
 # Script Folder Structure
 
-Use `Assets/02.Scripts` as the root for gameplay code.
+## Live ownership map
 
-## Character
+| Area | Folder / primary scripts | Responsibility |
+| --- | --- | --- |
+| Ground-defense authority | `Assets/02.Scripts/GroundDefense/Runtime/DefenseRuntimeState.cs`, `DefenseDirector.cs`, `DefenseSaveManager.cs`, `GroundDefenseBalanceModel.cs` | Continuous frontline, wall/resources/progression, save/load/offline state, formula balance. |
+| Ground-defense live battle | `Assets/02.Scripts/GroundDefense/Runtime/GroundDefenseNavMeshBattlefield.cs`, `GroundDefenseNavMeshUnit.cs`, `Assets/02.Scripts/GroundDefense/UI/GroundDefenseBillboardUtility.cs` | Autonomous NavMesh actors, visual faction/role readability, target ownership, death/reinforcement, authoritative wall damage. |
+| Dungeon | `Assets/02.Scripts/Dungeon/ExpeditionDirector.cs`, `EnemySpawner.cs`, `DungeonDepthBalanceModel.cs` | Direct-control expedition state, enemy spawning, formula depth bands, failure/reward handoff. |
+| Items | `Assets/02.Scripts/Items/ItemDefinitionRegistry.cs`, `LootDropper.cs`, `SimpleInventory.cs`, `ItemEconomyModel.cs`, `ItemSalvageService.cs` | Authored item identity, rewards, duplicate conversion, inventory, salvage, material sinks. |
+| UI | `Assets/02.Scripts/UI/PlayableLoopHud.cs`, `PlayableScreenLayoutController.cs`, `PanelCameraRenderTarget.cs`, `DungeonViewportInputRouter.cs` | Normal player HUD, focus/overlays, viewport render bridge, dungeon viewport input. |
+| Overlay UI | `Assets/02.Scripts/UI/*OverlayPresenter.cs` | Inventory, reward, and crafting actions/content. |
+| Shared | `Assets/02.Scripts/Shared/GameSaveData.cs`, `GameSaveDataDiagnostics.cs` | Save schema and explicit migration/diagnostics. |
+| Automation | `Tools/Automation/Invoke-IncrementalDiabloChecks.ps1`, balance exports, prototype inventory | Structural verification, deterministic balance checks, debt visibility. |
 
-Character code owns actors, stats, health, movement, combat execution, equipment slots, and controllers.
+## Retired ground-defense path
 
-- `Character/Core/`: body, movement, combat execution, health, and equipment components.
-- `Character/Stats/`: stat ids, stat containers, and stat modifier experiments.
-- `Character/Controllers/`: player input, auto combat, and enemy AI controllers.
+The superseded presentation stack, its prefab/assets, review-only level control, and normal-player diagnostics were deleted after the actual NavMesh battlefield was accepted. Do not recreate compatibility fallbacks. If a future feature needs role data or pooling, design it against the live NavMesh contract.
 
-Current implementation note: `PlayerController` owns direct-control click movement, click attacks, Shift stationary attacks, and external camera-ray clicks for UI-rendered dungeon panels. It ignores duplicate world-click handling while the pointer is over UI, and it skips self/friendly actor colliders as movement surfaces so the hero should not self-target or move onto its own click collider. Shift-clicking a valid target keeps a stationary command alive while waiting for range, then hits when the target is in range; Shift-clicking ground still plays a single in-place attack.
+## Ownership boundaries
 
-## Dungeon
+- Ground battle visuals never own rewards, frontline progression, wall authority, or save data.
+- Dungeon contracts must extend `ExpeditionDirector` and save data; they must not create a second depth/reward system.
+- Player-facing UI shows actions and consequences, not review/debug/render wiring status.
+- New systems need a primary owner, data location, persistence statement, balance knobs, and a harness or Play Mode verification path.
 
-Dungeon code owns room-based expedition flow.
+## Automation notes
 
-- `DungeonRunState`
-- `DungeonDepthBalanceModel`
-- `ExpeditionDirector`
-- `CombatRoom`
-- `DungeonRoomPresenter`
-- `DungeonLoopSmokeTest`
-- `EnemySpawner`
-- `RoomExit`
-- room clear conditions
-
-Rooms should be prefab/runtime objects, not separate Unity scenes.
-
-Current implementation note: `DungeonRunState`, `ExpeditionDirector`, `CombatRoom`, `DungeonRoomPresenter`, `DungeonLoopSmokeTest`, `EnemySpawner`, and `DungeonDebugHud` exist first. `ExpeditionDirector` can start an expedition, complete a room, fail the run, expose Ready/Running/Cleared/Failed state, export/import `DungeonSaveData` through `DefenseSaveManager`, and grant a pending clear reward through `LootDropper`. `CombatRoom` binds tracked enemies to the room lifecycle and resolves through tracked `Health` references. Its prototype health/DPS simulation remains available for isolated dev/test use, but normal `Gameplay` disables it. `EnemySpawner` validates the melee prefab's Health, Enemy team, AI, enabled NavMeshAgent, and click collider, resolves every intended spawn position onto nearby NavMesh before instantiation, registers spawned `Health` components with `CombatRoom`, and keeps spawned enemies inactive until the room enters combat. The user accepted the current `PF_DungeonEnemy_Melee` spawn, chase/attack, routed player attack, HP/death, clear, authored reward, and retry path on 2026-06-06. `DungeonRoomPresenter` remains prototype room-presentation debt, and `DungeonDebugHud` remains an edge-only smoke-test surface.
-
-Phase D progression note: `ExpeditionDirector` now owns active, selected, and highest-unlocked dungeon depths. It starts the selected depth, unlocks exactly one next depth after clearing the current highest, keeps failure non-advancing, and exports/imports the ladder through `DungeonSaveData`.
-
-D0-B implementation note: `DungeonDepthBalanceModel` owns ten-depth milestone bands for enemy health, enemy damage, reward power, and material yield. `EnemySpawner` applies the active profile through runtime `CharacterStats` multipliers, `LootDropper` writes depth-scaled item level/power, `ItemEconomyModel.GetSalvageRewards(ItemInstance)` keeps overlay previews and actual payout aligned from saved item level, and `PlayableLoopHud` exposes the selected/active profile.
-
-## GroundDefense
-
-Ground defense code owns the continuous frontline, defense upgrades, local save support for the defense loop, and the HUD that inspects that loop.
-
-- `GroundDefense/Runtime/`: frontline state, Hold/Push simulation, upgrades, and defense save manager.
-- `GroundDefense/UI/`: HUD components for frontline status and defense actions.
-
-Current implementation note: `GroundDefenseBalanceModel`, `DefenseDirector`, and `DefenseRuntimeState` own the formula-driven frontline simulation. `GroundDefenseNavMeshBattlefield` now owns the normal visible battle: it creates runtime ground/NavMesh and actual defender/enemy actors, then adds cutout role-sheet sprites plus generated faction bases and shape-coded badges. It also evaluates the current Frontline profile to scale visual force count, enemy role tier, deterministic role mix, and reinforcement cadence for E0-A3 without authored wave rows. The battlefield includes a non-save E0-A3 review Frontline Level override so Play Mode can preview Level 11 or Level 21 visual density without changing `DefenseRuntimeState` or saved progression. `GroundDefenseNavMeshUnit` uses the shared character stats, health, motor, combat, team, agent, and collider stack for autonomous defender interception, enemy targeting, death/respawn, and enemy wall attacks; it also draws short attacker-to-target ownership lines with target recoil on successful melee and wall hits. The NavMesh combat foundation was accepted in Play Mode on 2026-06-15, readable ownership was accepted on 2026-06-17, and E0-A3 formula-driven density was accepted on 2026-06-19. `PanelCameraRenderTarget` now exposes `Render Target/Apply Now` for E0-B manual viewport rebinding, and the harness guards both named dungeon and compressed-defense `RawImage` render bridges before visual judgment. E0-B is now in progress with a reversible `Camera_DefensePanel` preset that maps the existing enemy spawn to the vertical top/far side and the wall to the lower protected side; Play Mode must validate it before acceptance. `GroundDefenseActorRuntime`, `GroundDefenseEnemyPool`, `GroundDefenseBattlefieldView`, and `GroundDefenseCombatPresenter` remain disabled replacement debt. E0-A is `Done / E0-A3 accepted`; individual unit controls, production queues, free tower placement, manual waves, and a second save/progression model remain out of scope.
-
-Automation tool note: `Tools/Automation/Invoke-IncrementalDiabloChecks.ps1` requires the canonical plan to keep E0-A as `RTS-readable automatic defense battlefield | Done / E0-A3 accepted` and E0-B as the next defense camera/reference composition pass. It guards the enabled `GroundDefenseNavMeshBattlefield`, disabled legacy presentation components, runtime NavMesh construction, shared character component stack, autonomous targeting/movement/basic attacks, authoritative wall-damage bridge, dark-matte sprite cutouts, generated faction markers, attack ownership lines, formula-driven visual force scale source tokens, the E0-A3 review override, the HUD review-scale label, and the named `RawImage_DungeonViewport` plus `RawImage_DefenseViewport` render-target bridges.
-
-D0-A automation note: the same harness now checks the `Gameplay` depth-button references and source tokens for selected/highest depth, one-step clear unlock, save schema v2 migration, and save diagnostics.
-
-D0-B automation note: `Tools/Automation/Export-DungeonDepthBalance.ps1` reads the runtime model constants, checks depth 1 plus monotonic growth, and exports `GameDesign/Balance/DungeonDepthBalance.csv`. The main harness runs its `-CheckOnly` path and checks the runtime scaling tokens.
-
-## UI
-
-Shared UI code owns player-facing screens that cross ground defense, dungeon, item, and save systems.
-
-- `PlayableLoopHud`
-- `PlayableScreenFocus`
-- `PlayableScreenLayoutController`
-- `InventoryOverlayPresenter`
-- `RewardOverlayPresenter`
-- `CraftingOverlayPresenter`
-- `PanelCameraRenderTarget`
-- `DungeonViewportInputRouter`
-
-Current implementation note: `PlayableLoopHud` is the first Canvas/TMP/Button bridge away from OnGUI debug panels. It can show frontline status, defense-alert summary/action priority, resources, ground-combat presenter status, E0-A3 review-scale status while the battlefield override is active, dungeon state, combat path, loot source, latest item, current/max hero HP, screen focus, dungeon viewport render/input diagnostics, a message line, and an action hint, then call button-safe methods for ground defense, dungeon, item, save, load, and optional inventory/crafting/reward overlay actions. It can also open the wired reward overlay automatically after a cleared room, so the normal dungeon-clear path leads into reward review/equip/salvage without relying on a manual debug-style follow-up button. `PlayableScreenFocus` and `PlayableScreenLayoutController` add the first reusable screen-state bridge for DefenseFocus, DungeonFocus, inventory overlay, crafting overlay, and reward overlay. The controller moves authored UI RectTransforms between the MVP defense-fullscreen and dungeon-dominant 70/30 layouts, reports whether optional overlay objects are wired, refuses to enter an invisible overlay state when a panel is missing, and can apply a target gameplay focus before opening an overlay so close actions return to the intended post-run focus. `PlayableLoopHud` can auto-find it, request DungeonFocus on dungeon start, restore DungeonFocus when a saved/loaded expedition is already Running, return to DefenseFocus when the room resolves, open reward overlay over DefenseFocus on clear, prioritize severe defense alerts or high pressure while the player is in DungeonFocus, and disable overlay buttons until the matching GameObjects exist. `PanelCameraRenderTarget` and `DungeonViewportInputRouter` are the P0-B bridge for a RenderTexture-style dungeon panel: the first binds a camera into a `RawImage` and exposes binding state, while the second converts clicks in that image into rays from the same camera before forwarding them to `PlayerController`; when both are on the same object, the router can inherit the camera from the render target. `InventoryOverlayPresenter` is the first player-facing inventory overlay content bridge: it fills authored TMP labels with item rows, selected-item details, wallet/materials, salvage preview, Rare reroll-cost preview when available, and action messages, then exposes Previous/Next/Latest/Equip/Salvage/Close methods for normal UI buttons. `RewardOverlayPresenter` is the matching reward-reveal content bridge for a wired reward overlay: it shows pending/claimed dungeon reward state, loot source, latest reward item details, wallet/material preview, claim reward, open inventory, equip reward, salvage reward, and close-overlay actions. `CraftingOverlayPresenter` is the first crafting overlay content bridge: it lists item instances, prefers the newest rerollable Rare item when opened, shows reroll-ready count, material guidance, and last-reroll result feedback, previews salvage and Rare reroll costs, salvages selected items, spends reroll materials, and writes one prototype affix roll onto selected Rare items; the current prototype reroll avoids repeating that item's saved affix when another slot-valid candidate exists. The three overlay presenters now resynchronize event subscriptions when auto-found references appear or change, so inventory, reward, wallet, and equipped-stat changes continue to refresh the visible overlay text during the normal path. The current `Gameplay` scene includes first-pass inventory/reward/crafting overlay layouts and wiring plus the dungeon RawImage/camera/render-target/input-router bridge; final camera crop, overlay density, item icons, scroll behavior, reward reveal art, crafting panel art, ornate treatment, and dungeon camera framing remain Unity Editor work. The debug OnGUI HUDs remain smoke-test fallbacks only.
-
-Phase D HUD note: `PlayableLoopHud` now shows active depth plus `SelectedDepth/HighestUnlockedDepth`, and `Gameplay` wires normal `Depth -` / `Depth +` buttons. The controls disable at the unlocked bounds and while an expedition is running.
-
-## Items
-
-Item code owns definitions, instances, drops, equipment effects, and simple inventory.
-
-- `ItemSlot`
-- `ItemRarity`
-- `ItemDefinition`
-- `ItemDefinitionRegistry`
-- `ItemEconomyModel`
-- `ItemSalvageService`
-- `ItemInstance`
-- `LootDropper`
-- `SimpleInventory`
-
-Current implementation note: `ItemSlot`, `ItemRarity`, `ItemDefinition`, `ItemDefinitionRegistry`, `ItemEconomyModel`, `ItemSalvageService`, `ItemInstance`, `SimpleInventory`, `LootDropper`, and `InventoryDebugHud` exist first. `ItemDefinitionRegistry.asset` owns the six current authored identities and optional legacy-id remaps. `SimpleInventory` resolves saved ids only through that registry, while `DefenseSaveManager` schema v3 reports resolved/remapped/unresolved counts before restore. Unknown records are preserved but quarantined from equipment, salvage, and reroll instead of using stale snapshot gameplay power. `EquipmentSlots` equips resolved definitions/live instances and feeds stat modifiers into `CharacterStats`; salvage turns resolved definitions into Scrap/Essence and Rare duplicates into AlterStone for the current economy test. `LootDropper` uses the weighted authored table first, then the legacy list, then a dev/test-only runtime fallback; normal `Gameplay` disables that fallback. The first six authored tier-1 item assets live under `Assets/05.ScriptableObjects/Items` and remain weighted at 78/20/2 Normal/Magic/Rare per clear, with first-Rare access and a 6 non-Rare pity threshold. `InventoryDebugHud` remains an edge smoke-test surface, while the normal inventory/reward/crafting presenters label unresolved ids and disable destructive actions. Full affix pools, affix locking, item-level upgrades, cross-definition value scoring, collection bonuses, defender gear, real drop-table export/import, and final inventory/crafting presentation remain future work.
-
-D0-D implementation note: `ItemEconomyModel` owns the conservative same-definition comparison rule, `LootDropper` evaluates the rolled candidate before inventory insertion, and `ItemSalvageService.TryConvertReward(...)` pays the normal depth-scaled materials for a consumed reward. A candidate is converted only when an owned copy has both equal-or-higher level and equal-or-higher rolled power. `RewardOverlayPresenter` and `PlayableLoopHud` expose the result without adding a new panel.
-
-## Shared
-
-Shared code is for small, generic helpers used across systems. Keep this folder small.
-
-## Automation
-
-Project automation helpers that are not Unity runtime code live outside `Assets`.
-
-- `Tools/Automation/Invoke-IncrementalDiabloChecks.ps1`: safe daily verification harness for Codex automation. It runs the solution build, `git diff --check`, required `Gameplay.unity` scene-contract checks, P0-B dungeon panel bridge checks, P0-C ground actor runtime wiring checks, missing-script scan, optional overlay wiring warning, automation-plan freshness checks, and local automation TOML health checks without invoking Unity batchmode.
-- `Tools/Automation/Get-PrototypeDebtInventory.ps1`: scans source files for prototype/debug/fallback/temporary markers so daily automation can keep `GameDesign/ProductionDocs/12_PrototypeDebtRegister.md` current instead of letting MVP bridges harden silently.
-- `Tools/Automation/Export-DungeonDepthBalance.ps1`: exports and validates the shared dungeon depth threat/reward/material curves without invoking Unity batchmode.
-- `Tools/Automation/Export-GroundDefenseBalance.ps1`: exports and validates the shared Frontline Level pressure/output/capacity/progress/reward/milestone curves without invoking Unity batchmode.
-
-## Rule
-
-Prefer component composition over inheritance.
-
-Examples:
-
-- player hero = `CharacterActor + PlayerController`
-- auto hero = `CharacterActor + AutoCombatController`
-- enemy = `CharacterActor + EnemyAIController`
-
-`CharacterActor` is the body and component hub. Controllers decide. Motor and combat execute.
+`Invoke-IncrementalDiabloChecks.ps1` verifies the active NavMesh defense battle and requires the removed legacy components to be absent from `Gameplay.unity`. It also checks named dungeon/defense viewport render bridges, save/item contracts, balance exports, prototype inventory, and production-document freshness. A passing run is structural verification, not gameplay acceptance.

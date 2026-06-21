@@ -1,5 +1,12 @@
 # Items Crafting Economy Spec
 
+## 2026-06-21 Production Economy Guard
+
+- The current 78/20/2 Normal/Magic/Rare per-clear table is a baseline, not a release-balanced economy. Any reward-count, rarity, or contract-reward change must declare its denominator and export Unity rows before D2 comparison.
+- D2 reference collection is complete enough; the missing production work is Unity-side drop-balance export and validation, not more reference gathering.
+- The duplicate conversion sink prevents dead drops, but it does not create build identity. The prototype Rare reroll (`TD-04`) remains an alpha blocker until a small authored affix pool with tags, weights, and migration rules replaces it.
+- E1-A contract rewards must use the same item/salvage path and export denominator; they must not silently alter rarity odds or bypass duplicate conversion.
+
 ## 2026-06-10 Phase D Duplicate Conversion
 
 - `LootDropper` rolls the candidate item before adding it to inventory. `ItemEconomyModel.TryFindAutoConversionMatch(...)` only matches an already-owned resolved item with the same canonical definition id.

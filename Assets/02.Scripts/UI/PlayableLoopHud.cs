@@ -17,21 +17,10 @@ public class PlayableLoopHud : MonoBehaviour
     [SerializeField] private Health heroHealth;
     [SerializeField] private CurrencyWallet wallet;
     [SerializeField] private DefenseSaveManager saveManager;
-    [SerializeField] private GroundDefenseCombatPresenter groundCombatPresenter;
-    [SerializeField] private GroundDefenseNavMeshBattlefield groundBattlefield;
     [SerializeField] private PlayableScreenLayoutController screenLayout;
-    [SerializeField] private PanelCameraRenderTarget dungeonPanelRenderTarget;
-    [SerializeField] private DungeonViewportInputRouter dungeonViewportInputRouter;
     [SerializeField] private bool autoFindReferences = true;
     [SerializeField] private bool syncScreenFocusWithDungeon = true;
     [SerializeField] private bool openRewardOverlayOnDungeonClear = true;
-    [SerializeField] private bool showGroundCombatDiagnostics;
-
-    [Header("Dungeon Viewport Diagnostics")]
-    [SerializeField] private bool showDungeonViewportDiagnostics = true;
-
-    [Header("Ground Battlefield Review")]
-    [SerializeField] private bool showGroundBattlefieldReviewStatus = true;
 
     [Header("Defense Alerts")]
     [SerializeField] private bool showDefenseAlertInSummary = true;
@@ -417,13 +406,9 @@ public class PlayableLoopHud : MonoBehaviour
 
         string defenseAlertText = showDefenseAlertInSummary ? BuildDefenseAlertText(runtime) : string.Empty;
         string alertText = string.IsNullOrWhiteSpace(defenseAlertText) ? string.Empty : $"\nDefense alert: {defenseAlertText}";
-        string groundCombatText = !showGroundCombatDiagnostics || groundCombatPresenter == null
-            ? string.Empty
-            : $"\n{groundCombatPresenter.LastCombatMessage}";
-        string groundBattlefieldReviewText = BuildGroundBattlefieldReviewText();
         string screenText = screenLayout == null ? string.Empty : $"\n{BuildScreenLayoutText()}";
         return $"Frontline Lv.{runtime.FrontlineLevel} / {runtime.State} / {runtime.Mode} / Wall {Mathf.CeilToInt(runtime.WallHealth)}/{Mathf.CeilToInt(runtime.WallMaxHealth)}\n" +
-               $"Pressure {pressureText} / Progress {progressText}\n{balanceText}\n{upgradeText}{alertText}{groundCombatText}{groundBattlefieldReviewText}{screenText}";
+               $"Pressure {pressureText} / Progress {progressText}\n{balanceText}\n{upgradeText}{alertText}{screenText}";
     }
 
     private string BuildDungeonText()
@@ -441,11 +426,10 @@ public class PlayableLoopHud : MonoBehaviour
             $"Band {balance.BandNumber} / Threat HP x{balance.EnemyHealthMultiplier:0.##} DMG x{balance.EnemyDamageMultiplier:0.##} / " +
             $"Reward x{balance.RewardPowerMultiplier:0.##} Materials x{balance.MaterialYieldMultiplier:0.##}";
         string dungeonTextValue = $"Dungeon: {expedition.State} / Depth {expedition.Depth} / Selected {expedition.SelectedDepth}/{expedition.HighestUnlockedDepth} unlocked\n{balanceText}\nRoom {expedition.RoomsCompleted}/{expedition.TotalRooms} / {expedition.ElapsedSeconds:0.0}s / {rewardState} / Loot {BuildLootSourceText()}\nLast: {result}";
-        string viewportText = BuildDungeonViewportText();
 
         if (combatRoom == null)
         {
-            return $"{dungeonTextValue}\nRoom: unavailable{viewportText}";
+            return $"{dungeonTextValue}\nRoom: unavailable";
         }
 
         CombatRoomResult roomResult = combatRoom.LastResult;
@@ -454,7 +438,7 @@ public class PlayableLoopHud : MonoBehaviour
             ? $"starting in {combatRoom.CountdownRemaining:0.0}s"
             : $"{combatRoom.ElapsedSeconds:0.0}s";
 
-        return $"{dungeonTextValue}\nRoom: {combatRoom.State} / {roomProgress} / Path {BuildCombatPathText()} / Hero {combatRoom.CurrentHeroHealth:0.#} / Enemy {combatRoom.CurrentEnemyHealth:0.#}\nRoom Last: {roomMessage}{viewportText}";
+        return $"{dungeonTextValue}\nRoom: {combatRoom.State} / {roomProgress} / Path {BuildCombatPathText()} / Hero {combatRoom.CurrentHeroHealth:0.#} / Enemy {combatRoom.CurrentEnemyHealth:0.#}\nRoom Last: {roomMessage}";
     }
 
     private string BuildRewardStateText()
@@ -529,80 +513,6 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         return combatRoom.IsPrototypeSimulationAvailable ? "prototype simulation" : "waiting for enemies";
-    }
-
-    private string BuildDungeonViewportText()
-    {
-        if (!showDungeonViewportDiagnostics)
-        {
-            return string.Empty;
-        }
-
-        bool viewportRelevant =
-            expedition != null && expedition.IsRunning ||
-            screenLayout != null && screenLayout.CurrentFocus == PlayableScreenFocus.DungeonFocus;
-        if (!viewportRelevant)
-        {
-            return string.Empty;
-        }
-
-        return $"\nViewport: {BuildDungeonRenderTargetStatus()} / {BuildDungeonInputRouterStatus()}";
-    }
-
-    private string BuildDungeonRenderTargetStatus()
-    {
-        if (dungeonPanelRenderTarget == null)
-        {
-            return "render target missing";
-        }
-
-        if (dungeonPanelRenderTarget.SourceCamera == null)
-        {
-            return "render missing source camera";
-        }
-
-        if (dungeonPanelRenderTarget.TargetImage == null)
-        {
-            return "render missing RawImage";
-        }
-
-        if (dungeonPanelRenderTarget.HasBoundTexture)
-        {
-            return $"render bound {dungeonPanelRenderTarget.SourceCamera.name}->{dungeonPanelRenderTarget.TargetImage.name}";
-        }
-
-        return string.IsNullOrWhiteSpace(dungeonPanelRenderTarget.LastBindingMessage) ||
-               dungeonPanelRenderTarget.LastBindingMessage == "Ready"
-            ? $"render ready {dungeonPanelRenderTarget.SourceCamera.name}->{dungeonPanelRenderTarget.TargetImage.name}"
-            : dungeonPanelRenderTarget.LastBindingMessage;
-    }
-
-    private string BuildDungeonInputRouterStatus()
-    {
-        if (dungeonViewportInputRouter == null)
-        {
-            return "input router missing";
-        }
-
-        if (dungeonViewportInputRouter.ViewportImage == null)
-        {
-            return "input missing RawImage";
-        }
-
-        if (dungeonViewportInputRouter.ViewportCamera == null)
-        {
-            return "input missing camera";
-        }
-
-        if (dungeonViewportInputRouter.Player == null)
-        {
-            return "input missing PlayerController";
-        }
-
-        return string.IsNullOrWhiteSpace(dungeonViewportInputRouter.LastInputMessage) ||
-               dungeonViewportInputRouter.LastInputMessage == "Ready"
-            ? $"input ready {dungeonViewportInputRouter.ViewportCamera.name}->{dungeonViewportInputRouter.Player.name}"
-            : dungeonViewportInputRouter.LastInputMessage;
     }
 
     private string BuildLatestItemText()
@@ -803,18 +713,6 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         return $"{prefix} Watch the defense side panel while fighting.";
-    }
-
-    private string BuildGroundBattlefieldReviewText()
-    {
-        if (!showGroundBattlefieldReviewStatus ||
-            groundBattlefield == null ||
-            !groundBattlefield.UsesReviewFrontlineLevelOverride)
-        {
-            return string.Empty;
-        }
-
-        return $"\nE0-A3 review scale: {groundBattlefield.VisualScaleSummary}";
     }
 
     private string BuildMessageText(string actionHint)
@@ -1041,29 +939,9 @@ public class PlayableLoopHud : MonoBehaviour
             saveManager = FindAnyObjectByType<DefenseSaveManager>();
         }
 
-        if (groundCombatPresenter == null || force)
-        {
-            groundCombatPresenter = FindAnyObjectByType<GroundDefenseCombatPresenter>();
-        }
-
-        if (groundBattlefield == null || force)
-        {
-            groundBattlefield = FindAnyObjectByType<GroundDefenseNavMeshBattlefield>();
-        }
-
         if (screenLayout == null || force)
         {
             screenLayout = FindAnyObjectByType<PlayableScreenLayoutController>();
-        }
-
-        if (dungeonPanelRenderTarget == null || force)
-        {
-            dungeonPanelRenderTarget = FindDungeonPanelRenderTarget();
-        }
-
-        if (dungeonViewportInputRouter == null || force)
-        {
-            dungeonViewportInputRouter = FindDungeonViewportInputRouter();
         }
 
         if (equipmentSlots == null || force)
@@ -1101,77 +979,6 @@ public class PlayableLoopHud : MonoBehaviour
     {
         PlayerController player = FindAnyObjectByType<PlayerController>();
         return player == null ? null : player.GetComponent<Health>();
-    }
-
-    private static PanelCameraRenderTarget FindDungeonPanelRenderTarget()
-    {
-        PanelCameraRenderTarget[] candidates = FindObjectsByType<PanelCameraRenderTarget>(FindObjectsInactive.Include);
-        PanelCameraRenderTarget firstCandidate = null;
-
-        for (int i = 0; i < candidates.Length; i++)
-        {
-            PanelCameraRenderTarget candidate = candidates[i];
-            if (candidate == null)
-            {
-                continue;
-            }
-
-            firstCandidate ??= candidate;
-            if (IsDungeonViewportCandidate(candidate))
-            {
-                return candidate;
-            }
-        }
-
-        return candidates.Length == 1 ? firstCandidate : null;
-    }
-
-    private static DungeonViewportInputRouter FindDungeonViewportInputRouter()
-    {
-        DungeonViewportInputRouter[] candidates = FindObjectsByType<DungeonViewportInputRouter>(FindObjectsInactive.Include);
-        DungeonViewportInputRouter firstCandidate = null;
-
-        for (int i = 0; i < candidates.Length; i++)
-        {
-            DungeonViewportInputRouter candidate = candidates[i];
-            if (candidate == null)
-            {
-                continue;
-            }
-
-            firstCandidate ??= candidate;
-            if (IsDungeonViewportCandidate(candidate))
-            {
-                return candidate;
-            }
-        }
-
-        return candidates.Length == 1 ? firstCandidate : null;
-    }
-
-    private static bool IsDungeonViewportCandidate(PanelCameraRenderTarget candidate)
-    {
-        return HasDungeonName(candidate) ||
-               HasDungeonName(candidate.SourceCamera) ||
-               HasDungeonName(candidate.TargetImage);
-    }
-
-    private static bool IsDungeonViewportCandidate(DungeonViewportInputRouter candidate)
-    {
-        return HasDungeonName(candidate) ||
-               HasDungeonName(candidate.ViewportCamera) ||
-               HasDungeonName(candidate.ViewportImage);
-    }
-
-    private static bool HasDungeonName(Component component)
-    {
-        return component != null && HasDungeonName(component.name);
-    }
-
-    private static bool HasDungeonName(string value)
-    {
-        return !string.IsNullOrWhiteSpace(value) &&
-               value.IndexOf("Dungeon", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
     private void WireButtons()

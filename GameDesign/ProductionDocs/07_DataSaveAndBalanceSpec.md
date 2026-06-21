@@ -1,5 +1,11 @@
 # Data Save And Balance Spec
 
+## 2026-06-21 Production Validation Boundary
+
+- The depth and frontline exports prove deterministic monotonic formulas. They do not prove a fun session length, affordable sinks, or a playable maximum-level economy.
+- The `1,000,000,000` multiplier clamp is a runtime safety boundary, not a target content tier. Curve shape must be reviewed before normal progression approaches a clamp plateau.
+- New run choices such as E1-A dungeon contracts require a stable id, active-run save field, migration/default rule, deterministic export, and explicit reward denominator before implementation is called complete.
+
 ## 2026-06-11 Ground Defense Balance Model
 
 `GroundDefenseBalanceModel` is the runtime source of truth for D1-A. It uses ten-level bands instead of authored wave rows.

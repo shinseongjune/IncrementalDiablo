@@ -197,6 +197,23 @@ function Assert-SceneBehaviourEnabled {
     return $false
 }
 
+function Assert-SceneBehaviourAbsent {
+    param(
+        [string]$Name,
+        [string]$SceneText,
+        [string]$ClassName
+    )
+
+    $blocks = @(Get-SceneBehaviourBlocks $SceneText $ClassName)
+    if ($blocks.Count -eq 0) {
+        Add-Result $Name "PASS" "$ClassName is absent."
+        return $true
+    }
+
+    Add-Result $Name "FAIL" "$ClassName is still present in Gameplay.unity."
+    return $false
+}
+
 function Invoke-CheckedCommand {
     param(
         [string]$Name,
@@ -241,15 +258,7 @@ $requiredPaths = @(
     @{ Name = "Defense director script"; Path = "Assets\02.Scripts\GroundDefense\Runtime\DefenseDirector.cs" },
     @{ Name = "Ground defense NavMesh battlefield"; Path = "Assets\02.Scripts\GroundDefense\Runtime\GroundDefenseNavMeshBattlefield.cs" },
     @{ Name = "Ground defense NavMesh unit"; Path = "Assets\02.Scripts\GroundDefense\Runtime\GroundDefenseNavMeshUnit.cs" },
-    @{ Name = "Ground defense enemy archetype script"; Path = "Assets\02.Scripts\GroundDefense\Runtime\GroundDefenseEnemyArchetype.cs" },
-    @{ Name = "Ground defense enemy pool script"; Path = "Assets\02.Scripts\GroundDefense\UI\GroundDefenseEnemyPool.cs" },
-    @{ Name = "Ground defense enemy view script"; Path = "Assets\02.Scripts\GroundDefense\UI\GroundDefenseEnemyView.cs" },
     @{ Name = "Ground defense billboard utility"; Path = "Assets\02.Scripts\GroundDefense\UI\GroundDefenseBillboardUtility.cs" },
-    @{ Name = "Ground defense battlefield view"; Path = "Assets\02.Scripts\GroundDefense\UI\GroundDefenseBattlefieldView.cs" },
-    @{ Name = "Ground defense enemy prefab"; Path = "Assets\04.Prefabs\GroundDefense\PF_GroundDefenseEnemy_Grunt.prefab" },
-    @{ Name = "Ground defense grunt archetype asset"; Path = "Assets\05.ScriptableObjects\GroundDefense\GDA_Enemy_Grunt.asset" },
-    @{ Name = "Ground defense shield archetype asset"; Path = "Assets\05.ScriptableObjects\GroundDefense\GDA_Enemy_Shield.asset" },
-    @{ Name = "Ground defense runner archetype asset"; Path = "Assets\05.ScriptableObjects\GroundDefense\GDA_Enemy_Runner.asset" },
     @{ Name = "Ground defense readability sheet"; Path = "Assets\06.Art\Sprites\GroundDefense\GroundDefense_ReadabilitySheet.png" },
     @{ Name = "Item definition registry script"; Path = "Assets\02.Scripts\Items\ItemDefinitionRegistry.cs" },
     @{ Name = "Item definition registry asset"; Path = "Assets\05.ScriptableObjects\Items\ItemDefinitionRegistry.asset" },
@@ -259,8 +268,8 @@ $requiredPaths = @(
     @{ Name = "Simple inventory script"; Path = "Assets\02.Scripts\Items\SimpleInventory.cs" },
     @{ Name = "Playable HUD script"; Path = "Assets\02.Scripts\UI\PlayableLoopHud.cs" },
     @{ Name = "Screen layout controller script"; Path = "Assets\02.Scripts\UI\PlayableScreenLayoutController.cs" },
-    @{ Name = "Ground defense actor runtime script"; Path = "Assets\02.Scripts\GroundDefense\Runtime\GroundDefenseActorRuntime.cs" },
     @{ Name = "Automation plan"; Path = "GameDesign\ProductionDocs\10_PlayableLoopMvpAutomationPlan.md" },
+    @{ Name = "Release readiness plan"; Path = "GameDesign\ProductionDocs\13_ReleaseReadinessAndProductionGates.md" },
     @{ Name = "Prototype debt register"; Path = "GameDesign\ProductionDocs\12_PrototypeDebtRegister.md" },
     @{ Name = "Scene setup guide"; Path = "GameDesign\ProductionDocs\06_UnitySceneAndPrefabSetupGuide.md" },
     @{ Name = "Script usage guide"; Path = "GameDesign\ProductionDocs\09_BaseScriptUsageGuide.md" },
@@ -288,17 +297,7 @@ $groundBalanceModelPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\Runt
 $defenseDirectorPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\Runtime\DefenseDirector.cs"
 $groundNavMeshBattlefieldPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\Runtime\GroundDefenseNavMeshBattlefield.cs"
 $groundNavMeshUnitPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\Runtime\GroundDefenseNavMeshUnit.cs"
-$groundActorRuntimePath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\Runtime\GroundDefenseActorRuntime.cs"
-$groundEnemyArchetypePath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\Runtime\GroundDefenseEnemyArchetype.cs"
-$groundEnemyPoolPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\UI\GroundDefenseEnemyPool.cs"
-$groundEnemyViewPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\UI\GroundDefenseEnemyView.cs"
 $groundBillboardUtilityPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\UI\GroundDefenseBillboardUtility.cs"
-$groundBattlefieldViewPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\UI\GroundDefenseBattlefieldView.cs"
-$groundCombatPresenterPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\UI\GroundDefenseCombatPresenter.cs"
-$groundEnemyPrefabPath = Join-ProjectPath "Assets\04.Prefabs\GroundDefense\PF_GroundDefenseEnemy_Grunt.prefab"
-$groundEnemyGruntAssetPath = Join-ProjectPath "Assets\05.ScriptableObjects\GroundDefense\GDA_Enemy_Grunt.asset"
-$groundEnemyShieldAssetPath = Join-ProjectPath "Assets\05.ScriptableObjects\GroundDefense\GDA_Enemy_Shield.asset"
-$groundEnemyRunnerAssetPath = Join-ProjectPath "Assets\05.ScriptableObjects\GroundDefense\GDA_Enemy_Runner.asset"
 $itemRegistryPath = Join-ProjectPath "Assets\02.Scripts\Items\ItemDefinitionRegistry.cs"
 $itemRegistryAssetPath = Join-ProjectPath "Assets\05.ScriptableObjects\Items\ItemDefinitionRegistry.asset"
 $itemEconomyPath = Join-ProjectPath "Assets\02.Scripts\Items\ItemEconomyModel.cs"
@@ -307,6 +306,7 @@ $lootDropperPath = Join-ProjectPath "Assets\02.Scripts\Items\LootDropper.cs"
 $simpleInventoryPath = Join-ProjectPath "Assets\02.Scripts\Items\SimpleInventory.cs"
 $playableHudPath = Join-ProjectPath "Assets\02.Scripts\UI\PlayableLoopHud.cs"
 $planPath = Join-ProjectPath "GameDesign\ProductionDocs\10_PlayableLoopMvpAutomationPlan.md"
+$releaseReadinessPath = Join-ProjectPath "GameDesign\ProductionDocs\13_ReleaseReadinessAndProductionGates.md"
 $debtRegisterPath = Join-ProjectPath "GameDesign\ProductionDocs\12_PrototypeDebtRegister.md"
 
 if (Test-Path -LiteralPath $scenePath) {
@@ -317,7 +317,6 @@ if (Test-Path -LiteralPath $scenePath) {
         @{ Name = "Scene has dungeon viewport panel"; Token = "m_Name: Panel_DungeonViewport" },
         @{ Name = "HUD syncs screen focus"; Token = "syncScreenFocusWithDungeon: 1" },
         @{ Name = "Scene has active NavMesh defense battlefield"; Token = "m_EditorClassIdentifier: Assembly-CSharp::GroundDefenseNavMeshBattlefield" },
-        @{ Name = "Scene hides ground combat diagnostics"; Token = "showGroundCombatDiagnostics: 0" },
         @{ Name = "Scene wires ground readability sheet"; Token = "a041289685f941e8a40086ddca94abc3" },
         @{ Name = "Scene starts with two defenders"; Token = "defenderCount: 2" },
         @{ Name = "Scene starts with three enemies"; Token = "enemyCount: 3" },
@@ -360,11 +359,11 @@ if (Test-Path -LiteralPath $scenePath) {
     [void](Assert-SceneBehaviourReference "Ground NavMesh battlefield wall" $sceneText "GroundDefenseNavMeshBattlefield" "wallAnchor")
     [void](Assert-SceneBehaviourReference "Ground NavMesh battlefield readability sheet" $sceneText "GroundDefenseNavMeshBattlefield" "readabilitySheet")
     [void](Assert-SceneBehaviourEnabled "Ground NavMesh battlefield is enabled" $sceneText "GroundDefenseNavMeshBattlefield" $true)
-    [void](Assert-SceneBehaviourEnabled "Legacy ground lane presenter is disabled" $sceneText "GroundDefenseLanePresenter" $false)
-    [void](Assert-SceneBehaviourEnabled "Legacy ground actor runtime is disabled" $sceneText "GroundDefenseActorRuntime" $false)
-    [void](Assert-SceneBehaviourEnabled "Legacy ground enemy pool is disabled" $sceneText "GroundDefenseEnemyPool" $false)
-    [void](Assert-SceneBehaviourEnabled "Legacy ground battlefield view is disabled" $sceneText "GroundDefenseBattlefieldView" $false)
-    [void](Assert-SceneBehaviourEnabled "Legacy ground combat presenter is disabled" $sceneText "GroundDefenseCombatPresenter" $false)
+    [void](Assert-SceneBehaviourAbsent "Legacy ground lane presenter is removed" $sceneText "GroundDefenseLanePresenter")
+    [void](Assert-SceneBehaviourAbsent "Legacy ground actor runtime is removed" $sceneText "GroundDefenseActorRuntime")
+    [void](Assert-SceneBehaviourAbsent "Legacy ground enemy pool is removed" $sceneText "GroundDefenseEnemyPool")
+    [void](Assert-SceneBehaviourAbsent "Legacy ground battlefield view is removed" $sceneText "GroundDefenseBattlefieldView")
+    [void](Assert-SceneBehaviourAbsent "Legacy ground combat presenter is removed" $sceneText "GroundDefenseCombatPresenter")
     [void](Assert-SceneBehaviourReference "Playable HUD previous depth button" $sceneText "PlayableLoopHud" "previousDungeonDepthButton")
     [void](Assert-SceneBehaviourReference "Playable HUD next depth button" $sceneText "PlayableLoopHud" "nextDungeonDepthButton")
     [void](Assert-SceneBehaviourReference "Simple inventory item registry" $sceneText "SimpleInventory" "definitionRegistry")
@@ -524,9 +523,6 @@ if ((Test-Path -LiteralPath $groundNavMeshBattlefieldPath) -and
     [void](Assert-TextContains "Ground battlefield creates enemy threat badge" $groundNavMeshBattlefieldText "EnemyThreatBadge")
     [void](Assert-TextContains "Ground battlefield evaluates formula force scale" $groundNavMeshBattlefieldText "EvaluateVisualForceProfile")
     [void](Assert-TextContains "Ground battlefield consumes frontline profile" $groundNavMeshBattlefieldText "defense.CurrentProgressionProfile")
-    [void](Assert-TextContains "Ground battlefield supports E0-A3 review override" $groundNavMeshBattlefieldText "useReviewFrontlineLevelOverride")
-    [void](Assert-TextContains "Ground battlefield isolates review profile from save state" $groundNavMeshBattlefieldText "GetVisualProgressionProfile")
-    [void](Assert-TextContains "Playable HUD labels E0-A3 review scale" $playableHudText "E0-A3 review scale")
     [void](Assert-TextContains "Ground battlefield caps scaled enemy density" $groundNavMeshBattlefieldText "maxFormulaEnemies")
     [void](Assert-TextContains "Ground battlefield selects formula role mix" $groundNavMeshBattlefieldText "GetEnemyRoleForSlot")
     [void](Assert-TextContains "Ground battlefield scales reinforcement cadence" $groundNavMeshBattlefieldText "formulaCadenceStrength")
@@ -540,74 +536,14 @@ if ((Test-Path -LiteralPath $groundNavMeshBattlefieldPath) -and
     [void](Assert-TextContains "Units show target reaction" $groundNavMeshUnitText "hitRecoil")
 }
 
-if ((Test-Path -LiteralPath $groundActorRuntimePath) -and
-    (Test-Path -LiteralPath $groundEnemyArchetypePath) -and
-    (Test-Path -LiteralPath $groundEnemyPoolPath) -and
-    (Test-Path -LiteralPath $groundEnemyViewPath) -and
-    (Test-Path -LiteralPath $groundBillboardUtilityPath) -and
-    (Test-Path -LiteralPath $groundBattlefieldViewPath) -and
-    (Test-Path -LiteralPath $groundCombatPresenterPath) -and
-    (Test-Path -LiteralPath $groundEnemyPrefabPath) -and
-    (Test-Path -LiteralPath $groundEnemyGruntAssetPath) -and
-    (Test-Path -LiteralPath $groundEnemyShieldAssetPath) -and
-    (Test-Path -LiteralPath $groundEnemyRunnerAssetPath)) {
-    $groundActorRuntimeText = Read-TextFile $groundActorRuntimePath
-    $groundEnemyArchetypeText = Read-TextFile $groundEnemyArchetypePath
-    $groundEnemyPoolText = Read-TextFile $groundEnemyPoolPath
-    $groundEnemyViewText = Read-TextFile $groundEnemyViewPath
+if (Test-Path -LiteralPath $groundBillboardUtilityPath) {
     $groundBillboardUtilityText = Read-TextFile $groundBillboardUtilityPath
-    $groundBattlefieldViewText = Read-TextFile $groundBattlefieldViewPath
-    $groundCombatPresenterText = Read-TextFile $groundCombatPresenterPath
-    $groundEnemyPrefabText = Read-TextFile $groundEnemyPrefabPath
-    $groundEnemyGruntAssetText = Read-TextFile $groundEnemyGruntAssetPath
-    $groundEnemyShieldAssetText = Read-TextFile $groundEnemyShieldAssetPath
-    $groundEnemyRunnerAssetText = Read-TextFile $groundEnemyRunnerAssetPath
-
-    [void](Assert-TextContains "Ground actor runtime consumes archetype data" $groundActorRuntimeText "GroundDefenseEnemyArchetype[] actorArchetypes")
-    [void](Assert-TextContains "Ground actor runtime exposes defeat feedback" $groundActorRuntimeText "GroundDefenseActorVisualState.Defeated")
-    [void](Assert-TextContains "Ground actor runtime exposes wall contact feedback" $groundActorRuntimeText "GroundDefenseActorVisualState.WallContact")
-    [void](Assert-TextContains "Ground archetype owns pressure spawn cost" $groundEnemyArchetypeText "PressurePerSpawn")
-    [void](Assert-TextContains "Ground archetype owns reusable feedback timings" $groundEnemyArchetypeText "WallContactFeedbackSeconds")
-    [void](Assert-TextContains "Ground archetype owns readable texture" $groundEnemyArchetypeText "VisualTexture")
-    [void](Assert-TextContains "Ground enemy pool reuses inactive views" $groundEnemyPoolText "!view.gameObject.activeSelf")
-    [void](Assert-TextContains "Ground enemy view builds readable role visual" $groundEnemyViewText "BuildReadableVisual")
-    [void](Assert-TextContains "Ground enemy view exposes health bar feedback" $groundEnemyViewText "UpdateHealthBar")
     [void](Assert-TextContains "Ground billboard utility faces defense camera" $groundBillboardUtilityText "GroundDefenseBillboardFacing")
     [void](Assert-TextContains "Ground billboard utility creates runtime sprites" $groundBillboardUtilityText "Sprite.Create(")
     [void](Assert-TextContains "Ground billboard utility cuts dark sprite matte" $groundBillboardUtilityText "TryCreateCutoutTexture")
     [void](Assert-TextContains "Ground billboard utility softens black sheet background" $groundBillboardUtilityText "ApplyDarkMatteCutout")
     [void](Assert-TextContains "Ground billboard utility uses SpriteRenderer" $groundBillboardUtilityText "SpriteRenderer renderer")
     [void](Assert-TextContains "Ground billboard utility supports role facing" $groundBillboardUtilityText "renderer.flipX = flipX")
-    [void](Assert-TextContains "Ground battlefield creates wall-bound feedback" $groundBattlefieldViewText '"DefenseWall"')
-    [void](Assert-TextContains "Ground battlefield creates attacker-owned tower" $groundBattlefieldViewText '"CrossbowTower"')
-    [void](Assert-TextContains "Ground battlefield creates defender squad" $groundBattlefieldViewText '$"Defender_{i + 1:00}"')
-    [void](Assert-TextContains "Ground battlefield defines static grammar gate" $groundBattlefieldViewText "GroundDefenseBattlefieldStage.StaticGrammar")
-    [void](Assert-TextContains "Ground battlefield creates enemy staging zone" $groundBattlefieldViewText '"Zone_EnemyStaging"')
-    [void](Assert-TextContains "Ground battlefield creates approach zone" $groundBattlefieldViewText '"Zone_Approach"')
-    [void](Assert-TextContains "Ground battlefield creates contact line" $groundBattlefieldViewText '"Line_Contact"')
-    [void](Assert-TextContains "Ground battlefield creates protected zone" $groundBattlefieldViewText '"Zone_FriendlyDefense"')
-    [void](Assert-TextContains "Ground battlefield creates one grammar enemy" $groundBattlefieldViewText '"Enemy_GrammarProof"')
-    [void](Assert-TextContains "Ground battlefield creates one grammar defender" $groundBattlefieldViewText '"Defender_GrammarProof"')
-    [void](Assert-TextContains "Ground battlefield flips defender toward enemy" $groundBattlefieldViewText "flipX: true")
-    [void](Assert-TextContains "Ground battlefield hides static wall health bar" $groundBattlefieldViewText "if (!SupportsCombatEvents)")
-    [void](Assert-TextContains "Ground presenter hides runtime actors for static proof" $groundCombatPresenterText "!battlefieldView.UsesRuntimeEnemies")
-    [void](Assert-TextContains "Ground grunt uses readability sheet" $groundEnemyGruntAssetText "visualTexture:")
-    [void](Assert-TextContains "Ground shield has durable role stats" $groundEnemyShieldAssetText "maxHealth: 24")
-    [void](Assert-TextContains "Ground runner has fast role stats" $groundEnemyRunnerAssetText "baseAdvancePerSecond: 0.18")
-    [void](Assert-TextContains "Ground enemy view renders defeat state" $groundEnemyViewText "GroundDefenseActorVisualState.Defeated")
-    [void](Assert-TextContains "Ground actor runtime emits real hit events" $groundActorRuntimeText "public event Action<int> ActorHit")
-    [void](Assert-TextContains "Ground combat presenter rents pooled enemies" $groundCombatPresenterText "enemyPool.Rent(archetype)")
-    [void](Assert-TextContains "Ground combat presenter routes actual hits" $groundCombatPresenterText "battlefieldView.PlayDefenseHit(actorIndex, targetPosition)")
-    [void](Assert-TextContains "Ground battlefield owns contact formation" $groundBattlefieldViewText "GetEnemyWorldPosition")
-    [void](Assert-TextContains "Ground battlefield launches tower projectiles" $groundBattlefieldViewText "LaunchTowerProjectile")
-    [void](Assert-TextContains "Ground battlefield shows melee strikes" $groundBattlefieldViewText "PlayMeleeStrike")
-    [void](Assert-TextContains "Ground battlefield cycles casualties" $groundBattlefieldViewText "TriggerDefenderCasualty")
-    [void](Assert-TextContains "Ground battlefield binds wall damage" $groundBattlefieldViewText "ApplyWallState")
-    [void](Assert-TextContains "Ground enemy prefab has production view" $groundEnemyPrefabText "m_EditorClassIdentifier: Assembly-CSharp::GroundDefenseEnemyView")
-    [void](Assert-TextContains "Ground enemy prefab has collision silhouette" $groundEnemyPrefabText "CapsuleCollider:")
-    [void](Assert-TextContains "Ground grunt archetype references prefab" $groundEnemyGruntAssetText "a83542c699354f79a4cb7a5d808a43f1")
-    [void](Assert-TextContains "Ground shield archetype references prefab" $groundEnemyShieldAssetText "a83542c699354f79a4cb7a5d808a43f1")
-    [void](Assert-TextContains "Ground runner archetype references prefab" $groundEnemyRunnerAssetText "a83542c699354f79a4cb7a5d808a43f1")
 }
 
 if (Test-Path -LiteralPath $planPath) {
@@ -626,18 +562,15 @@ if (Test-Path -LiteralPath $planPath) {
         "D0-D | P0 | Duplicate-item sink and conversion | Done",
         "D1-A | P1 | Formula-driven ground scaling | Done",
         "E0-A | P0 | RTS-readable automatic defense battlefield | Done / E0-A3 accepted",
-        "E0-B | P0 | Defense camera and reference composition pass | In Progress / Anchor-derived starting preset applied",
+        "E0-B | P0 | Defense camera and reference composition pass | Done / User accepted camera composition",
+        "Current product queue",
+        "E1-A | P0 | Formula-driven dungeon contract choice | Next / Product work",
         "RTS-readable automatic defense",
-        "actual NavMesh battlefield",
-        "CharacterStats",
-        "NavMeshAgent",
-        "Unit -> action -> target",
-        "formula-driven battle scale",
-        "RawImage_DefenseViewport",
-        "reinforcements",
+        "Actual NavMesh battlefield",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
         "12_PrototypeDebtRegister.md",
-        "Get-PrototypeDebtInventory.ps1"
+        "Get-PrototypeDebtInventory.ps1",
+        "Closed work is not a default task source"
     )
 
     foreach ($token in $requiredPlanTokens) {
@@ -648,6 +581,29 @@ if (Test-Path -LiteralPath $planPath) {
         Add-Result "Automation next-unlock freshness" "WARN" "Plan still asks to add a layout controller that exists in Gameplay.unity."
     } else {
         Add-Result "Automation next-unlock freshness" "PASS" "No stale layout-controller add instruction found."
+    }
+
+    if ($planText.Contains("The next proof is a camera/reference-image composition pass")) {
+        Add-Result "Automation closed-gate freshness" "FAIL" "Plan still routes completed E0-B composition as the next proof."
+    } else {
+        Add-Result "Automation closed-gate freshness" "PASS" "No completed E0-B composition task is routed as current work."
+    }
+}
+
+if (Test-Path -LiteralPath $releaseReadinessPath) {
+    $releaseReadinessText = Read-TextFile $releaseReadinessPath
+    $requiredReleaseTokens = @(
+        "Current Product Contract",
+        "What Counts As Production Movement",
+        "Two-Hour Repeatable Slice",
+        "Ten-Hour Alpha Loop",
+        "E1-A | Next / P0",
+        "900+ hour target is a long-horizon design constraint",
+        "A green harness means safe structure, not a completed product gate"
+    )
+
+    foreach ($token in $requiredReleaseTokens) {
+        [void](Assert-TextContains "Release readiness token" $releaseReadinessText $token)
     }
 }
 
@@ -692,14 +648,56 @@ if (Test-Path -LiteralPath $AutomationTomlPath) {
 
     [void](Assert-TextContains "Automation config active" $automationText 'status = "ACTIVE"')
     [void](Assert-TextContains "Automation prompt uses verification harness" $automationText "Invoke-IncrementalDiabloChecks.ps1")
+    [void](Assert-TextContains "Automation prompt reads release gates" $automationText "13_ReleaseReadinessAndProductionGates.md" "WARN")
+    [void](Assert-TextContains "Automation prompt forbids closed-gate repeats" $automationText "Closed gates are regression-only" "WARN")
+    [void](Assert-TextContains "Automation prompt distinguishes harness from product progress" $automationText "A green harness is structural verification" "WARN")
 } else {
     Add-Result "Automation TOML check" "SKIP" "Not found: $AutomationTomlPath"
+}
+
+function Invoke-DotnetBuildCheck {
+    Push-Location $ProjectRoot
+    try {
+        $buildOutput = @(& dotnet build .\IncrementalDiablo.sln -v:minimal 2>&1)
+        foreach ($line in $buildOutput) {
+            Write-Host $line
+        }
+
+        $exitCode = $LASTEXITCODE
+        if ($null -eq $exitCode) {
+            $exitCode = 0
+        }
+
+        if ($exitCode -ne 0) {
+            Add-Result "dotnet build" "FAIL" "Exit code $exitCode"
+            return
+        }
+
+        Add-Result "dotnet build" "PASS" "Exit code 0"
+        $warningLines = @($buildOutput | Where-Object { $_.ToString() -match '(?i):\s*warning\s+[A-Z]+\d+' })
+        if ($warningLines.Count -eq 0) {
+            Add-Result "dotnet build warnings" "PASS" "No compiler warnings detected."
+            return
+        }
+
+        $warningText = ($warningLines | ForEach-Object { $_.ToString() }) -join "`n"
+        $isKnownUnityAiBindingWarning = $warningText.Contains("MSB3277") -and $warningText.Contains("Unity.AI.") -and $warningText.Contains("System.Net.Http")
+        if ($isKnownUnityAiBindingWarning) {
+            Add-Result "dotnet build warnings" "WARN" "Known Unity AI package System.Net.Http binding warnings ($($warningLines.Count) lines); build succeeds, but package compatibility remains triaged risk."
+        } else {
+            Add-Result "dotnet build warnings" "WARN" "Compiler warnings detected ($($warningLines.Count) lines). Review before claiming release readiness."
+        }
+    } catch {
+        Add-Result "dotnet build" "FAIL" $_.Exception.Message
+    } finally {
+        Pop-Location
+    }
 }
 
 if ($SkipBuild) {
     Add-Result "dotnet build" "SKIP" "Skipped by -SkipBuild."
 } else {
-    Invoke-CheckedCommand "dotnet build" { dotnet build .\IncrementalDiablo.sln -v:minimal }
+    Invoke-DotnetBuildCheck
 }
 
 if ($SkipDiffCheck) {

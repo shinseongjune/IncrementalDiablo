@@ -1,5 +1,11 @@
 # Dungeon Expedition System Spec
 
+## 2026-06-21 Current Production Boundary
+
+- The accepted normal path is one direct-control room with a real spawned enemy, depth progression, reward continuity, and retry. It is a foundation, not proof of a repeatable dungeon game.
+- The next dungeon feature is E1-A: choose one of two generated risk/reward contracts before a run. Contract selection must be transparent, use reusable data, affect the active run, persist through save/load, and leave the existing direct-control path authoritative.
+- Boss breadth, multi-room sequences, and a new calculation-only auto-expedition path remain deferred until contract choice and encounter variety have an evidence-backed production route.
+
 ## 2026-06-06 Phase D Direction
 
 - The user confirmed the normal `Gameplay` path works through `PF_DungeonEnemy_Melee` spawn, `Running` activation, chase/attack, player attacks, HP/death/result feedback, room clear, reward continuity, and retry.

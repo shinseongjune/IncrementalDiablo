@@ -39,10 +39,6 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
     [SerializeField, Min(0.1f)] private float minimumDefenderRespawnSeconds = 1.6f;
     [SerializeField] private GroundDefenseNavMeshEnemyRole[] enemyRoles;
 
-    [Header("E0-A3 Review")]
-    [SerializeField] private bool useReviewFrontlineLevelOverride;
-    [SerializeField, Min(1)] private int reviewFrontlineLevel = 21;
-
     [Header("Defender Stats")]
     [SerializeField, Min(1f)] private float defenderHealth = 90f;
     [SerializeField, Min(0f)] private float defenderMoveSpeed = 3.2f;
@@ -100,10 +96,7 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
         WallPosition - travelDirection * Mathf.Max(0.2f, wallAttackDistance);
     public int ActiveDefenderCount => CountAlive(defenders);
     public int ActiveEnemyCount => CountAlive(enemies);
-    public bool UsesReviewFrontlineLevelOverride => useReviewFrontlineLevelOverride;
-    public int ReviewFrontlineLevel => Mathf.Max(1, reviewFrontlineLevel);
     public GroundDefenseVisualForceProfile ActiveForceProfile => GetReadableActiveForceProfile();
-    public string VisualScaleSummary => BuildVisualScaleSummary();
 
     private void Start()
     {
@@ -121,8 +114,6 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
         formulaCadenceStrength = Mathf.Clamp01(formulaCadenceStrength);
         minimumEnemyRespawnSeconds = Mathf.Max(0.1f, minimumEnemyRespawnSeconds);
         minimumDefenderRespawnSeconds = Mathf.Max(0.1f, minimumDefenderRespawnSeconds);
-        reviewFrontlineLevel = Mathf.Max(1, reviewFrontlineLevel);
-
         if (enemyRoles == null || enemyRoles.Length == 0)
         {
             enemyRoles = CreateDefaultEnemyRoles();
@@ -198,43 +189,6 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
         }
 
         StartCoroutine(ReplaceDefeatedUnit(unit));
-    }
-
-    [ContextMenu("E0-A3 Review/Use Baseline Frontline Level")]
-    public void EnableE0A3ReviewBaseline()
-    {
-        SetReviewFrontlineLevelOverride(1);
-    }
-
-    [ContextMenu("E0-A3 Review/Use Shield Role Band")]
-    public void EnableE0A3ReviewShieldBand()
-    {
-        SetReviewFrontlineLevelOverride(11);
-    }
-
-    [ContextMenu("E0-A3 Review/Use Full Role Mix Band")]
-    public void EnableE0A3ReviewFullRoleMixBand()
-    {
-        SetReviewFrontlineLevelOverride(21);
-    }
-
-    [ContextMenu("E0-A3 Review/Clear Frontline Level Override")]
-    public void ClearReviewFrontlineLevelOverride()
-    {
-        if (!useReviewFrontlineLevelOverride)
-        {
-            return;
-        }
-
-        useReviewFrontlineLevelOverride = false;
-        RefreshFormulaForceScaleIfRunning();
-    }
-
-    public void SetReviewFrontlineLevelOverride(int frontlineLevel)
-    {
-        useReviewFrontlineLevelOverride = true;
-        reviewFrontlineLevel = Mathf.Max(1, frontlineLevel);
-        RefreshFormulaForceScaleIfRunning();
     }
 
     private void BuildBattlefield()
@@ -524,11 +478,6 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
 
     private GroundDefenseBalanceProfile GetVisualProgressionProfile()
     {
-        if (useReviewFrontlineLevelOverride)
-        {
-            return GroundDefenseBalanceModel.Evaluate(reviewFrontlineLevel);
-        }
-
         return defense == null
             ? GroundDefenseBalanceModel.Evaluate(1)
             : defense.CurrentProgressionProfile;
@@ -539,24 +488,6 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
         return activeForceProfile.DefenderCount <= 0 || activeForceProfile.EnemyCount <= 0
             ? EvaluateVisualForceProfile()
             : activeForceProfile;
-    }
-
-    private string BuildVisualScaleSummary()
-    {
-        GroundDefenseVisualForceProfile profile = GetReadableActiveForceProfile();
-        string source = useReviewFrontlineLevelOverride ? "review" : "runtime";
-        return $"{source} Lv.{profile.FrontlineLevel} / Band {profile.BandNumber} / " +
-               $"{profile.DefenderCount} defenders / {profile.EnemyCount} enemies / " +
-               $"role tier {profile.EnemyRoleTier + 1} / " +
-               $"respawn E {profile.EnemyRespawnSeconds:0.0}s D {profile.DefenderRespawnSeconds:0.0}s";
-    }
-
-    private void RefreshFormulaForceScaleIfRunning()
-    {
-        if (Application.isPlaying && generatedRoot != null && wallVisual != null)
-        {
-            RefreshFormulaForceScale();
-        }
     }
 
     private GroundDefenseNavMeshEnemyRole[] GetEnemyRoles()

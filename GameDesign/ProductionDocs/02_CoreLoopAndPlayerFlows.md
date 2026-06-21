@@ -8,6 +8,12 @@
 - Use `GameDesign/References/2026-05-17_FinalGameplayScreenConcept.png` for battlefield composition and `Assets/06.Art/Sprites/GroundDefense/GroundDefense_ReadabilitySheet.png` for role silhouettes.
 - Generic pulses, moving markers, isolated battlefield cards, and combat diagnostic text are not final normal-path feedback.
 
+## 2026-06-21 Current Flow Priority
+
+- The four labels below describe player domains, not a requirement to add four separate tabs before the core loop earns repeatability.
+- The accepted defense and dungeon presentation are baseline behavior. The next normal-path decision is a pre-run dungeon contract choice with clear threat/reward text, followed by the existing direct-control run, reward, equip/salvage, and next-goal return.
+- Do not add a new calculation-only auto-expedition branch while encounter variety, item identity, and the direct-control session loop remain thin. Existing calculation paths stay dev/test edge fallbacks only.
+
 작성일: 2026-05-03
 문서 목적: 플레이어가 실제로 누르는 것과 화면 흐름 정의
 
