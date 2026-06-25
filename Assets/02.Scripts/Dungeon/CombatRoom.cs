@@ -54,7 +54,9 @@ public class CombatRoom : MonoBehaviour
     public string TrackedEnemySetupBlocker => trackedEnemySetupBlocker;
     public bool IsPrototypeSimulationAvailable => simulateWhenNoEnemies && !HasAnyEnemyReference() && (!HasTrackedEnemySetupBlocker || !blockPrototypeSimulationWhenEnemySetupBlocked);
     public int ActiveDepth => expedition == null ? 1 : expedition.Depth;
-    public DungeonDepthBalanceProfile DepthBalance => DungeonDepthBalanceModel.Evaluate(ActiveDepth);
+    public DungeonDepthBalanceProfile DepthBalance => expedition == null
+        ? DungeonDepthBalanceModel.Evaluate(ActiveDepth)
+        : expedition.GetEffectiveDepthBalance(ActiveDepth);
 
     private void Awake()
     {

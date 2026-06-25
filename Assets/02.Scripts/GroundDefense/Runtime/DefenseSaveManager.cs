@@ -6,7 +6,7 @@ using UnityEngine;
 [DefaultExecutionOrder(1000)]
 public class DefenseSaveManager : MonoBehaviour
 {
-    private const int CurrentSaveVersion = 3;
+    private const int CurrentSaveVersion = 4;
 
     [SerializeField] private DefenseDirector director;
     [SerializeField] private ExpeditionDirector expedition;
@@ -80,6 +80,7 @@ public class DefenseSaveManager : MonoBehaviour
             }
 
             File.WriteAllText(SavePath, JsonUtility.ToJson(saveData, true));
+            autoSaveElapsed = 0f;
             return true;
         }
         catch (Exception exception)
@@ -127,8 +128,15 @@ public class DefenseSaveManager : MonoBehaviour
     {
         ResolveReferences();
 
-        if (director == null || !HasSaveFile)
+        if (director == null)
         {
+            LastLoadReport = "Load failed: DefenseDirector is missing.";
+            return false;
+        }
+
+        if (!HasSaveFile)
+        {
+            LastLoadReport = $"Save file missing at {SavePath}.";
             return false;
         }
 
@@ -154,6 +162,7 @@ public class DefenseSaveManager : MonoBehaviour
             }
 
             director.ApplySaveData(saveData.defense);
+            LastLoadReport = AppendLoadReport(LastLoadReport, BuildDefenseLoadSummary(saveData.defense));
             if (expedition != null)
             {
                 expedition.ApplySaveData(saveData.dungeon);
@@ -181,6 +190,7 @@ public class DefenseSaveManager : MonoBehaviour
         }
         catch (Exception exception)
         {
+            LastLoadReport = $"Load failed at {SavePath}: {exception.Message}";
             Debug.LogWarning($"DefenseSaveManager failed to load from {SavePath}: {exception.Message}", this);
             return false;
         }
@@ -240,6 +250,33 @@ public class DefenseSaveManager : MonoBehaviour
         };
     }
 
+    private static string BuildDefenseLoadSummary(DefenseSaveData defense)
+    {
+        if (defense == null)
+        {
+            return "Defense restore: missing.";
+        }
+
+        int wallHealth = Mathf.CeilToInt(Mathf.Max(0f, defense.wallCurrentHealth));
+        float progress = Mathf.Max(0f, defense.frontlineProgress);
+        return $"Defense restored: FL {Mathf.Max(1, defense.frontlineLevel)}, {defense.state}/{defense.mode}, wall {wallHealth}, progress {progress:0.#}.";
+    }
+
+    private static string AppendLoadReport(string report, string detail)
+    {
+        if (string.IsNullOrWhiteSpace(report))
+        {
+            return detail;
+        }
+
+        if (string.IsNullOrWhiteSpace(detail))
+        {
+            return report;
+        }
+
+        return $"{report} {detail}";
+    }
+
     private bool TryCreateSaveDataSnapshot(out GameSaveData saveData)
     {
         ResolveReferences();
@@ -287,6 +324,8 @@ public class DefenseSaveManager : MonoBehaviour
             saveData.dungeon.selectedDepth = Mathf.Clamp(selectedDepth, 1, highestDepth);
         }
 
+        MigrateDungeonContractSaveData(saveData.dungeon);
+
         ItemDefinitionRegistry registry = inventory?.DefinitionRegistry;
         ItemDefinitionMigrationReport itemReport = registry?.MigrateInventorySaveData(saveData.inventory);
         lastLoadHasUnresolvedItems = itemReport == null || itemReport.HasUnresolved;
@@ -298,6 +337,56 @@ public class DefenseSaveManager : MonoBehaviour
         {
             saveData.version = CurrentSaveVersion;
             LastLoadReport = $"Save schema v{sourceVersion} -> v{CurrentSaveVersion}. {LastLoadReport}";
+        }
+    }
+
+    private static void MigrateDungeonContractSaveData(DungeonSaveData dungeon)
+    {
+        if (dungeon == null)
+        {
+            return;
+        }
+
+        dungeon.contractOfferSeed = Mathf.Max(0, dungeon.contractOfferSeed);
+        bool firstValid = DungeonContractModel.TryGetContract(dungeon.offeredContractIdA, out DungeonContractProfile first);
+        bool secondValid = DungeonContractModel.TryGetContract(dungeon.offeredContractIdB, out DungeonContractProfile second);
+        if (!firstValid ||
+            !secondValid ||
+            string.Equals(first.Id, second.Id, StringComparison.OrdinalIgnoreCase))
+        {
+            DungeonContractModel.BuildOffer(
+                Mathf.Max(1, dungeon.selectedDepth),
+                dungeon.contractOfferSeed,
+                out dungeon.offeredContractIdA,
+                out dungeon.offeredContractIdB);
+        }
+
+        if (!DungeonContractModel.TryGetContract(dungeon.selectedContractId, out DungeonContractProfile selected) ||
+            (!string.Equals(selected.Id, dungeon.offeredContractIdA, StringComparison.OrdinalIgnoreCase) &&
+             !string.Equals(selected.Id, dungeon.offeredContractIdB, StringComparison.OrdinalIgnoreCase)))
+        {
+            dungeon.selectedContractId = dungeon.offeredContractIdA;
+        }
+
+        if (dungeon.state == DungeonRunState.Running ||
+            dungeon.state == DungeonRunState.Cleared ||
+            dungeon.state == DungeonRunState.Failed)
+        {
+            if (!DungeonContractModel.TryGetContract(dungeon.activeContractId, out _))
+            {
+                dungeon.activeContractId = dungeon.selectedContractId;
+            }
+        }
+        else if (!DungeonContractModel.TryGetContract(dungeon.activeContractId, out _))
+        {
+            dungeon.activeContractId = string.Empty;
+        }
+
+        if (string.IsNullOrWhiteSpace(dungeon.lastContractSummary))
+        {
+            dungeon.lastContractSummary = DungeonContractModel.FormatOfferText(
+                dungeon.offeredContractIdA,
+                dungeon.offeredContractIdB);
         }
     }
 

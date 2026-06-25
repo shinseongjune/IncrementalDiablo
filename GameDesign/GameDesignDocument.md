@@ -24,6 +24,7 @@ The release-gate source of truth is `ProductionDocs/13_ReleaseReadinessAndProduc
 - It should read as a dark-fantasy battlefield: defenders, enemies, attacks, reinforcements, wall damage, and a protected side are visible.
 - It remains automatic. The player does not select units, issue movement or focus-fire commands, manage workers/production queues, place towers freely, or author manual waves.
 - `DefenseRuntimeState` remains authoritative for pressure, wall state, resources, progression, save/load, and offline behavior.
+- Loading defense state rebuilds visual actors from the restored authoritative state; visual actors must not keep damaging the wall while defense is not running.
 
 ### Direct-control dungeon action
 
@@ -41,14 +42,14 @@ The release-gate source of truth is `ProductionDocs/13_ReleaseReadinessAndProduc
 ## Current accepted baseline
 
 - Ground defense has an accepted actual NavMesh battlefield with readable faction/attack ownership, wall damage, reinforcement, formula-driven density, and accepted camera composition.
-- Dungeon depth progression, depth threat/reward bands, item registry/migration, duplicate conversion, save/load, reward overlays, salvage, and the prototype crafting path exist.
-- The next product gap is a transparent dungeon contract choice that creates different repeatable run decisions.
+- Dungeon depth progression, depth threat/reward bands, E1-A contract core, normal-player contract buttons, defense save/load visual rebuild, item registry/migration, duplicate conversion, save/load, reward overlays, salvage, and the prototype crafting path exist.
+- The next product gap is Play Mode validation that proves the transparent contract choice creates different repeatable run decisions.
 
 Accepted baselines reopen only for regressions or explicit contract changes. They are not default polishing work.
 
 ## Current production priorities
 
-1. `E1-A`: formula-driven pre-run dungeon contracts with active-run/save behavior and clear reward/threat effects.
+1. `E1-A`: finish formula-driven pre-run dungeon contracts by validating choice -> run -> reward -> save/load in Play Mode.
 2. `E1-B`: authored affix pool replacing the prototype Rare reroll.
 3. `E1-C`: reusable elite/boss encounter rules.
 4. `E2-A`: first-session onboarding, settings, and recovery once the decision loop is real.

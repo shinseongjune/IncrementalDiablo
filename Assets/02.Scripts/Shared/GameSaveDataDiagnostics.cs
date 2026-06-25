@@ -51,8 +51,11 @@ public static class GameSaveDataDiagnostics
         int dungeonDepth = saveData.dungeon == null ? 1 : Math.Max(1, saveData.dungeon.depth);
         int selectedDepth = saveData.dungeon == null ? 1 : Math.Max(1, saveData.dungeon.selectedDepth);
         int highestDepth = saveData.dungeon == null ? 1 : Math.Max(1, saveData.dungeon.highestUnlockedDepth);
+        string contractId = saveData.dungeon == null || string.IsNullOrWhiteSpace(saveData.dungeon.selectedContractId)
+            ? DungeonContractModel.DefaultContractId
+            : saveData.dungeon.selectedContractId;
 
-        return $"Save snapshot: currencies {currencyCount}, FL {frontlineLevel}, dungeon {dungeonState} D{dungeonDepth} selected {selectedDepth}/{highestDepth}, inventory {itemCount}, equipped {equippedCount}.";
+        return $"Save snapshot: currencies {currencyCount}, FL {frontlineLevel}, dungeon {dungeonState} D{dungeonDepth} selected {selectedDepth}/{highestDepth}, contract {contractId}, inventory {itemCount}, equipped {equippedCount}.";
     }
 
     private static void ValidateHeader(GameSaveData saveData, List<string> errors, List<string> warnings)
@@ -181,6 +184,8 @@ public static class GameSaveDataDiagnostics
             errors.Add("dungeon active depth cannot exceed highestUnlockedDepth");
         }
 
+        ValidateDungeonContracts(dungeon, errors);
+
         if (dungeon.totalRooms < 1)
         {
             errors.Add("dungeon totalRooms must be at least 1");
@@ -204,6 +209,49 @@ public static class GameSaveDataDiagnostics
         if (dungeon.elapsedSeconds < 0f)
         {
             errors.Add("dungeon elapsedSeconds cannot be negative");
+        }
+    }
+
+    private static void ValidateDungeonContracts(DungeonSaveData dungeon, List<string> errors)
+    {
+        if (!DungeonContractModel.TryGetContract(dungeon.offeredContractIdA, out DungeonContractProfile firstContract))
+        {
+            errors.Add("dungeon offeredContractIdA is invalid");
+        }
+
+        if (!DungeonContractModel.TryGetContract(dungeon.offeredContractIdB, out DungeonContractProfile secondContract))
+        {
+            errors.Add("dungeon offeredContractIdB is invalid");
+        }
+
+        if (firstContract.IsValid &&
+            secondContract.IsValid &&
+            string.Equals(firstContract.Id, secondContract.Id, StringComparison.OrdinalIgnoreCase))
+        {
+            errors.Add("dungeon contract offer must contain two different contract ids");
+        }
+
+        if (!DungeonContractModel.TryGetContract(dungeon.selectedContractId, out DungeonContractProfile selectedContract))
+        {
+            errors.Add("dungeon selectedContractId is invalid");
+        }
+        else if (!string.Equals(selectedContract.Id, dungeon.offeredContractIdA, StringComparison.OrdinalIgnoreCase) &&
+                 !string.Equals(selectedContract.Id, dungeon.offeredContractIdB, StringComparison.OrdinalIgnoreCase))
+        {
+            errors.Add("dungeon selectedContractId must be one of the offered contract ids");
+        }
+
+        if (!string.IsNullOrWhiteSpace(dungeon.activeContractId) &&
+            !DungeonContractModel.TryGetContract(dungeon.activeContractId, out _))
+        {
+            errors.Add("dungeon activeContractId is invalid");
+        }
+
+        if ((dungeon.state == DungeonRunState.Running ||
+             (dungeon.state == DungeonRunState.Cleared && dungeon.rewardPending)) &&
+            string.IsNullOrWhiteSpace(dungeon.activeContractId))
+        {
+            errors.Add("dungeon activeContractId is required for active or reward-pending contract resolution");
         }
     }
 

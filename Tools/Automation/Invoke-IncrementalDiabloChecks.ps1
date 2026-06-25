@@ -250,6 +250,7 @@ $requiredPaths = @(
     @{ Name = "Dungeon enemy prefab"; Path = "Assets\04.Prefabs\Dungeon\PF_DungeonEnemy_Melee.prefab" },
     @{ Name = "Enemy spawner script"; Path = "Assets\02.Scripts\Dungeon\EnemySpawner.cs" },
     @{ Name = "Dungeon depth balance model"; Path = "Assets\02.Scripts\Dungeon\DungeonDepthBalanceModel.cs" },
+    @{ Name = "Dungeon contract model"; Path = "Assets\02.Scripts\Dungeon\DungeonContractModel.cs" },
     @{ Name = "Expedition director script"; Path = "Assets\02.Scripts\Dungeon\ExpeditionDirector.cs" },
     @{ Name = "Save data script"; Path = "Assets\02.Scripts\Shared\GameSaveData.cs" },
     @{ Name = "Save diagnostics script"; Path = "Assets\02.Scripts\Shared\GameSaveDataDiagnostics.cs" },
@@ -277,6 +278,8 @@ $requiredPaths = @(
     @{ Name = "Prototype debt inventory script"; Path = "Tools\Automation\Get-PrototypeDebtInventory.ps1" },
     @{ Name = "Dungeon depth balance export"; Path = "Tools\Automation\Export-DungeonDepthBalance.ps1" },
     @{ Name = "Dungeon depth balance CSV"; Path = "GameDesign\Balance\DungeonDepthBalance.csv" },
+    @{ Name = "Dungeon contract export"; Path = "Tools\Automation\Export-DungeonContracts.ps1" },
+    @{ Name = "Dungeon contract balance CSV"; Path = "GameDesign\Balance\DungeonContractBalance.csv" },
     @{ Name = "Ground defense balance export"; Path = "Tools\Automation\Export-GroundDefenseBalance.ps1" },
     @{ Name = "Ground defense balance CSV"; Path = "GameDesign\Balance\GroundDefenseBalance.csv" }
 )
@@ -289,6 +292,7 @@ $scenePath = Join-ProjectPath "Assets\01.Scenes\Gameplay.unity"
 $enemyPrefabPath = Join-ProjectPath "Assets\04.Prefabs\Dungeon\PF_DungeonEnemy_Melee.prefab"
 $enemySpawnerPath = Join-ProjectPath "Assets\02.Scripts\Dungeon\EnemySpawner.cs"
 $depthBalanceModelPath = Join-ProjectPath "Assets\02.Scripts\Dungeon\DungeonDepthBalanceModel.cs"
+$dungeonContractModelPath = Join-ProjectPath "Assets\02.Scripts\Dungeon\DungeonContractModel.cs"
 $expeditionDirectorPath = Join-ProjectPath "Assets\02.Scripts\Dungeon\ExpeditionDirector.cs"
 $saveDataPath = Join-ProjectPath "Assets\02.Scripts\Shared\GameSaveData.cs"
 $saveDiagnosticsPath = Join-ProjectPath "Assets\02.Scripts\Shared\GameSaveDataDiagnostics.cs"
@@ -337,6 +341,9 @@ if (Test-Path -LiteralPath $scenePath) {
         @{ Name = "Scene has defense panel camera"; Token = "m_Name: Camera_DefensePanel" },
         @{ Name = "Scene has previous dungeon depth button"; Token = "m_Name: Button_DungeonDepthPrevious" },
         @{ Name = "Scene has next dungeon depth button"; Token = "m_Name: Button_DungeonDepthNext" },
+        @{ Name = "Scene has dungeon contract A button"; Token = "m_Name: Button_DungeonContractA" },
+        @{ Name = "Scene has dungeon contract B button"; Token = "m_Name: Button_DungeonContractB" },
+        @{ Name = "Scene has dungeon contract refresh button"; Token = "m_Name: Button_DungeonContractRefresh" },
         @{ Name = "Scene initializes selected dungeon depth"; Token = "selectedDepth: 1" },
         @{ Name = "Scene initializes highest unlocked dungeon depth"; Token = "highestUnlockedDepth: 1" }
     )
@@ -366,6 +373,9 @@ if (Test-Path -LiteralPath $scenePath) {
     [void](Assert-SceneBehaviourAbsent "Legacy ground combat presenter is removed" $sceneText "GroundDefenseCombatPresenter")
     [void](Assert-SceneBehaviourReference "Playable HUD previous depth button" $sceneText "PlayableLoopHud" "previousDungeonDepthButton")
     [void](Assert-SceneBehaviourReference "Playable HUD next depth button" $sceneText "PlayableLoopHud" "nextDungeonDepthButton")
+    [void](Assert-SceneBehaviourReference "Playable HUD contract A button" $sceneText "PlayableLoopHud" "selectContractAButton")
+    [void](Assert-SceneBehaviourReference "Playable HUD contract B button" $sceneText "PlayableLoopHud" "selectContractBButton")
+    [void](Assert-SceneBehaviourReference "Playable HUD contract refresh button" $sceneText "PlayableLoopHud" "refreshDungeonContractButton")
     [void](Assert-SceneBehaviourReference "Simple inventory item registry" $sceneText "SimpleInventory" "definitionRegistry")
     [void](Assert-SceneBehaviourReference "Loot dropper salvage service" $sceneText "LootDropper" "salvageService")
 
@@ -400,17 +410,27 @@ if ((Test-Path -LiteralPath $expeditionDirectorPath) -and
 
     [void](Assert-TextContains "Expedition exposes selected depth" $expeditionDirectorText "public int SelectedDepth")
     [void](Assert-TextContains "Expedition exposes highest unlocked depth" $expeditionDirectorText "public int HighestUnlockedDepth")
+    [void](Assert-TextContains "Expedition exposes contract selection" $expeditionDirectorText "public bool SelectFirstContract()")
+    [void](Assert-TextContains "Expedition applies contract balance" $expeditionDirectorText "GetEffectiveDepthBalance")
+    [void](Assert-TextContains "Expedition grants contract reward depth" $expeditionDirectorText "lootDropper.TryGrantClearReward(ActiveRewardDepth")
     [void](Assert-TextContains "Expedition starts selected depth" $expeditionDirectorText "runtime.depth = SelectedDepth;")
     [void](Assert-TextContains "Expedition unlocks after clear" $expeditionDirectorText "int unlockedDepth = TryUnlockNextDepth();")
     [void](Assert-TextContains "Dungeon save stores selected depth" $saveDataText "public int selectedDepth = 1;")
     [void](Assert-TextContains "Dungeon save stores highest unlocked depth" $saveDataText "public int highestUnlockedDepth = 1;")
-    [void](Assert-TextContains "Save manager writes schema v3" $saveManagerText "private const int CurrentSaveVersion = 3;")
+    [void](Assert-TextContains "Dungeon save stores selected contract" $saveDataText "public string selectedContractId")
+    [void](Assert-TextContains "Dungeon save stores active contract" $saveDataText "public string activeContractId")
+    [void](Assert-TextContains "Save manager writes schema v4" $saveManagerText "private const int CurrentSaveVersion = 4;")
     [void](Assert-TextContains "Save manager migrates legacy dungeon depth" $saveManagerText "MigrateSaveData(saveData);")
+    [void](Assert-TextContains "Save manager migrates dungeon contracts" $saveManagerText "MigrateDungeonContractSaveData")
     [void](Assert-TextContains "Save manager runs item id migration" $saveManagerText "MigrateInventorySaveData")
+    [void](Assert-TextContains "Save manager resets autosave after manual save" $saveManagerText "autoSaveElapsed = 0f;")
+    [void](Assert-TextContains "Save manager reports defense restore" $saveManagerText "BuildDefenseLoadSummary")
     [void](Assert-TextContains "Save diagnostics use item registry" $saveDiagnosticsText "ItemDefinitionRegistry definitionRegistry")
     [void](Assert-TextContains "Save diagnostics validate selected depth" $saveDiagnosticsText "dungeon selectedDepth must be within the unlocked depth range")
+    [void](Assert-TextContains "Save diagnostics validate selected contract" $saveDiagnosticsText "dungeon selectedContractId must be one of the offered contract ids")
     [void](Assert-TextContains "Playable HUD exposes previous depth action" $playableHudText "public void SelectPreviousDungeonDepth()")
     [void](Assert-TextContains "Playable HUD exposes next depth action" $playableHudText "public void SelectNextDungeonDepth()")
+    [void](Assert-TextContains "Playable HUD exposes contract actions" $playableHudText "public void SelectFirstDungeonContract()")
 }
 
 if ((Test-Path -LiteralPath $itemRegistryPath) -and
@@ -486,6 +506,15 @@ if (Test-Path -LiteralPath $depthBalanceModelPath) {
     [void](Assert-TextContains "Depth balance exposes material yield scaling" $depthBalanceModelText "MaterialYieldMultiplier")
 }
 
+if (Test-Path -LiteralPath $dungeonContractModelPath) {
+    $dungeonContractModelText = Read-TextFile $dungeonContractModelPath
+    [void](Assert-TextContains "Dungeon contracts define default id" $dungeonContractModelText "DefaultContractId")
+    [void](Assert-TextContains "Dungeon contracts expose starter set" $dungeonContractModelText "StarterContracts")
+    [void](Assert-TextContains "Dungeon contracts generate two offers" $dungeonContractModelText "BuildOffer")
+    [void](Assert-TextContains "Dungeon contracts state denominator" $dungeonContractModelText "per-clear guaranteed item reward")
+    [void](Assert-TextContains "Dungeon contracts include risk reward" $dungeonContractModelText "RewardDepthOffset")
+}
+
 if ((Test-Path -LiteralPath $groundBalanceModelPath) -and
     (Test-Path -LiteralPath $defenseDirectorPath) -and
     (Test-Path -LiteralPath $playableHudPath)) {
@@ -502,6 +531,8 @@ if ((Test-Path -LiteralPath $groundBalanceModelPath) -and
     [void](Assert-TextContains "Defense director grants band milestone" $defenseDirectorText "GrantMilestoneRewards")
     [void](Assert-TextContains "Breached defense keeps recovery income" $defenseDirectorText "runtime.IsRunning || runtime.State == DefenseState.Breached")
     [void](Assert-TextContains "Defense director accepts visible wall hits" $defenseDirectorText "ApplyBattlefieldWallDamage")
+    [void](Assert-TextContains "Defense director exposes save-apply event" $defenseDirectorText "public event Action SaveDataApplied")
+    [void](Assert-TextContains "Defense director notifies save-apply event" $defenseDirectorText "SaveDataApplied?.Invoke()")
     [void](Assert-TextContains "Playable HUD exposes ground band" $playableHudText "Next Band Lv.")
 }
 
@@ -523,9 +554,12 @@ if ((Test-Path -LiteralPath $groundNavMeshBattlefieldPath) -and
     [void](Assert-TextContains "Ground battlefield creates enemy threat badge" $groundNavMeshBattlefieldText "EnemyThreatBadge")
     [void](Assert-TextContains "Ground battlefield evaluates formula force scale" $groundNavMeshBattlefieldText "EvaluateVisualForceProfile")
     [void](Assert-TextContains "Ground battlefield consumes frontline profile" $groundNavMeshBattlefieldText "defense.CurrentProgressionProfile")
+    [void](Assert-TextContains "Ground battlefield subscribes to save-apply event" $groundNavMeshBattlefieldText "subscribedDefense.SaveDataApplied += HandleDefenseSaveDataApplied")
+    [void](Assert-TextContains "Ground battlefield rebuilds on save load" $groundNavMeshBattlefieldText "HandleDefenseSaveDataApplied")
     [void](Assert-TextContains "Ground battlefield caps scaled enemy density" $groundNavMeshBattlefieldText "maxFormulaEnemies")
     [void](Assert-TextContains "Ground battlefield selects formula role mix" $groundNavMeshBattlefieldText "GetEnemyRoleForSlot")
     [void](Assert-TextContains "Ground battlefield scales reinforcement cadence" $groundNavMeshBattlefieldText "formulaCadenceStrength")
+    [void](Assert-TextContains "Ground units require active defense state" $groundNavMeshUnitText "battlefield.UnitsCanAct")
     [void](Assert-TextContains "Defenders acquire enemy targets" $groundNavMeshUnitText "FindNearestEnemy")
     [void](Assert-TextContains "Enemies acquire defender targets" $groundNavMeshUnitText "FindNearestDefender")
     [void](Assert-TextContains "Units move through character motor" $groundNavMeshUnitText "actor.Motor.TryMoveTo")
@@ -564,7 +598,7 @@ if (Test-Path -LiteralPath $planPath) {
         "E0-A | P0 | RTS-readable automatic defense battlefield | Done / E0-A3 accepted",
         "E0-B | P0 | Defense camera and reference composition pass | Done / User accepted camera composition",
         "Current product queue",
-        "E1-A | P0 | Formula-driven dungeon contract choice | Next / Product work",
+        "E1-A | P0 | Formula-driven dungeon contract choice | In progress / Scene-wired, Play Mode validation pending",
         "RTS-readable automatic defense",
         "Actual NavMesh battlefield",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
@@ -597,7 +631,7 @@ if (Test-Path -LiteralPath $releaseReadinessPath) {
         "What Counts As Production Movement",
         "Two-Hour Repeatable Slice",
         "Ten-Hour Alpha Loop",
-        "E1-A | Next / P0",
+        "E1-A | In progress / P0",
         "900+ hour target is a long-horizon design constraint",
         "A green harness means safe structure, not a completed product gate"
     )
@@ -630,6 +664,11 @@ if (Test-Path -LiteralPath $debtScriptPath) {
 $depthBalanceExportPath = Join-ProjectPath "Tools\Automation\Export-DungeonDepthBalance.ps1"
 if (Test-Path -LiteralPath $depthBalanceExportPath) {
     Invoke-CheckedCommand "Dungeon depth balance curve" { powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Automation\Export-DungeonDepthBalance.ps1 -CheckOnly }
+}
+
+$dungeonContractExportPath = Join-ProjectPath "Tools\Automation\Export-DungeonContracts.ps1"
+if (Test-Path -LiteralPath $dungeonContractExportPath) {
+    Invoke-CheckedCommand "Dungeon contract export" { powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Automation\Export-DungeonContracts.ps1 -CheckOnly }
 }
 
 $groundBalanceExportPath = Join-ProjectPath "Tools\Automation\Export-GroundDefenseBalance.ps1"

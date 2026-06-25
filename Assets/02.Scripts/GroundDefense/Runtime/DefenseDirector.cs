@@ -36,6 +36,7 @@ public class DefenseDirector : MonoBehaviour
     private float scrapRemainder;
 
     public event Action Changed;
+    public event Action SaveDataApplied;
 
     public DefenseRuntimeState Runtime => runtime;
     public CurrencyWallet Wallet => wallet;
@@ -266,6 +267,7 @@ public class DefenseDirector : MonoBehaviour
         scrapRemainder = 0f;
         LastMilestoneMessage = $"Ground milestone: Band {CurrentProgressionProfile.BandNumber} restored.";
         NotifyChanged();
+        SaveDataApplied?.Invoke();
     }
 
     public float SimulateOffline(float offlineSeconds)

@@ -6,6 +6,16 @@
 - The next dungeon feature is E1-A: choose one of two generated risk/reward contracts before a run. Contract selection must be transparent, use reusable data, affect the active run, persist through save/load, and leave the existing direct-control path authoritative.
 - Boss breadth, multi-room sequences, and a new calculation-only auto-expedition path remain deferred until contract choice and encounter variety have an evidence-backed production route.
 
+## 2026-06-25 E1-A Contract Core
+
+- `DungeonContractModel` now owns the starter set of three reusable contracts: one baseline and two risk/reward choices. `BuildOffer(selectedDepth, contractOfferSeed)` deterministically exposes two choices without a hand-authored depth ladder.
+- `ExpeditionDirector` owns offered, selected, and active contract ids. Starting a run copies the selected contract into active run state; clear/failure/result text names the active contract.
+- Contract threat applies through `ExpeditionDirector.GetEffectiveDepthBalance(...)`, which feeds `CombatRoom` and `EnemySpawner` enemy HP/damage multipliers without creating a second combat system.
+- Contract reward uses a reward-depth offset and still calls the existing `LootDropper.TryGrantClearReward(depth)` path. This keeps the denominator as one guaranteed per-clear item reward and preserves authored tables, duplicate conversion, salvage, and item save behavior.
+- `DungeonLoopSmokeTest` now selects a non-default contract before starting its clear path and blocks if the run starts without an active contract.
+- `Gameplay` now wires normal-player contract A, contract B, and refresh buttons into `PlayableLoopHud`; the harness checks these scene references.
+- Remaining production evidence: validate choice A/B/refresh -> start run -> clear/fail -> reward -> save/load in Play Mode.
+
 ## 2026-06-06 Phase D Direction
 
 - The user confirmed the normal `Gameplay` path works through `PF_DungeonEnemy_Melee` spawn, `Running` activation, chase/attack, player attacks, HP/death/result feedback, room clear, reward continuity, and retry.

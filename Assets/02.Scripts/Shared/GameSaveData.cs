@@ -3,7 +3,7 @@ using System;
 [Serializable]
 public class GameSaveData
 {
-    public int version = 3;
+    public int version = 4;
     public string savedAtUtc;
     public float playTimeSeconds;
     public ResourceAmount[] currencies;
@@ -47,6 +47,12 @@ public class DungeonSaveData
     public int depth = 1;
     public int selectedDepth = 1;
     public int highestUnlockedDepth = 1;
+    public int contractOfferSeed;
+    public string offeredContractIdA = DungeonContractModel.DefaultContractId;
+    public string offeredContractIdB = "ravenous_pact";
+    public string selectedContractId = DungeonContractModel.DefaultContractId;
+    public string activeContractId = DungeonContractModel.DefaultContractId;
+    public string lastContractSummary;
     public int totalRooms = 1;
     public int currentRoomIndex;
     public int roomsCompleted;

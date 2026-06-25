@@ -24,6 +24,44 @@ This guide describes only live `Gameplay` scene contracts. It intentionally excl
 4. Keep both named viewport `RawImage` objects connected through `PanelCameraRenderTarget`; the harness validates the serialized bridges.
 5. When editing a scene externally while Unity is open, reopen or reload `Gameplay` before Play Mode.
 
+## E1-A contract-button wiring
+
+The E1-A contract core is implemented in scripts and `Gameplay` now contains three normal-player contract controls under the Dungeon status area:
+
+- `Button_DungeonContractA` / label `Contract A`
+- `Button_DungeonContractB` / label `Contract B`
+- `Button_DungeonContractRefresh` / label `Refresh`
+
+Required `PlayableLoopHud` Inspector fields:
+
+| Field | Intended action |
+| --- | --- |
+| `Select Contract A Button` | Assigned to `Button_DungeonContractA`; calls `PlayableLoopHud.SelectFirstDungeonContract()` at runtime for the first offered contract. |
+| `Select Contract B Button` | Assigned to `Button_DungeonContractB`; calls `PlayableLoopHud.SelectSecondDungeonContract()` at runtime for the second offered contract. |
+| `Refresh Dungeon Contract Button` | Assigned to `Button_DungeonContractRefresh`; calls `PlayableLoopHud.RefreshDungeonContractOffer()` at runtime to advance the deterministic offer seed before a run. |
+
+Validation path:
+
+1. Open `Gameplay`.
+2. If Unity reports an external scene-file change, reload `Gameplay` before Play Mode; do not discard unrelated unsaved scene edits.
+3. Enter Play Mode and confirm the Dungeon text shows two offers.
+4. Click `Contract A`, `Contract B`, and `Refresh`; confirm selection/result text changes and buttons disable while a run is active.
+5. Keep `Start Dungeon Button` unchanged. Starting a run uses the currently selected contract.
+6. Start the run, clear or fail, save/load, and confirm the active contract/result text persists.
+
+## Focused Play Mode validation path
+
+Use this exact short path for the current E1-A/defense-save check:
+
+1. Open `Gameplay`; reload the scene if Unity reports external file changes.
+2. Enter Play Mode and read the top-left Dungeon line. Expected: two contract offers and one selected contract are visible.
+3. Click `Refresh`, then `Contract A` or `Contract B`. Expected: the selected contract line changes.
+4. Start the defense if it is stopped, let the wall/progress visibly change, click `Save`, then immediately change defense mode or wait for a visible wall/progress difference.
+5. Click `Load`. Expected: the Frontline line reports the saved FL/state/mode/wall/progress, the defense battlefield rebuilds from that restored state, and visual units do not keep attacking if the restored state is not running.
+6. Start a dungeon run from the selected contract, finish or fail it, then save/load once more. Expected: contract result/reward state and defense state both remain coherent.
+
+Do not move camera anchors, dungeon room geometry, or viewport proportions for this wiring pass unless the user explicitly approves a layout pass.
+
 ## Visual-authoring boundary
 
 Do not autonomously change room size, camera framing, HUD placement, object scale, silhouette, or composition based on source text alone. For a necessary manual pass, provide:

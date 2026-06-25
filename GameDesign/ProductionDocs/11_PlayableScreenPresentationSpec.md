@@ -33,10 +33,18 @@ defense state and resources
 
 ## Dungeon presentation
 
-- Before entry, show the selected depth and the future E1-A contract’s readable threat/reward effect.
+- Before entry, show the selected depth, two generated contract offers, selected contract, and readable threat/reward-depth effect.
 - During a run, keep direct-control input, enemy state, failure, and reward consequence legible.
 - On clear, open the normal reward path; do not require debug HUD actions.
 - On failure, state the outcome and return path without silently losing valid saved progression.
+
+## 2026-06-25 E1-A presentation status
+
+- `PlayableLoopHud` now has script fields and methods for contract A, contract B, and offer refresh buttons.
+- The Dungeon text can display the generated offers, selected contract, active contract, threat multipliers, and reward-depth result.
+- `Gameplay` now wires compact normal-player `Contract A`, `Contract B`, and `Refresh` buttons to the new `PlayableLoopHud` fields.
+- Remaining evidence is focused Play Mode validation of choice -> run -> reward/save behavior and whether the compact controls are readable enough in the live screen.
+- Do not add review labels or diagnostic component names for this pass; contract text should state player consequences only.
 
 ## Text policy
 

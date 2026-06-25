@@ -17,6 +17,7 @@ incoming pressure + automatic defenders
 - `DefenseDirector` owns runtime progression and applies visible wall damage through the authoritative state.
 - `GroundDefenseBalanceModel` owns formula-driven scaling and exports; it must not be replaced by hand-authored wave rows.
 - `GroundDefenseNavMeshBattlefield` is the live visual layer. It creates autonomous defenders/enemies with the shared character stats, health, motor, combat, team, NavMesh agent, collider, targeting, death, reinforcement, and wall-attack behavior.
+- When save data is loaded, `DefenseDirector.SaveDataApplied` forces the live battlefield to rebuild from the restored `DefenseRuntimeState`. Visual actors must not keep attacking when the restored defense state is idle, waiting for repair, or breached.
 - `GroundDefenseBillboardUtility` creates the live role sprites and faction readability treatment used by the NavMesh battlefield.
 
 ## Player-visible rules
@@ -31,6 +32,7 @@ incoming pressure + automatic defenders
 
 - Hold stabilizes pressure and preserves the wall; Push converts safety into progress pressure.
 - A breach must remain visible and must not silently stop recovery income or corrupt save/load state.
+- Save/load must visibly restore Frontline Level, Hold/Push state, wall health, pressure/progress, and upgrade levels; actor positions are presentation-only and may be rebuilt from the restored state.
 - Ground resources and milestones feed hero, equipment, defense, and future dungeon decisions. They may not form a separate reward economy.
 
 ## Scale and balance

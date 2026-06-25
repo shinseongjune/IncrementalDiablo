@@ -69,6 +69,12 @@ public sealed class GroundDefenseNavMeshUnit : MonoBehaviour
             return;
         }
 
+        if (!battlefield.UnitsCanAct)
+        {
+            ReturnHome();
+            return;
+        }
+
         if (side == GroundDefenseNavMeshUnitSide.Defender)
         {
             UpdateDefender();

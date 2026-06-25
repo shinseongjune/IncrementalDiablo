@@ -46,6 +46,9 @@ public class PlayableLoopHud : MonoBehaviour
     [SerializeField] private Button upgradeDefenderButton;
     [SerializeField] private Button previousDungeonDepthButton;
     [SerializeField] private Button nextDungeonDepthButton;
+    [SerializeField] private Button selectContractAButton;
+    [SerializeField] private Button selectContractBButton;
+    [SerializeField] private Button refreshDungeonContractButton;
     [SerializeField] private Button startDungeonButton;
     [SerializeField] private Button claimRewardButton;
     [SerializeField] private Button equipLatestButton;
@@ -129,8 +132,8 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         SetMessage(combatRoom == null
-            ? $"Depth {expedition.Depth} started, but no CombatRoom is linked. Room progress cannot advance yet."
-            : $"Depth {expedition.Depth} started. Room progress is shown in the Dungeon line.");
+            ? $"Depth {expedition.Depth} started with {expedition.ActiveContract.DisplayName}, but no CombatRoom is linked. Room progress cannot advance yet."
+            : $"Depth {expedition.Depth} started with {expedition.ActiveContract.DisplayName}. Room progress is shown in the Dungeon line.");
     }
 
     public void SelectPreviousDungeonDepth()
@@ -141,6 +144,30 @@ public class PlayableLoopHud : MonoBehaviour
     public void SelectNextDungeonDepth()
     {
         SelectDungeonDepth(next: true);
+    }
+
+    public void SelectFirstDungeonContract()
+    {
+        SelectDungeonContract(first: true);
+    }
+
+    public void SelectSecondDungeonContract()
+    {
+        SelectDungeonContract(first: false);
+    }
+
+    public void RefreshDungeonContractOffer()
+    {
+        ResolveReferences();
+        if (expedition == null)
+        {
+            SetMessage("Dungeon contracts are not available.");
+            return;
+        }
+
+        SetMessage(expedition.RefreshContractOffer()
+            ? $"Contract offer refreshed. Selected {expedition.SelectedContract.DisplayName}."
+            : "Contract offer cannot refresh while an expedition is running.");
     }
 
     public void StartDefense()
@@ -421,11 +448,12 @@ public class PlayableLoopHud : MonoBehaviour
         string rewardState = BuildRewardStateText();
         string result = string.IsNullOrWhiteSpace(expedition.LastResult) ? "none" : expedition.LastResult;
         int balanceDepth = expedition.IsRunning ? expedition.Depth : expedition.SelectedDepth;
-        DungeonDepthBalanceProfile balance = DungeonDepthBalanceModel.Evaluate(balanceDepth);
+        DungeonDepthBalanceProfile balance = expedition.GetEffectiveDepthBalance(balanceDepth);
         string balanceText =
             $"Band {balance.BandNumber} / Threat HP x{balance.EnemyHealthMultiplier:0.##} DMG x{balance.EnemyDamageMultiplier:0.##} / " +
             $"Reward x{balance.RewardPowerMultiplier:0.##} Materials x{balance.MaterialYieldMultiplier:0.##}";
-        string dungeonTextValue = $"Dungeon: {expedition.State} / Depth {expedition.Depth} / Selected {expedition.SelectedDepth}/{expedition.HighestUnlockedDepth} unlocked\n{balanceText}\nRoom {expedition.RoomsCompleted}/{expedition.TotalRooms} / {expedition.ElapsedSeconds:0.0}s / {rewardState} / Loot {BuildLootSourceText()}\nLast: {result}";
+        string contractText = BuildDungeonContractText();
+        string dungeonTextValue = $"Dungeon: {expedition.State} / Depth {expedition.Depth} / Selected {expedition.SelectedDepth}/{expedition.HighestUnlockedDepth} unlocked\n{balanceText}\n{contractText}\nRoom {expedition.RoomsCompleted}/{expedition.TotalRooms} / {expedition.ElapsedSeconds:0.0}s / {rewardState} / Loot {BuildLootSourceText()}\nLast: {result}";
 
         if (combatRoom == null)
         {
@@ -439,6 +467,21 @@ public class PlayableLoopHud : MonoBehaviour
             : $"{combatRoom.ElapsedSeconds:0.0}s";
 
         return $"{dungeonTextValue}\nRoom: {combatRoom.State} / {roomProgress} / Path {BuildCombatPathText()} / Hero {combatRoom.CurrentHeroHealth:0.#} / Enemy {combatRoom.CurrentEnemyHealth:0.#}\nRoom Last: {roomMessage}";
+    }
+
+    private string BuildDungeonContractText()
+    {
+        if (expedition == null)
+        {
+            return "Contract: unavailable";
+        }
+
+        if (expedition.IsRunning)
+        {
+            return $"Contract active: {DungeonContractModel.FormatShortText(expedition.ActiveContract)} / Reward depth {expedition.ActiveRewardDepth}";
+        }
+
+        return $"Contracts: {DungeonContractModel.FormatOfferText(expedition.OfferedContractIdA, expedition.OfferedContractIdB)}\nSelected: {DungeonContractModel.FormatShortText(expedition.SelectedContract)}";
     }
 
     private string BuildRewardStateText()
@@ -606,6 +649,11 @@ public class PlayableLoopHud : MonoBehaviour
             return "Next: claim the dungeon reward.";
         }
 
+        if (expedition.State == DungeonRunState.Ready)
+        {
+            return $"Next: choose a dungeon contract or start with {expedition.SelectedContract.DisplayName}.";
+        }
+
         ItemInstance latest = GetLatestItem();
         if (latest != null && !latest.IsDefinitionResolved)
         {
@@ -747,6 +795,9 @@ public class PlayableLoopHud : MonoBehaviour
         SetInteractable(upgradeDefenderButton, canUseUpgrades && defenseWallet.CanSpend(upgrades.GetDefenderUpgradeCost()));
         SetInteractable(previousDungeonDepthButton, expedition != null && expedition.CanSelectPreviousDepth);
         SetInteractable(nextDungeonDepthButton, expedition != null && expedition.CanSelectNextDepth);
+        SetInteractable(selectContractAButton, expedition != null && expedition.CanSelectContract);
+        SetInteractable(selectContractBButton, expedition != null && expedition.CanSelectContract);
+        SetInteractable(refreshDungeonContractButton, expedition != null && expedition.CanSelectContract);
         SetInteractable(startDungeonButton, expedition != null && !expedition.IsRunning);
         SetInteractable(claimRewardButton, expedition != null && (expedition.RewardPending || expedition.State == DungeonRunState.Cleared));
         SetInteractable(equipLatestButton, latest != null && latest.IsDefinitionResolved && inventory != null && equipmentSlots != null);
@@ -792,10 +843,29 @@ public class PlayableLoopHud : MonoBehaviour
             ? expedition.SelectNextDepth()
             : expedition.SelectPreviousDepth();
         SetMessage(changed
-            ? $"Selected dungeon Depth {expedition.SelectedDepth} of {expedition.HighestUnlockedDepth} unlocked."
+            ? $"Selected dungeon Depth {expedition.SelectedDepth} of {expedition.HighestUnlockedDepth} unlocked. Contract offer refreshed."
             : expedition.IsRunning
                 ? "Dungeon depth cannot change while an expedition is running."
                 : $"Dungeon depth stays at {expedition.SelectedDepth}; unlocked range is 1-{expedition.HighestUnlockedDepth}.");
+    }
+
+    private void SelectDungeonContract(bool first)
+    {
+        ResolveReferences();
+        if (expedition == null)
+        {
+            SetMessage("Dungeon contracts are not available.");
+            return;
+        }
+
+        bool changed = first
+            ? expedition.SelectFirstContract()
+            : expedition.SelectSecondContract();
+        SetMessage(changed
+            ? $"Selected contract: {expedition.SelectedContract.DisplayName}."
+            : expedition.IsRunning
+                ? "Dungeon contract cannot change while an expedition is running."
+                : "Dungeon contract selection failed; refresh the offer.");
     }
 
     private void TryUpgradeDefense(string label, Func<DefenseUpgradeModel, ResourceAmount[]> costSelector, Func<bool> upgradeAction)
@@ -996,6 +1066,9 @@ public class PlayableLoopHud : MonoBehaviour
         AddListener(upgradeDefenderButton, UpgradeDefenders);
         AddListener(previousDungeonDepthButton, SelectPreviousDungeonDepth);
         AddListener(nextDungeonDepthButton, SelectNextDungeonDepth);
+        AddListener(selectContractAButton, SelectFirstDungeonContract);
+        AddListener(selectContractBButton, SelectSecondDungeonContract);
+        AddListener(refreshDungeonContractButton, RefreshDungeonContractOffer);
         AddListener(startDungeonButton, StartDungeon);
         AddListener(claimRewardButton, ClaimPendingReward);
         AddListener(equipLatestButton, EquipLatest);
@@ -1024,6 +1097,9 @@ public class PlayableLoopHud : MonoBehaviour
         RemoveListener(upgradeDefenderButton, UpgradeDefenders);
         RemoveListener(previousDungeonDepthButton, SelectPreviousDungeonDepth);
         RemoveListener(nextDungeonDepthButton, SelectNextDungeonDepth);
+        RemoveListener(selectContractAButton, SelectFirstDungeonContract);
+        RemoveListener(selectContractBButton, SelectSecondDungeonContract);
+        RemoveListener(refreshDungeonContractButton, RefreshDungeonContractOffer);
         RemoveListener(startDungeonButton, StartDungeon);
         RemoveListener(claimRewardButton, ClaimPendingReward);
         RemoveListener(equipLatestButton, EquipLatest);

@@ -6,6 +6,7 @@
 - D2 reference collection is complete enough; the missing production work is Unity-side drop-balance export and validation, not more reference gathering.
 - The duplicate conversion sink prevents dead drops, but it does not create build identity. The prototype Rare reroll (`TD-04`) remains an alpha blocker until a small authored affix pool with tags, weights, and migration rules replaces it.
 - E1-A contract rewards must use the same item/salvage path and export denominator; they must not silently alter rarity odds or bypass duplicate conversion.
+- 2026-06-25 E1-A contract reward rule: risk contracts use a reward-depth offset for the existing one guaranteed per-clear item reward. They do not change reward count, the 78/20/2 rarity table, authored weighted-table selection, duplicate conversion, salvage service, or the D2 per-kill comparison denominator.
 
 ## 2026-06-10 Phase D Duplicate Conversion
 

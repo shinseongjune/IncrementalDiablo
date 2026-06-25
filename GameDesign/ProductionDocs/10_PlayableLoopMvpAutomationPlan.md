@@ -24,15 +24,15 @@ The ground layer is **RTS-readable automatic defense**. It is not an RTS control
 
 **Current phase | Phase E - Early Access Readiness Slice**
 
-**Last meaningful movement:** obsolete ground-defense presentation code, review-only controls, diagnostics, and its stale documentation were removed after the accepted NavMesh replacement.
+**Last meaningful movement:** E1-A dungeon contract UI is scene-wired, and a save/load regression was patched so loading defense state rebuilds the live NavMesh battlefield and prevents visual units from attacking while the restored defense state is not running.
 
-**Next unlock:** `E1-A | P0 | Formula-driven dungeon contract choice | Next / Product work`.
+**Next unlock:** `E1-A | P0 | Formula-driven dungeon contract choice | In progress / Focused Play Mode validation`.
 
 ## Current product queue
 
 | ID | Priority | Task | Status | Completion evidence |
 | --- | --- | --- | --- | --- |
-| E1-A | P0 | Formula-driven dungeon contract choice | Next / Product work | Before an expedition, offer two generated choices from a starter set of three. Each must state threat and reward effects, apply to that run, survive save/load, and resolve visibly. | Deterministic data/export check; choice -> run -> reward -> save/load Play Mode path; scene/save harness checks. |
+| E1-A | P0 | Formula-driven dungeon contract choice | In progress / Scene-wired, Play Mode validation pending | Before an expedition, offer two generated choices from a starter set of three. Each states threat and reward-depth effects, applies to that run, survives save/load, and resolves in HUD/result text. | Done structurally: deterministic contract export, save schema v4, active contract state, threat multiplier, reward-depth offset, normal-player contract buttons in `Gameplay`, and defense save/load visual rebuild. Remaining: run choice -> run -> reward -> save/load Play Mode path. |
 | E1-B | P0 | Authored Rare affix pool | Pending | Replace prototype reroll output with data-backed tags, weights, slot rules, and clear stat text. | Affix export; migration; reward -> equip/reroll/salvage verification. |
 | E1-C | P1 | Reusable dungeon encounter variety | Pending | Add one elite rule and one boss/encounter rule without hand-authored room ladders. | Data contract; run-state/save behavior; failure/reward evidence. |
 | E2-A | P1 | Onboarding, settings, recovery | Pending | Teach the first-session loop after E1-A makes a real decision. | Fresh-save walkthrough, settings persistence, and recovery QA. |
@@ -74,12 +74,12 @@ Use `12_PrototypeDebtRegister.md` and `Tools/Automation/Get-PrototypeDebtInvento
 | Loop link | Current state | Next gap |
 | --- | --- | --- |
 | Automatic defense -> base resources | Working and accepted | Future defense rewards need meaningful strategy, not more visual polish. |
-| Dungeon entry -> direct combat | Working | E1-A must add a transparent pre-run choice. |
+| Dungeon entry -> direct combat | Working with E1-A contract UI | Validate the pre-run contract decision path in Play Mode. |
 | Dungeon reward -> inventory/equipment/salvage | Working | E1-B needs authored affix identity. |
 | Crafting -> material sink | Prototype only | Replace reroll with the E1-B affix pool. |
-| Save/load -> progression recovery | Working for current depth/items | E1-A must extend it to active contract state. |
+| Save/load -> progression recovery | Working for depth/items/defense; E1-A contract fields are schema v4 | Validate active contract and restored defense state through save/load in Play Mode. |
 
-Known blockers: no source-code blocker. E1-A requires a bounded contract-data decision, not visual scene composition. The optional automation prompt update still needs user approval before the TOML freshness warnings can disappear.
+Known blockers: no source-code blocker. E1-A now needs focused `Gameplay` Play Mode validation of contract A/B/refresh -> start -> clear/fail -> reward -> save/load, plus the defense restore check in `06_UnitySceneAndPrefabSetupGuide.md`. The optional automation prompt update still needs user approval before the TOML freshness warnings can disappear.
 
 ## Verification and documentation
 

@@ -1,0 +1,4 @@
+"contract_id","display_name","denominator","enemy_health_multiplier","enemy_damage_multiplier","reward_depth_offset","generated_offer_source","notes"
+"steady_clear","Steady Clear","per-clear guaranteed item reward","1","1","0","DungeonContractModel.BuildOffer(selectedDepth, contractOfferSeed)","No added risk; baseline threat and item power."
+"ravenous_pact","Ravenous Pact","per-clear guaranteed item reward","1.18","1.08","3","DungeonContractModel.BuildOffer(selectedDepth, contractOfferSeed)","Tougher enemies for a stronger item roll."
+"blood_price","Blood Price","per-clear guaranteed item reward","1.06","1.24","2","DungeonContractModel.BuildOffer(selectedDepth, contractOfferSeed)","Sharper enemy hits for a better item roll."

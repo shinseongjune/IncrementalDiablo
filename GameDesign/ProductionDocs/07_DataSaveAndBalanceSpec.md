@@ -5,6 +5,17 @@
 - The depth and frontline exports prove deterministic monotonic formulas. They do not prove a fun session length, affordable sinks, or a playable maximum-level economy.
 - The `1,000,000,000` multiplier clamp is a runtime safety boundary, not a target content tier. Curve shape must be reviewed before normal progression approaches a clamp plateau.
 - New run choices such as E1-A dungeon contracts require a stable id, active-run save field, migration/default rule, deterministic export, and explicit reward denominator before implementation is called complete.
+- 2026-06-25 update: save schema v4 adds dungeon contract offer/selection/active fields. `DefenseSaveManager` migrates older saves by generating a default two-contract offer from selected depth and seed, then preserving an active contract for running or reward-pending clears.
+
+## 2026-06-25 Dungeon Contract Balance Export
+
+`DungeonContractModel` is the runtime source of truth for the first E1-A contract set.
+
+- Stable ids: `steady_clear`, `ravenous_pact`, `blood_price`.
+- Offer generation: two choices from `BuildOffer(selectedDepth, contractOfferSeed)`, deterministic and save-backed.
+- Threat denominator: active dungeon run enemy HP/damage multipliers.
+- Reward denominator: one guaranteed per-clear item reward. Risk contracts increase reward by passing a higher reward depth into the existing clear-reward path, not by changing rarity odds or reward count.
+- `Tools/Automation/Export-DungeonContracts.ps1` reads the C# starter set, verifies the baseline plus at least one risk/reward contract, and exports `GameDesign/Balance/DungeonContractBalance.csv`.
 
 ## 2026-06-11 Ground Defense Balance Model
 
@@ -227,6 +238,10 @@ equipped
 2026-06-07 Phase D dungeon progression note: save schema v2 adds `DungeonSaveData.selectedDepth` and `highestUnlockedDepth`. `DefenseSaveManager` migrates a v1 save by using its prior active `depth` as the initial selected/highest value, then `GameSaveDataDiagnostics` requires active and selected depth to remain within `1..highestUnlockedDepth`. This is the first explicit save migration hook for long-horizon dungeon progression.
 
 2026-06-09 Phase D item identity note: save schema v3 adds a production item-id migration stage without changing the serialized `ItemInstanceSaveData` shape. `DefenseSaveManager` asks the scene's `ItemDefinitionRegistry` to remap legacy ids before validation and inventory restore. Canonical ids reconnect to live assets; unknown ids remain serialized and visible but are quarantined from equip/salvage/reroll. `LastLoadReport`, save diagnostics, HUD text, and overlay text expose resolved/remapped/unresolved counts so content deletion or id drift cannot silently become snapshot-based gameplay power.
+
+2026-06-25 E1-A contract note: save schema v4 adds `contractOfferSeed`, `offeredContractIdA`, `offeredContractIdB`, `selectedContractId`, `activeContractId`, and `lastContractSummary` to `DungeonSaveData`. Save diagnostics require valid offered/selected ids and require `activeContractId` for running or reward-pending contract resolution.
+
+2026-06-25 defense restore note: loading a save now emits `DefenseDirector.SaveDataApplied`, rebuilds `GroundDefenseNavMeshBattlefield` from the restored authoritative `DefenseRuntimeState`, and stops visual actors from attacking while the restored state is not running. Manual saves also reset the auto-save timer so a player-triggered checkpoint is not immediately overwritten by the next auto-save tick.
 
 ## 5. 저장 시점
 

@@ -129,13 +129,30 @@ public static class DungeonLoopSmokeTest
     {
         failure = string.Empty;
 
+        if (!expedition.IsRunning)
+        {
+            if (!expedition.SelectSecondContract())
+            {
+                failure = "Expedition could not select the second dungeon contract before start.";
+                return false;
+            }
+
+            AppendStep(builder, $"Selected dungeon contract {expedition.SelectedContract.DisplayName}.");
+        }
+
         if (!expedition.IsRunning && !expedition.StartExpedition())
         {
             failure = "Expedition could not be started.";
             return false;
         }
 
-        AppendStep(builder, "Started dungeon expedition.");
+        if (string.IsNullOrWhiteSpace(expedition.ActiveContractId))
+        {
+            failure = "Expedition started without an active dungeon contract.";
+            return false;
+        }
+
+        AppendStep(builder, $"Started dungeon expedition with {expedition.ActiveContract.DisplayName}.");
 
         int guard = Mathf.Max(1, expedition.TotalRooms) + 2;
         while (expedition.IsRunning && guard > 0)

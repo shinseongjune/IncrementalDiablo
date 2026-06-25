@@ -89,6 +89,7 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
     private Vector3 travelDirection;
     private Vector3 sideDirection;
     private GroundDefenseVisualForceProfile activeForceProfile;
+    private DefenseDirector subscribedDefense;
     private bool shuttingDown;
 
     public Vector3 WallPosition => wallAnchor == null ? transform.position : wallAnchor.position;
@@ -97,10 +98,18 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
     public int ActiveDefenderCount => CountAlive(defenders);
     public int ActiveEnemyCount => CountAlive(enemies);
     public GroundDefenseVisualForceProfile ActiveForceProfile => GetReadableActiveForceProfile();
+    public bool UnitsCanAct => defense != null && defense.Runtime != null && defense.Runtime.IsRunning;
+
+    private void OnEnable()
+    {
+        ResolveReferences();
+        SubscribeToDefense();
+    }
 
     private void Start()
     {
         ResolveReferences();
+        SubscribeToDefense();
         BuildBattlefield();
     }
 
@@ -127,29 +136,14 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
 
     private void OnDisable()
     {
+        UnsubscribeFromDefense();
         shuttingDown = true;
         ClearBattlefield();
     }
 
     private void Update()
     {
-        if (wallVisual == null || defense == null || defense.Runtime == null)
-        {
-            return;
-        }
-
-        RefreshFormulaForceScale();
-
-        float wallHealth = defense.Runtime.WallHealthPercent;
-        wallVisual.Renderer.transform.localScale =
-            Vector3.one * Mathf.Lerp(0.92f, 1f, wallHealth);
-        if (wallVisual.Renderer is SpriteRenderer spriteRenderer)
-        {
-            spriteRenderer.color = Color.Lerp(
-                new Color(0.55f, 0.12f, 0.08f, 1f),
-                Color.white,
-                wallHealth);
-        }
+        RefreshRuntimeVisualState();
     }
 
     public GroundDefenseNavMeshUnit FindNearestEnemy(
@@ -396,6 +390,43 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
         }
 
         activeForceProfile = nextProfile;
+    }
+
+    private void RefreshRuntimeVisualState()
+    {
+        if (wallVisual == null || defense == null || defense.Runtime == null)
+        {
+            return;
+        }
+
+        RefreshFormulaForceScale();
+
+        float wallHealth = defense.Runtime.WallHealthPercent;
+        wallVisual.Renderer.transform.localScale =
+            Vector3.one * Mathf.Lerp(0.92f, 1f, wallHealth);
+        if (wallVisual.Renderer is SpriteRenderer spriteRenderer)
+        {
+            spriteRenderer.color = Color.Lerp(
+                new Color(0.55f, 0.12f, 0.08f, 1f),
+                Color.white,
+                wallHealth);
+        }
+    }
+
+    private void HandleDefenseChanged()
+    {
+        RefreshRuntimeVisualState();
+    }
+
+    private void HandleDefenseSaveDataApplied()
+    {
+        if (!isActiveAndEnabled)
+        {
+            return;
+        }
+
+        BuildBattlefield();
+        RefreshRuntimeVisualState();
     }
 
     private GroundDefenseVisualForceProfile EvaluateVisualForceProfile()
@@ -792,6 +823,36 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
         {
             defense = FindAnyObjectByType<DefenseDirector>();
         }
+    }
+
+    private void SubscribeToDefense()
+    {
+        if (subscribedDefense == defense)
+        {
+            return;
+        }
+
+        UnsubscribeFromDefense();
+        subscribedDefense = defense;
+        if (subscribedDefense == null)
+        {
+            return;
+        }
+
+        subscribedDefense.Changed += HandleDefenseChanged;
+        subscribedDefense.SaveDataApplied += HandleDefenseSaveDataApplied;
+    }
+
+    private void UnsubscribeFromDefense()
+    {
+        if (subscribedDefense == null)
+        {
+            return;
+        }
+
+        subscribedDefense.Changed -= HandleDefenseChanged;
+        subscribedDefense.SaveDataApplied -= HandleDefenseSaveDataApplied;
+        subscribedDefense = null;
     }
 }
 
