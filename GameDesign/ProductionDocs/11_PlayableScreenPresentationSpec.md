@@ -43,8 +43,14 @@ defense state and resources
 - `PlayableLoopHud` now has script fields and methods for contract A, contract B, and offer refresh buttons.
 - The Dungeon text can display the generated offers, selected contract, active contract, threat multipliers, and reward-depth result.
 - `Gameplay` now wires compact normal-player `Contract A`, `Contract B`, and `Refresh` buttons to the new `PlayableLoopHud` fields.
-- Remaining evidence is focused Play Mode validation of choice -> run -> reward/save behavior and whether the compact controls are readable enough in the live screen.
+- The focused Play Mode validation was accepted on 2026-06-25. Do not repeat contract-button acceptance work unless a regression changes the contract/save/reward path.
 - Do not add review labels or diagnostic component names for this pass; contract text should state player consequences only.
+
+## 2026-06-26 E1-B crafting presentation status
+
+- Rare affix reroll result text now uses authored affix display names and stat text through `ItemEconomyModel.FormatAffixRoll(...)`.
+- The crafting overlay keeps the same normal action path: select a Rare item, spend `Gold + Essence + AlterStone`, show the before -> after affix summary, and refresh equipped stats when needed.
+- Production evidence accepted 2026-06-26: a rewarded Rare can be equipped, rerolled, saved, and loaded with the authored affix text still coherent. Reopen only for UI/stat/save regressions.
 
 ## Text policy
 

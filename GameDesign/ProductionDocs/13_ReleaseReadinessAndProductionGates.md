@@ -55,11 +55,11 @@ The player can complete several runs without repeating the exact same decision p
 - duplicate handling and salvage remain understandable;
 - no accepted ground or dungeon combat path regresses.
 
-`E1-A` is the current task that starts this gate. As of 2026-06-25, its code/data/save/export core and normal-player button wiring exist, but focused Play Mode validation is still required before the gate can count as accepted.
+`E1-A` is accepted from the focused Play Mode path as of 2026-06-25. `E1-B` is accepted from the focused Play Mode path as of 2026-06-26, so R1 has the contract decision and authored item-affix outcome needed for the two-hour repeatable slice. The next production gap is `E1-C` encounter variety.
 
 ### Gate R2 — Ten-Hour Alpha Loop
 
-- authored affix data replaces the prototype reroll (`TD-04`);
+- authored affix data replaces the prototype reroll (`TD-04`) and is verified through the normal crafting overlay;
 - at least one reusable encounter/elite or boss rule replaces the tint-only room presentation (`TD-05`);
 - players can name why one item, contract, or upgrade is better for their current goal;
 - the first-session path teaches Hold/Push, contract choice, direct combat, reward handling, and recovery;
@@ -81,8 +81,8 @@ Only after R3 should the project expand toward multi-theme depth, broader item b
 
 | ID | Status | Product task | Completion evidence |
 | --- | --- | --- | --- |
-| E1-A | In progress / P0 | Formula-driven dungeon contract choice. Before each expedition, show two generated choices from a starter set of three contracts. Each choice has a transparent threat modifier and reward-depth modifier, applies to the active run, and persists in the save. | Structural core done: deterministic contract selection/export, save schema v4, active-run threat/reward-depth state, HUD text, and normal-player contract buttons. Remaining evidence: focused Play Mode choice -> run -> reward -> save/load path. |
-| E1-B | Pending / P0 | Replace the prototype Rare reroll with a small authored affix pool: tags, weights, slot rules, and clear stat text. | Affix data export, no repeated affix when alternatives exist, item migration path, and focused reward -> equip/reroll/salvage verification. |
+| E1-A | Done / P0 | Formula-driven dungeon contract choice. Before each expedition, show two generated choices from a starter set of three contracts. Each choice has a transparent threat modifier and reward-depth modifier, applies to the active run, and persists in the save. | Accepted 2026-06-25 through focused Play Mode contract A/B/refresh -> run -> reward -> save/load evidence, including restored defense state. |
+| E1-B | Done / P0 | Replace the prototype Rare reroll with a small authored affix pool: tags, weights, slot rules, and clear stat text. | Accepted 2026-06-26 through focused reward -> equip -> reroll -> save/load evidence. `RareAffixPool.csv` is the deterministic export, and TD-04 is retired. |
 | E1-C | Pending / P1 | Add reusable dungeon encounter variety: one elite rule and one boss/encounter rule that preserves direct-control value. | Encounter data contract, run-state/save behavior, normal-path failure/reward evidence, and no silent calculation fallback. |
 | E2-A | Pending / P1 | First-session onboarding, settings, and recovery handoff after R1 decisions are real. | Fresh-save walkthrough plus settings persistence and failure/recovery QA. |
 

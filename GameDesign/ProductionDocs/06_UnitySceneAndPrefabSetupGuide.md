@@ -49,9 +49,9 @@ Validation path:
 5. Keep `Start Dungeon Button` unchanged. Starting a run uses the currently selected contract.
 6. Start the run, clear or fail, save/load, and confirm the active contract/result text persists.
 
-## Focused Play Mode validation path
+## E1-A regression validation path
 
-Use this exact short path for the current E1-A/defense-save check:
+Use this path only when contract selection, save/load, or defense restore regresses. E1-A was accepted on 2026-06-25:
 
 1. Open `Gameplay`; reload the scene if Unity reports external file changes.
 2. Enter Play Mode and read the top-left Dungeon line. Expected: two contract offers and one selected contract are visible.
@@ -61,6 +61,17 @@ Use this exact short path for the current E1-A/defense-save check:
 6. Start a dungeon run from the selected contract, finish or fail it, then save/load once more. Expected: contract result/reward state and defense state both remain coherent.
 
 Do not move camera anchors, dungeon room geometry, or viewport proportions for this wiring pass unless the user explicitly approves a layout pass.
+
+## E1-B regression validation path
+
+Use this path only when authored Rare affix reroll, stat refresh, or save/load regresses. E1-B was accepted on 2026-06-26:
+
+1. Open `Gameplay`; reload the scene if Unity reports external file changes.
+2. Enter Play Mode and earn or select a Rare item through the normal dungeon/reward/inventory path.
+3. Equip the Rare item, then open the crafting overlay and select the same item.
+4. Confirm the reroll cost is `Gold + Essence + AlterStone`, then press `Reroll`.
+5. Expected: the result text shows an authored affix name such as `Wounding Edge`, `Vital Plating`, `Swift Band`, or `Runner Band`, plus a clear stat modifier. If the item already had an authored affix and another slot-valid candidate exists, the new affix id should change.
+6. Save and load. Expected: the item remains resolved, the authored affix id/text and modifier remain coherent, and equipped stat text refreshes after load/equip.
 
 ## Visual-authoring boundary
 

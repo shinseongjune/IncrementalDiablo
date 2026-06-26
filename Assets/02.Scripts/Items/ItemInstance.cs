@@ -153,7 +153,7 @@ public class ItemInstance
         equipped = value;
     }
 
-    public bool TryApplyPrototypeAffixReroll(out ItemAffixRoll affixRoll)
+    public bool TryApplyAuthoredAffixReroll(out ItemAffixRoll affixRoll)
     {
         affixRoll = null;
         if (Rarity != ItemRarity.Rare)
@@ -161,12 +161,11 @@ public class ItemInstance
             return false;
         }
 
-        if (!TryCreatePrototypeAffixModifierAvoidingCurrent(out string affixId, out StatMod modifier))
+        if (!ItemEconomyModel.TryRollAuthoredRareAffix(this, out affixRoll))
         {
             return false;
         }
 
-        affixRoll = new ItemAffixRoll(affixId, modifier);
         affixRolls = new[] { affixRoll };
         return true;
     }
@@ -264,142 +263,6 @@ public class ItemInstance
             default:
                 return false;
         }
-    }
-
-    private bool TryCreatePrototypeAffixModifierAvoidingCurrent(out string affixId, out StatMod modifier)
-    {
-        affixId = string.Empty;
-        modifier = null;
-
-        int candidateCount = GetPrototypeAffixCandidateCount();
-        if (candidateCount <= 0)
-        {
-            return false;
-        }
-
-        int firstRoll = UnityEngine.Random.Range(0, candidateCount);
-        string fallbackAffixId = null;
-        StatMod fallbackModifier = null;
-        for (int attempt = 0; attempt < candidateCount; attempt++)
-        {
-            int candidateRoll = (firstRoll + attempt) % candidateCount;
-            if (!TryCreatePrototypeAffixModifier(candidateRoll, out string candidateAffixId, out StatMod candidateModifier))
-            {
-                continue;
-            }
-
-            fallbackAffixId ??= candidateAffixId;
-            fallbackModifier ??= candidateModifier;
-            if (!HasMatchingAffix(AffixRolls, candidateAffixId, candidateModifier))
-            {
-                affixId = candidateAffixId;
-                modifier = candidateModifier;
-                return true;
-            }
-        }
-
-        affixId = fallbackAffixId ?? string.Empty;
-        modifier = fallbackModifier;
-        return modifier != null;
-    }
-
-    private int GetPrototypeAffixCandidateCount()
-    {
-        switch (Slot)
-        {
-            case ItemSlot.Weapon:
-            case ItemSlot.Armor:
-            case ItemSlot.Ring:
-                return 2;
-            default:
-                return 0;
-        }
-    }
-
-    private bool TryCreatePrototypeAffixModifier(int roll, out string affixId, out StatMod modifier)
-    {
-        affixId = string.Empty;
-        modifier = null;
-
-        int normalizedRoll = Mathf.Abs(roll) % 2;
-        float scaledPower = Mathf.Max(1f, Level + RolledPower * 0.25f);
-        switch (Slot)
-        {
-            case ItemSlot.Weapon:
-                if (normalizedRoll == 0)
-                {
-                    affixId = "prototype_attack_damage";
-                    modifier = new StatMod(StatId.AttackDamage, StatMod.StatModType.Flat, Mathf.Ceil(scaledPower * 1.15f));
-                }
-                else
-                {
-                    affixId = "prototype_attack_speed";
-                    modifier = new StatMod(StatId.AttackSpeed, StatMod.StatModType.PercentAdd, Mathf.Ceil(3f + scaledPower * 0.4f));
-                }
-
-                return true;
-            case ItemSlot.Armor:
-                if (normalizedRoll == 0)
-                {
-                    affixId = "prototype_max_health";
-                    modifier = new StatMod(StatId.MaxHealth, StatMod.StatModType.Flat, Mathf.Ceil(6f + scaledPower * 4f));
-                }
-                else
-                {
-                    affixId = "prototype_move_speed";
-                    modifier = new StatMod(StatId.MoveSpeed, StatMod.StatModType.PercentAdd, Mathf.Ceil(2f + scaledPower * 0.25f));
-                }
-
-                return true;
-            case ItemSlot.Ring:
-                if (normalizedRoll == 0)
-                {
-                    affixId = "prototype_attack_speed";
-                    modifier = new StatMod(StatId.AttackSpeed, StatMod.StatModType.PercentAdd, Mathf.Ceil(4f + scaledPower * 0.55f));
-                }
-                else
-                {
-                    affixId = "prototype_move_speed";
-                    modifier = new StatMod(StatId.MoveSpeed, StatMod.StatModType.PercentAdd, Mathf.Ceil(3f + scaledPower * 0.45f));
-                }
-
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    private static bool HasMatchingAffix(ItemAffixRoll[] rolls, string affixId, StatMod modifier)
-    {
-        if (rolls == null || modifier == null)
-        {
-            return false;
-        }
-
-        for (int i = 0; i < rolls.Length; i++)
-        {
-            ItemAffixRoll roll = rolls[i];
-            if (roll == null || roll.Modifier == null)
-            {
-                continue;
-            }
-
-            if (string.Equals(roll.AffixId, affixId, StringComparison.Ordinal) && HasSameModifier(roll.Modifier, modifier))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool HasSameModifier(StatMod first, StatMod second)
-    {
-        return first != null
-            && second != null
-            && first.StatId == second.StatId
-            && first.Type == second.Type
-            && Mathf.Approximately(first.Value, second.Value);
     }
 
     private static float GetRarityPowerMultiplier(ItemRarity itemRarity)

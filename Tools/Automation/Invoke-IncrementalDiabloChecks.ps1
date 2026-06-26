@@ -280,6 +280,8 @@ $requiredPaths = @(
     @{ Name = "Dungeon depth balance CSV"; Path = "GameDesign\Balance\DungeonDepthBalance.csv" },
     @{ Name = "Dungeon contract export"; Path = "Tools\Automation\Export-DungeonContracts.ps1" },
     @{ Name = "Dungeon contract balance CSV"; Path = "GameDesign\Balance\DungeonContractBalance.csv" },
+    @{ Name = "Rare affix export"; Path = "Tools\Automation\Export-RareAffixes.ps1" },
+    @{ Name = "Rare affix pool CSV"; Path = "GameDesign\Balance\RareAffixPool.csv" },
     @{ Name = "Ground defense balance export"; Path = "Tools\Automation\Export-GroundDefenseBalance.ps1" },
     @{ Name = "Ground defense balance CSV"; Path = "GameDesign\Balance\GroundDefenseBalance.csv" }
 )
@@ -470,6 +472,10 @@ if ((Test-Path -LiteralPath $itemEconomyPath) -and
     [void](Assert-TextContains "Duplicate conversion requires same definition" $itemEconomyText "StringComparison.Ordinal")
     [void](Assert-TextContains "Duplicate conversion preserves stronger depth" $itemEconomyText "ownedItem.Level < candidate.Level")
     [void](Assert-TextContains "Duplicate conversion preserves stronger power" $itemEconomyText "ownedItem.RolledPower < candidate.RolledPower")
+    [void](Assert-TextContains "Rare affix pool exposes authored entries" $itemEconomyText "AuthoredRareAffixes")
+    [void](Assert-TextContains "Rare affix reroll uses authored pool" $itemEconomyText "TryRollAuthoredRareAffix")
+    [void](Assert-TextContains "Rare affix reroll avoids current ids" $itemEconomyText "CollectRareAffixCandidates(item.Slot, item.AffixRolls, true)")
+    [void](Assert-TextContains "Rare affix text uses display names" $itemEconomyText "FormatAffixRoll")
     [void](Assert-TextContains "Salvage service converts unstored reward" $itemSalvageText "public bool TryConvertReward")
     [void](Assert-TextContains "Loot dropper evaluates duplicate conversion" $lootDropperText "TryAutoConvertInferiorDuplicate")
     [void](Assert-TextContains "Loot dropper reports converted reward" $lootDropperText "RewardConverted?.Invoke")
@@ -598,7 +604,9 @@ if (Test-Path -LiteralPath $planPath) {
         "E0-A | P0 | RTS-readable automatic defense battlefield | Done / E0-A3 accepted",
         "E0-B | P0 | Defense camera and reference composition pass | Done / User accepted camera composition",
         "Current product queue",
-        "E1-A | P0 | Formula-driven dungeon contract choice | In progress / Scene-wired, Play Mode validation pending",
+        "E1-A | P0 | Formula-driven dungeon contract choice | Done / User accepted Play Mode validation",
+        "E1-B | P0 | Authored Rare affix pool | Done / User accepted Play Mode validation",
+        "E1-C | P1 | Reusable dungeon encounter variety | Pending",
         "RTS-readable automatic defense",
         "Actual NavMesh battlefield",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
@@ -631,7 +639,8 @@ if (Test-Path -LiteralPath $releaseReadinessPath) {
         "What Counts As Production Movement",
         "Two-Hour Repeatable Slice",
         "Ten-Hour Alpha Loop",
-        "E1-A | In progress / P0",
+        "E1-A | Done / P0",
+        "E1-B | Done / P0",
         "900+ hour target is a long-horizon design constraint",
         "A green harness means safe structure, not a completed product gate"
     )
@@ -669,6 +678,11 @@ if (Test-Path -LiteralPath $depthBalanceExportPath) {
 $dungeonContractExportPath = Join-ProjectPath "Tools\Automation\Export-DungeonContracts.ps1"
 if (Test-Path -LiteralPath $dungeonContractExportPath) {
     Invoke-CheckedCommand "Dungeon contract export" { powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Automation\Export-DungeonContracts.ps1 -CheckOnly }
+}
+
+$rareAffixExportPath = Join-ProjectPath "Tools\Automation\Export-RareAffixes.ps1"
+if (Test-Path -LiteralPath $rareAffixExportPath) {
+    Invoke-CheckedCommand "Rare affix export" { powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Automation\Export-RareAffixes.ps1 -CheckOnly }
 }
 
 $groundBalanceExportPath = Join-ProjectPath "Tools\Automation\Export-GroundDefenseBalance.ps1"

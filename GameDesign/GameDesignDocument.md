@@ -42,17 +42,15 @@ The release-gate source of truth is `ProductionDocs/13_ReleaseReadinessAndProduc
 ## Current accepted baseline
 
 - Ground defense has an accepted actual NavMesh battlefield with readable faction/attack ownership, wall damage, reinforcement, formula-driven density, and accepted camera composition.
-- Dungeon depth progression, depth threat/reward bands, E1-A contract core, normal-player contract buttons, defense save/load visual rebuild, item registry/migration, duplicate conversion, save/load, reward overlays, salvage, and the prototype crafting path exist.
-- The next product gap is Play Mode validation that proves the transparent contract choice creates different repeatable run decisions.
+- Dungeon depth progression, depth threat/reward bands, E1-A contract choice, normal-player contract buttons, defense save/load visual rebuild, item registry/migration, duplicate conversion, save/load, reward overlays, salvage, and the accepted authored Rare affix pool exist.
+- The next product gap is reusable dungeon encounter variety so repeated runs do not feel like the same room feeding improved item text.
 
 Accepted baselines reopen only for regressions or explicit contract changes. They are not default polishing work.
 
 ## Current production priorities
 
-1. `E1-A`: finish formula-driven pre-run dungeon contracts by validating choice -> run -> reward -> save/load in Play Mode.
-2. `E1-B`: authored affix pool replacing the prototype Rare reroll.
-3. `E1-C`: reusable elite/boss encounter rules.
-4. `E2-A`: first-session onboarding, settings, and recovery once the decision loop is real.
+1. `E1-C`: reusable elite/boss encounter rules.
+2. `E2-A`: first-session onboarding, settings, and recovery once the item/contract/encounter decision loop is real.
 
 ## Design rules
 

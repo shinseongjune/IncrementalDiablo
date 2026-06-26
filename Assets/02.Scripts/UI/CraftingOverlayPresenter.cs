@@ -161,7 +161,7 @@ public class CraftingOverlayPresenter : MonoBehaviour
             return;
         }
 
-        if (!item.TryApplyPrototypeAffixReroll(out ItemAffixRoll affixRoll))
+        if (!item.TryApplyAuthoredAffixReroll(out ItemAffixRoll affixRoll))
         {
             wallet.Add(cost);
             SetMessage("Reroll failed before changing the item.");
@@ -774,8 +774,7 @@ public class CraftingOverlayPresenter : MonoBehaviour
             return "empty affix";
         }
 
-        StatMod modifier = affixRoll.Modifier;
-        return $"{affixRoll.AffixId}: {modifier.StatId} {modifier.Type} {modifier.Value:0.#}";
+        return ItemEconomyModel.FormatAffixRoll(affixRoll);
     }
 
     private static string FormatAffixSummary(ItemAffixRoll[] affixes)

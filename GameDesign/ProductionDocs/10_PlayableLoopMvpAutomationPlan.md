@@ -20,20 +20,20 @@ The ground layer is **RTS-readable automatic defense**. It is not an RTS control
 | Phase D progression foundation | Done | D0-A depth progression, D0-B depth bands, D0-C registry/migration, D0-D duplicate conversion, and D1-A ground scaling are complete. |
 | E0-A automatic defense battlefield | Done / E0-A3 accepted | Actual NavMesh battlefield, readable actor ownership, formula-driven density, and wall-damage authority are accepted. |
 | E0-B defense composition | Done / User accepted camera composition | The accepted far-side enemy to lower protected wall composition is regression-only. |
-| Phase E - Early Access Readiness Slice | In progress | Build the two-hour repeatable dungeon decision loop. |
+| Phase E - Early Access Readiness Slice | In progress | Build the two-hour repeatable dungeon decision loop and retire alpha-blocking item prototypes. |
 
 **Current phase | Phase E - Early Access Readiness Slice**
 
-**Last meaningful movement:** E1-A dungeon contract UI is scene-wired, and a save/load regression was patched so loading defense state rebuilds the live NavMesh battlefield and prevents visual units from attacking while the restored defense state is not running.
+**Last meaningful movement:** E1-B was accepted from the focused Play Mode path. The authored Rare affix pool now replaces the prototype reroll output with slot rules, weights, readable affix names, non-repeat reroll selection when alternatives exist, deterministic `RareAffixPool.csv` export, and normal reward -> equip -> reroll -> save/load evidence.
 
-**Next unlock:** `E1-A | P0 | Formula-driven dungeon contract choice | In progress / Focused Play Mode validation`.
+**Next unlock:** `E1-C | P1 | Reusable dungeon encounter variety | Pending`.
 
 ## Current product queue
 
 | ID | Priority | Task | Status | Completion evidence |
 | --- | --- | --- | --- | --- |
-| E1-A | P0 | Formula-driven dungeon contract choice | In progress / Scene-wired, Play Mode validation pending | Before an expedition, offer two generated choices from a starter set of three. Each states threat and reward-depth effects, applies to that run, survives save/load, and resolves in HUD/result text. | Done structurally: deterministic contract export, save schema v4, active contract state, threat multiplier, reward-depth offset, normal-player contract buttons in `Gameplay`, and defense save/load visual rebuild. Remaining: run choice -> run -> reward -> save/load Play Mode path. |
-| E1-B | P0 | Authored Rare affix pool | Pending | Replace prototype reroll output with data-backed tags, weights, slot rules, and clear stat text. | Affix export; migration; reward -> equip/reroll/salvage verification. |
+| E1-A | P0 | Formula-driven dungeon contract choice | Done / User accepted Play Mode validation | Before an expedition, offer two generated choices from a starter set of three. Each states threat and reward-depth effects, applies to that run, survives save/load, and resolves in HUD/result text. | User accepted the focused `Gameplay` Play Mode path on 2026-06-25: contract A/B/refresh -> start -> clear/fail -> reward -> save/load, including the defense restore check. Reopen only for contract/save/reward regressions. |
+| E1-B | P0 | Authored Rare affix pool | Done / User accepted Play Mode validation | Replace prototype reroll output with data-backed tags, weights, slot rules, and clear stat text. | User accepted the focused `Gameplay` Play Mode path on 2026-06-26: reward -> equip -> reroll -> save/load. Six authored Rare affixes in `ItemEconomyModel.AuthoredRareAffixes`, slot-specific weighted reroll, current-affix avoidance when alternatives exist, readable crafting text, and `GameDesign/Balance/RareAffixPool.csv` are complete. |
 | E1-C | P1 | Reusable dungeon encounter variety | Pending | Add one elite rule and one boss/encounter rule without hand-authored room ladders. | Data contract; run-state/save behavior; failure/reward evidence. |
 | E2-A | P1 | Onboarding, settings, recovery | Pending | Teach the first-session loop after E1-A makes a real decision. | Fresh-save walkthrough, settings persistence, and recovery QA. |
 
@@ -74,12 +74,12 @@ Use `12_PrototypeDebtRegister.md` and `Tools/Automation/Get-PrototypeDebtInvento
 | Loop link | Current state | Next gap |
 | --- | --- | --- |
 | Automatic defense -> base resources | Working and accepted | Future defense rewards need meaningful strategy, not more visual polish. |
-| Dungeon entry -> direct combat | Working with E1-A contract UI | Validate the pre-run contract decision path in Play Mode. |
-| Dungeon reward -> inventory/equipment/salvage | Working | E1-B needs authored affix identity. |
-| Crafting -> material sink | Prototype only | Replace reroll with the E1-B affix pool. |
-| Save/load -> progression recovery | Working for depth/items/defense; E1-A contract fields are schema v4 | Validate active contract and restored defense state through save/load in Play Mode. |
+| Dungeon entry -> direct combat | Working and accepted with E1-A contract UI | Future changes should add encounter/affix value, not repeat contract-button acceptance. |
+| Dungeon reward -> inventory/equipment/salvage | Working and accepted with authored affix output | E1-C needs encounter variety so repeated runs do not feel like the same room feeding better item text. |
+| Crafting -> material sink | Authored affix reroll accepted | Future crafting work should add affix locking/upgrades only after encounter variety exists. |
+| Save/load -> progression recovery | Working for depth/items/defense/contracts/affixes | Keep regression checks, but do not repeat E1-B acceptance without a new save or item mutation bug. |
 
-Known blockers: no source-code blocker. E1-A now needs focused `Gameplay` Play Mode validation of contract A/B/refresh -> start -> clear/fail -> reward -> save/load, plus the defense restore check in `06_UnitySceneAndPrefabSetupGuide.md`. The optional automation prompt update still needs user approval before the TOML freshness warnings can disappear.
+Known blockers: no source-code blocker. E1-C now needs a reusable elite/boss encounter rule that changes a normal dungeon run without hand-authored room ladders. The optional automation prompt update still needs user approval before the TOML freshness warnings can disappear.
 
 ## Verification and documentation
 

@@ -4,9 +4,20 @@
 
 - The current 78/20/2 Normal/Magic/Rare per-clear table is a baseline, not a release-balanced economy. Any reward-count, rarity, or contract-reward change must declare its denominator and export Unity rows before D2 comparison.
 - D2 reference collection is complete enough; the missing production work is Unity-side drop-balance export and validation, not more reference gathering.
-- The duplicate conversion sink prevents dead drops, but it does not create build identity. The prototype Rare reroll (`TD-04`) remains an alpha blocker until a small authored affix pool with tags, weights, and migration rules replaces it.
+- The duplicate conversion sink prevents dead drops, but it does not create build identity by itself. E1-B replaced the prototype Rare reroll (`TD-04`) with an authored affix pool and user-accepted reward -> equip -> reroll -> save/load evidence. The next item gap is not another reroll acceptance pass; it is deeper build identity after encounter variety exists.
 - E1-A contract rewards must use the same item/salvage path and export denominator; they must not silently alter rarity odds or bypass duplicate conversion.
 - 2026-06-25 E1-A contract reward rule: risk contracts use a reward-depth offset for the existing one guaranteed per-clear item reward. They do not change reward count, the 78/20/2 rarity table, authored weighted-table selection, duplicate conversion, salvage service, or the D2 per-kill comparison denominator.
+
+## 2026-06-26 E1-B Authored Rare Affix Pool
+
+- Rare reroll now calls `ItemInstance.TryApplyAuthoredAffixReroll(...)`, which rolls from `ItemEconomyModel.AuthoredRareAffixes` instead of hard-coded prototype candidates.
+- The first authored pool has six entries: two each for Weapon, Armor, and Ring. Each entry has a stable id, display name, slot rule, stat, modifier type, base value, item-level scaling, rolled-power scaling, weight, and tags.
+- Reroll keeps the existing denominator and sink: one paid Rare affix reroll through `Gold + Essence + AlterStone`. It does not change reward count, rarity odds, salvage yield, duplicate conversion, or the E1-A contract reward-depth rule.
+- When another valid affix exists for the slot, reroll excludes the selected item's current affix id from the candidate set. This keeps a paid reroll from visibly repeating the same affix unless the slot has no alternative.
+- Crafting text uses authored affix display names and clear stat text through `ItemEconomyModel.FormatAffixRoll(...)`.
+- Save schema does not change. `ItemAffixRoll.affixId` and `modifier` already persist; existing older affix ids stay loaded as legacy ids and are replaced the next time the player pays for a reroll.
+- `Tools/Automation/Export-RareAffixes.ps1` exports and checks `GameDesign/Balance/RareAffixPool.csv` with the denominator `per-paid Rare affix reroll`.
+- Production evidence accepted 2026-06-26: in `Gameplay`, reward -> equip -> reroll -> save/load kept the authored affix id/text coherent. Reopen E1-B only for affix id, stat refresh, save/load, or crafting-cost regressions.
 
 ## 2026-06-10 Phase D Duplicate Conversion
 
@@ -239,7 +250,7 @@ Gold
 
 MVP에서는 플레이어가 변형할 옵션을 직접 고르는 기능은 보류해도 된다. 처음에는 마지막 옵션 1개 재굴림으로 충분하다.
 
-현재 코드에서는 `ItemDefinition.CanRerollAffix`와 `ItemDefinition.AffixRerollCost`로 Rare 장비의 변형 가능 여부와 비용을 계산한다. 비용은 `Gold + Essence + AlterStone`이고 `baseTier`에 따라 증가한다. `CraftingOverlayPresenter`는 이 비용을 실제로 소비한 뒤 선택된 Rare `ItemInstance`의 saved `ItemAffixRoll` 1개를 프로토타입 stat affix로 교체한다. 이 규칙은 첫 material sink이며, 최종 affix pool/lock/upgrade crafting은 아직 별도 작업이다.
+현재 코드에서는 `ItemDefinition.CanRerollAffix`와 `ItemDefinition.AffixRerollCost`로 Rare 장비의 변형 가능 여부와 비용을 계산한다. 비용은 `Gold + Essence + AlterStone`이고 `baseTier`에 따라 증가한다. `CraftingOverlayPresenter`는 이 비용을 실제로 소비한 뒤 선택된 Rare `ItemInstance`의 saved `ItemAffixRoll` 1개를 authored Rare affix로 교체한다. 이 규칙은 첫 material sink이며, affix lock/upgrade crafting은 아직 별도 작업이다.
 
 ## 8. 지상과 지하 연결 방식
 
@@ -306,12 +317,12 @@ MVP에서 하지 않는다.
 ## 14. 2026-05-30 Crafting Overlay And Rare Reroll Note
 
 - `CraftingOverlayPresenter` now exposes the first crafting overlay path for item selection, salvage preview, current affix preview, selected-item salvage, and Rare affix reroll.
-- The reroll path spends `ItemDefinition.AffixRerollCost` from `CurrencyWallet` and calls `ItemInstance.TryApplyPrototypeAffixReroll(...)`, replacing the item's saved affix roll with one prototype stat modifier.
+- The reroll path spends `ItemDefinition.AffixRerollCost` from `CurrencyWallet` and calls `ItemInstance.TryApplyAuthoredAffixReroll(...)`, replacing the item's saved affix roll with one authored stat modifier.
 - `SimpleInventory.NotifyItemsChanged()` and `EquipmentSlots.RefreshEquippedModifiers()` keep UI and equipped-stat subscribers current after the live item mutation.
 - This uses the existing D2-inspired resource idea of turning rare/duplicate gear into reroll pressure, but it is not a D2 cube clone. It is a small single-player sink for the current guaranteed per-clear reward loop.
-- Remaining economy gaps: duplicate/low-value conversion, authored affix pools, affix tags/weights, affix locking, item-level upgrades, drop-balance export/import, and Play Mode tuning of whether early Rare reroll costs are too expensive or too cheap.
+- Remaining economy gaps: Play Mode validation of the authored affix pool, affix locking, item-level upgrades, drop-balance export/import, and tuning whether early Rare reroll costs are too expensive or too cheap.
 - 2026-06-01 validation feedback update: the crafting overlay now records the last successful reroll for the selected item as spent materials plus previous affix state and new affix. This changes only player-facing verification feedback, not reroll cost, salvage return, rarity pacing, or affix generation rules.
-- 2026-06-02 validation reliability update: the current prototype reroll now avoids repeating the selected item's saved affix when another slot-valid prototype candidate exists. This is not a final affix-pool or weighting rule; it prevents the first material-spend check from looking unchanged after a paid reroll.
+- 2026-06-02 validation reliability update: the pre-E1-B prototype reroll avoided repeating the selected item's saved affix when another slot-valid prototype candidate existed. The 2026-06-26 E1-B pool replaces that rule with authored affix ids, weights, and export validation.
 
 ## 16. 2026-06-09 Production Item Registry And Save Migration
 

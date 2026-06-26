@@ -14,7 +14,7 @@
 - Contract reward uses a reward-depth offset and still calls the existing `LootDropper.TryGrantClearReward(depth)` path. This keeps the denominator as one guaranteed per-clear item reward and preserves authored tables, duplicate conversion, salvage, and item save behavior.
 - `DungeonLoopSmokeTest` now selects a non-default contract before starting its clear path and blocks if the run starts without an active contract.
 - `Gameplay` now wires normal-player contract A, contract B, and refresh buttons into `PlayableLoopHud`; the harness checks these scene references.
-- Remaining production evidence: validate choice A/B/refresh -> start run -> clear/fail -> reward -> save/load in Play Mode.
+- Production evidence accepted 2026-06-25: choice A/B/refresh -> start run -> clear/fail -> reward -> save/load in Play Mode, including restored defense state. Reopen E1-A only for contract/save/reward regressions.
 
 ## 2026-06-06 Phase D Direction
 

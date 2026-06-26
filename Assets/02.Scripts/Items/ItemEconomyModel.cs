@@ -7,6 +7,78 @@ public static class ItemEconomyModel
     private const float RerollGoldBaseCost = 50f;
     private const float RerollGoldGrowth = 1.35f;
 
+    private static readonly ItemAffixProfile[] RareAffixes =
+    {
+        new ItemAffixProfile(
+            "rare_wounding_edge",
+            "Wounding Edge",
+            ItemSlot.Weapon,
+            StatId.AttackDamage,
+            StatMod.StatModType.Flat,
+            2f,
+            0.8f,
+            0.5f,
+            120,
+            "weapon|offense|flat"),
+        new ItemAffixProfile(
+            "rare_quickened_edge",
+            "Quickened Edge",
+            ItemSlot.Weapon,
+            StatId.AttackSpeed,
+            StatMod.StatModType.PercentAdd,
+            3f,
+            0.25f,
+            0.2f,
+            85,
+            "weapon|offense|speed"),
+        new ItemAffixProfile(
+            "rare_vital_plating",
+            "Vital Plating",
+            ItemSlot.Armor,
+            StatId.MaxHealth,
+            StatMod.StatModType.Flat,
+            8f,
+            3.5f,
+            2f,
+            120,
+            "armor|survival|flat"),
+        new ItemAffixProfile(
+            "rare_runner_plate",
+            "Runner Plate",
+            ItemSlot.Armor,
+            StatId.MoveSpeed,
+            StatMod.StatModType.PercentAdd,
+            2f,
+            0.2f,
+            0.15f,
+            70,
+            "armor|mobility|speed"),
+        new ItemAffixProfile(
+            "rare_swift_band",
+            "Swift Band",
+            ItemSlot.Ring,
+            StatId.AttackSpeed,
+            StatMod.StatModType.PercentAdd,
+            4f,
+            0.35f,
+            0.25f,
+            100,
+            "ring|offense|speed"),
+        new ItemAffixProfile(
+            "rare_runner_band",
+            "Runner Band",
+            ItemSlot.Ring,
+            StatId.MoveSpeed,
+            StatMod.StatModType.PercentAdd,
+            3f,
+            0.3f,
+            0.2f,
+            90,
+            "ring|mobility|speed")
+    };
+
+    public static IReadOnlyList<ItemAffixProfile> AuthoredRareAffixes => RareAffixes;
+
     public static bool TryFindAutoConversionMatch(
         ItemInstance candidate,
         IReadOnlyList<ItemInstance> ownedItems,
@@ -126,6 +198,153 @@ public static class ItemEconomyModel
         };
     }
 
+    public static bool TryRollAuthoredRareAffix(ItemInstance item, out ItemAffixRoll affixRoll)
+    {
+        affixRoll = null;
+        if (item == null || item.Rarity != ItemRarity.Rare)
+        {
+            return false;
+        }
+
+        List<ItemAffixProfile> candidates = CollectRareAffixCandidates(item.Slot, item.AffixRolls, true);
+        if (candidates.Count == 0)
+        {
+            candidates = CollectRareAffixCandidates(item.Slot, item.AffixRolls, false);
+        }
+
+        if (candidates.Count == 0)
+        {
+            return false;
+        }
+
+        ItemAffixProfile profile = PickWeightedAffix(candidates);
+        affixRoll = profile?.CreateRoll(item.Level, item.RolledPower);
+        return affixRoll != null;
+    }
+
+    public static bool TryGetAffixProfile(string affixId, out ItemAffixProfile profile)
+    {
+        profile = null;
+        if (string.IsNullOrWhiteSpace(affixId))
+        {
+            return false;
+        }
+
+        for (int i = 0; i < RareAffixes.Length; i++)
+        {
+            ItemAffixProfile candidate = RareAffixes[i];
+            if (candidate != null && string.Equals(candidate.Id, affixId, StringComparison.Ordinal))
+            {
+                profile = candidate;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static string FormatAffixRoll(ItemAffixRoll affixRoll)
+    {
+        if (affixRoll == null || affixRoll.Modifier == null)
+        {
+            return "empty affix";
+        }
+
+        string modifierText = FormatModifier(affixRoll.Modifier);
+        if (TryGetAffixProfile(affixRoll.AffixId, out ItemAffixProfile profile))
+        {
+            return $"{profile.DisplayName}: {modifierText}";
+        }
+
+        return $"{affixRoll.AffixId}: {modifierText}";
+    }
+
+    private static List<ItemAffixProfile> CollectRareAffixCandidates(
+        ItemSlot slot,
+        ItemAffixRoll[] currentRolls,
+        bool avoidCurrentAffixIds)
+    {
+        List<ItemAffixProfile> candidates = new List<ItemAffixProfile>(RareAffixes.Length);
+        for (int i = 0; i < RareAffixes.Length; i++)
+        {
+            ItemAffixProfile profile = RareAffixes[i];
+            if (profile == null || !profile.AppliesTo(slot))
+            {
+                continue;
+            }
+
+            if (avoidCurrentAffixIds && HasAffixId(currentRolls, profile.Id))
+            {
+                continue;
+            }
+
+            candidates.Add(profile);
+        }
+
+        return candidates;
+    }
+
+    private static ItemAffixProfile PickWeightedAffix(IReadOnlyList<ItemAffixProfile> candidates)
+    {
+        int totalWeight = 0;
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            totalWeight += Mathf.Max(1, candidates[i].Weight);
+        }
+
+        int roll = UnityEngine.Random.Range(0, totalWeight);
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            ItemAffixProfile candidate = candidates[i];
+            roll -= Mathf.Max(1, candidate.Weight);
+            if (roll < 0)
+            {
+                return candidate;
+            }
+        }
+
+        return candidates[candidates.Count - 1];
+    }
+
+    private static bool HasAffixId(ItemAffixRoll[] rolls, string affixId)
+    {
+        if (rolls == null || string.IsNullOrWhiteSpace(affixId))
+        {
+            return false;
+        }
+
+        for (int i = 0; i < rolls.Length; i++)
+        {
+            if (rolls[i] != null && string.Equals(rolls[i].AffixId, affixId, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string FormatModifier(StatMod modifier)
+    {
+        if (modifier == null)
+        {
+            return "empty modifier";
+        }
+
+        string sign = modifier.Value >= 0f ? "+" : string.Empty;
+        switch (modifier.Type)
+        {
+            case StatMod.StatModType.Flat:
+                return $"{modifier.StatId} flat {sign}{modifier.Value:0.#}";
+            case StatMod.StatModType.PercentAdd:
+                return $"{modifier.StatId} additive {sign}{modifier.Value:0.#}%";
+            case StatMod.StatModType.PercentMult:
+                return $"{modifier.StatId} multiplier {sign}{modifier.Value:0.#}%";
+            default:
+                return $"{modifier.StatId} {modifier.Type} {sign}{modifier.Value:0.#}";
+        }
+    }
+
     private static int GetSlotScrapWeight(ItemSlot slot)
     {
         switch (slot)
@@ -193,5 +412,56 @@ public static class ItemEconomyModel
         }
 
         return scaledRewards;
+    }
+}
+
+public class ItemAffixProfile
+{
+    public ItemAffixProfile(
+        string id,
+        string displayName,
+        ItemSlot slot,
+        StatId statId,
+        StatMod.StatModType modifierType,
+        float baseValue,
+        float perItemLevel,
+        float perRolledPower,
+        int weight,
+        string tags)
+    {
+        Id = string.IsNullOrWhiteSpace(id) ? "rare_affix" : id;
+        DisplayName = string.IsNullOrWhiteSpace(displayName) ? Id : displayName;
+        Slot = slot;
+        StatId = statId;
+        ModifierType = modifierType;
+        BaseValue = Mathf.Max(0f, baseValue);
+        PerItemLevel = Mathf.Max(0f, perItemLevel);
+        PerRolledPower = Mathf.Max(0f, perRolledPower);
+        Weight = Mathf.Max(1, weight);
+        Tags = string.IsNullOrWhiteSpace(tags) ? "rare" : tags;
+    }
+
+    public string Id { get; }
+    public string DisplayName { get; }
+    public ItemSlot Slot { get; }
+    public StatId StatId { get; }
+    public StatMod.StatModType ModifierType { get; }
+    public float BaseValue { get; }
+    public float PerItemLevel { get; }
+    public float PerRolledPower { get; }
+    public int Weight { get; }
+    public string Tags { get; }
+
+    public bool AppliesTo(ItemSlot slot)
+    {
+        return Slot == slot;
+    }
+
+    public ItemAffixRoll CreateRoll(int itemLevel, int rolledPower)
+    {
+        float value = BaseValue
+            + Mathf.Max(1, itemLevel) * PerItemLevel
+            + Mathf.Max(0, rolledPower) * PerRolledPower;
+        return new ItemAffixRoll(Id, new StatMod(StatId, ModifierType, Mathf.Ceil(value)));
     }
 }

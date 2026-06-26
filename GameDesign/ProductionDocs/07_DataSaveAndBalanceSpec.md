@@ -17,6 +17,18 @@
 - Reward denominator: one guaranteed per-clear item reward. Risk contracts increase reward by passing a higher reward depth into the existing clear-reward path, not by changing rarity odds or reward count.
 - `Tools/Automation/Export-DungeonContracts.ps1` reads the C# starter set, verifies the baseline plus at least one risk/reward contract, and exports `GameDesign/Balance/DungeonContractBalance.csv`.
 
+## 2026-06-26 Rare Affix Balance Export
+
+`ItemEconomyModel.AuthoredRareAffixes` is the runtime source of truth for the first E1-B Rare affix pool.
+
+- Stable ids: `rare_wounding_edge`, `rare_quickened_edge`, `rare_vital_plating`, `rare_runner_plate`, `rare_swift_band`, `rare_runner_band`.
+- Coverage: two authored affixes each for Weapon, Armor, and Ring.
+- Reroll denominator: `per-paid Rare affix reroll`. The pool does not change dungeon reward count, rarity odds, duplicate conversion, salvage yield, or contract reward-depth offsets.
+- Roll formula: `ceil(base_value + item_level * per_item_level + rolled_power * per_rolled_power)`.
+- Weighting: slot-valid candidates are weighted by each profile's `weight`; the selected item's current affix id is excluded when the slot has another candidate.
+- Save behavior: no schema change. `ItemAffixRoll.affixId` plus `modifier` already persist in `ItemInstanceSaveData`; older saved ids remain readable as legacy ids until the next paid reroll replaces them.
+- `Tools/Automation/Export-RareAffixes.ps1` reads the C# pool, verifies unique ids, positive weights, per-slot coverage, slot tags, and exports `GameDesign/Balance/RareAffixPool.csv`.
+
 ## 2026-06-11 Ground Defense Balance Model
 
 `GroundDefenseBalanceModel` is the runtime source of truth for D1-A. It uses ten-level bands instead of authored wave rows.
