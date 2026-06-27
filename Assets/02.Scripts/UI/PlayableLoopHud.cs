@@ -132,8 +132,8 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         SetMessage(combatRoom == null
-            ? $"Depth {expedition.Depth} started with {expedition.ActiveContract.DisplayName}, but no CombatRoom is linked. Room progress cannot advance yet."
-            : $"Depth {expedition.Depth} started with {expedition.ActiveContract.DisplayName}. Room progress is shown in the Dungeon line.");
+            ? $"Depth {expedition.Depth} started with {expedition.ActiveContract.DisplayName} / {expedition.ActiveEncounter.DisplayName}, but no CombatRoom is linked. Room progress cannot advance yet."
+            : $"Depth {expedition.Depth} started with {expedition.ActiveContract.DisplayName} / {expedition.ActiveEncounter.DisplayName}. Room progress is shown in the Dungeon line.");
     }
 
     public void SelectPreviousDungeonDepth()
@@ -166,7 +166,7 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         SetMessage(expedition.RefreshContractOffer()
-            ? $"Contract offer refreshed. Selected {expedition.SelectedContract.DisplayName}."
+            ? $"Contract offer refreshed. Selected {expedition.SelectedContract.DisplayName}; next encounter {expedition.SelectedEncounter.DisplayName}."
             : "Contract offer cannot refresh while an expedition is running.");
     }
 
@@ -453,7 +453,8 @@ public class PlayableLoopHud : MonoBehaviour
             $"Band {balance.BandNumber} / Threat HP x{balance.EnemyHealthMultiplier:0.##} DMG x{balance.EnemyDamageMultiplier:0.##} / " +
             $"Reward x{balance.RewardPowerMultiplier:0.##} Materials x{balance.MaterialYieldMultiplier:0.##}";
         string contractText = BuildDungeonContractText();
-        string dungeonTextValue = $"Dungeon: {expedition.State} / Depth {expedition.Depth} / Selected {expedition.SelectedDepth}/{expedition.HighestUnlockedDepth} unlocked\n{balanceText}\n{contractText}\nRoom {expedition.RoomsCompleted}/{expedition.TotalRooms} / {expedition.ElapsedSeconds:0.0}s / {rewardState} / Loot {BuildLootSourceText()}\nLast: {result}";
+        string encounterText = BuildDungeonEncounterText();
+        string dungeonTextValue = $"Dungeon: {expedition.State} / Depth {expedition.Depth} / Selected {expedition.SelectedDepth}/{expedition.HighestUnlockedDepth} unlocked\n{balanceText}\n{contractText}\n{encounterText}\nRoom {expedition.RoomsCompleted}/{expedition.TotalRooms} / {expedition.ElapsedSeconds:0.0}s / {rewardState} / Loot {BuildLootSourceText()}\nLast: {result}";
 
         if (combatRoom == null)
         {
@@ -482,6 +483,21 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         return $"Contracts: {DungeonContractModel.FormatOfferText(expedition.OfferedContractIdA, expedition.OfferedContractIdB)}\nSelected: {DungeonContractModel.FormatShortText(expedition.SelectedContract)}";
+    }
+
+    private string BuildDungeonEncounterText()
+    {
+        if (expedition == null)
+        {
+            return "Encounter: unavailable";
+        }
+
+        if (expedition.IsRunning || expedition.RewardPending)
+        {
+            return $"Encounter active: {DungeonEncounterModel.FormatShortText(expedition.ActiveEncounter)} / Reward depth {expedition.ActiveRewardDepth}";
+        }
+
+        return $"Next encounter: {DungeonEncounterModel.FormatShortText(expedition.SelectedEncounter)} / Seed {expedition.EncounterSeed}";
     }
 
     private string BuildRewardStateText()
@@ -843,7 +859,7 @@ public class PlayableLoopHud : MonoBehaviour
             ? expedition.SelectNextDepth()
             : expedition.SelectPreviousDepth();
         SetMessage(changed
-            ? $"Selected dungeon Depth {expedition.SelectedDepth} of {expedition.HighestUnlockedDepth} unlocked. Contract offer refreshed."
+            ? $"Selected dungeon Depth {expedition.SelectedDepth} of {expedition.HighestUnlockedDepth} unlocked. Contract offer and next encounter refreshed."
             : expedition.IsRunning
                 ? "Dungeon depth cannot change while an expedition is running."
                 : $"Dungeon depth stays at {expedition.SelectedDepth}; unlocked range is 1-{expedition.HighestUnlockedDepth}.");
@@ -862,7 +878,7 @@ public class PlayableLoopHud : MonoBehaviour
             ? expedition.SelectFirstContract()
             : expedition.SelectSecondContract();
         SetMessage(changed
-            ? $"Selected contract: {expedition.SelectedContract.DisplayName}."
+            ? $"Selected contract: {expedition.SelectedContract.DisplayName}. Next encounter: {expedition.SelectedEncounter.DisplayName}."
             : expedition.IsRunning
                 ? "Dungeon contract cannot change while an expedition is running."
                 : "Dungeon contract selection failed; refresh the offer.");

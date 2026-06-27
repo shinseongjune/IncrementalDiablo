@@ -1,0 +1,4 @@
+"encounter_id","display_name","kind","denominator","enemy_health_multiplier","enemy_damage_multiplier","reward_depth_offset","generated_rule_source","description"
+"crypt_skirmish","Crypt Skirmish","Normal","per dungeon run spawned encounter","1","1","0","DungeonEncounterModel.BuildEncounter(selectedDepth, encounterSeed, selectedContractId)","A standard room using the current depth and contract threat."
+"elite_guard","Elite Guard","Elite","per dungeon run spawned encounter","1.28","1.12","1","DungeonEncounterModel.BuildEncounter(selectedDepth, encounterSeed, selectedContractId)","A reinforced elite pushes the same room with higher durability and damage."
+"tomb_warden","Tomb Warden","Boss","per dungeon run spawned encounter","1.65","1.22","2","DungeonEncounterModel.BuildEncounter(selectedDepth, encounterSeed, selectedContractId)","A boss-style encounter with a larger threat spike and stronger item roll."

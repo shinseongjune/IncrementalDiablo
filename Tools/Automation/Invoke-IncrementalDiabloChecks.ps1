@@ -251,6 +251,7 @@ $requiredPaths = @(
     @{ Name = "Enemy spawner script"; Path = "Assets\02.Scripts\Dungeon\EnemySpawner.cs" },
     @{ Name = "Dungeon depth balance model"; Path = "Assets\02.Scripts\Dungeon\DungeonDepthBalanceModel.cs" },
     @{ Name = "Dungeon contract model"; Path = "Assets\02.Scripts\Dungeon\DungeonContractModel.cs" },
+    @{ Name = "Dungeon encounter model"; Path = "Assets\02.Scripts\Dungeon\DungeonEncounterModel.cs" },
     @{ Name = "Expedition director script"; Path = "Assets\02.Scripts\Dungeon\ExpeditionDirector.cs" },
     @{ Name = "Save data script"; Path = "Assets\02.Scripts\Shared\GameSaveData.cs" },
     @{ Name = "Save diagnostics script"; Path = "Assets\02.Scripts\Shared\GameSaveDataDiagnostics.cs" },
@@ -280,6 +281,8 @@ $requiredPaths = @(
     @{ Name = "Dungeon depth balance CSV"; Path = "GameDesign\Balance\DungeonDepthBalance.csv" },
     @{ Name = "Dungeon contract export"; Path = "Tools\Automation\Export-DungeonContracts.ps1" },
     @{ Name = "Dungeon contract balance CSV"; Path = "GameDesign\Balance\DungeonContractBalance.csv" },
+    @{ Name = "Dungeon encounter export"; Path = "Tools\Automation\Export-DungeonEncounters.ps1" },
+    @{ Name = "Dungeon encounter balance CSV"; Path = "GameDesign\Balance\DungeonEncounterBalance.csv" },
     @{ Name = "Rare affix export"; Path = "Tools\Automation\Export-RareAffixes.ps1" },
     @{ Name = "Rare affix pool CSV"; Path = "GameDesign\Balance\RareAffixPool.csv" },
     @{ Name = "Ground defense balance export"; Path = "Tools\Automation\Export-GroundDefenseBalance.ps1" },
@@ -295,6 +298,7 @@ $enemyPrefabPath = Join-ProjectPath "Assets\04.Prefabs\Dungeon\PF_DungeonEnemy_M
 $enemySpawnerPath = Join-ProjectPath "Assets\02.Scripts\Dungeon\EnemySpawner.cs"
 $depthBalanceModelPath = Join-ProjectPath "Assets\02.Scripts\Dungeon\DungeonDepthBalanceModel.cs"
 $dungeonContractModelPath = Join-ProjectPath "Assets\02.Scripts\Dungeon\DungeonContractModel.cs"
+$dungeonEncounterModelPath = Join-ProjectPath "Assets\02.Scripts\Dungeon\DungeonEncounterModel.cs"
 $expeditionDirectorPath = Join-ProjectPath "Assets\02.Scripts\Dungeon\ExpeditionDirector.cs"
 $saveDataPath = Join-ProjectPath "Assets\02.Scripts\Shared\GameSaveData.cs"
 $saveDiagnosticsPath = Join-ProjectPath "Assets\02.Scripts\Shared\GameSaveDataDiagnostics.cs"
@@ -415,24 +419,31 @@ if ((Test-Path -LiteralPath $expeditionDirectorPath) -and
     [void](Assert-TextContains "Expedition exposes contract selection" $expeditionDirectorText "public bool SelectFirstContract()")
     [void](Assert-TextContains "Expedition applies contract balance" $expeditionDirectorText "GetEffectiveDepthBalance")
     [void](Assert-TextContains "Expedition grants contract reward depth" $expeditionDirectorText "lootDropper.TryGrantClearReward(ActiveRewardDepth")
+    [void](Assert-TextContains "Expedition exposes selected encounter" $expeditionDirectorText "public DungeonEncounterProfile SelectedEncounter")
+    [void](Assert-TextContains "Expedition stores active encounter" $expeditionDirectorText "runtime.activeEncounterId = encounter.Id;")
     [void](Assert-TextContains "Expedition starts selected depth" $expeditionDirectorText "runtime.depth = SelectedDepth;")
     [void](Assert-TextContains "Expedition unlocks after clear" $expeditionDirectorText "int unlockedDepth = TryUnlockNextDepth();")
     [void](Assert-TextContains "Dungeon save stores selected depth" $saveDataText "public int selectedDepth = 1;")
     [void](Assert-TextContains "Dungeon save stores highest unlocked depth" $saveDataText "public int highestUnlockedDepth = 1;")
     [void](Assert-TextContains "Dungeon save stores selected contract" $saveDataText "public string selectedContractId")
     [void](Assert-TextContains "Dungeon save stores active contract" $saveDataText "public string activeContractId")
-    [void](Assert-TextContains "Save manager writes schema v4" $saveManagerText "private const int CurrentSaveVersion = 4;")
+    [void](Assert-TextContains "Dungeon save stores selected encounter" $saveDataText "public string selectedEncounterId")
+    [void](Assert-TextContains "Dungeon save stores active encounter" $saveDataText "public string activeEncounterId")
+    [void](Assert-TextContains "Save manager writes schema v5" $saveManagerText "private const int CurrentSaveVersion = 5;")
     [void](Assert-TextContains "Save manager migrates legacy dungeon depth" $saveManagerText "MigrateSaveData(saveData);")
     [void](Assert-TextContains "Save manager migrates dungeon contracts" $saveManagerText "MigrateDungeonContractSaveData")
+    [void](Assert-TextContains "Save manager migrates dungeon encounters" $saveManagerText "MigrateDungeonEncounterSaveData")
     [void](Assert-TextContains "Save manager runs item id migration" $saveManagerText "MigrateInventorySaveData")
     [void](Assert-TextContains "Save manager resets autosave after manual save" $saveManagerText "autoSaveElapsed = 0f;")
     [void](Assert-TextContains "Save manager reports defense restore" $saveManagerText "BuildDefenseLoadSummary")
     [void](Assert-TextContains "Save diagnostics use item registry" $saveDiagnosticsText "ItemDefinitionRegistry definitionRegistry")
     [void](Assert-TextContains "Save diagnostics validate selected depth" $saveDiagnosticsText "dungeon selectedDepth must be within the unlocked depth range")
     [void](Assert-TextContains "Save diagnostics validate selected contract" $saveDiagnosticsText "dungeon selectedContractId must be one of the offered contract ids")
+    [void](Assert-TextContains "Save diagnostics validate active encounter" $saveDiagnosticsText "dungeon activeEncounterId is required for active or reward-pending encounter resolution")
     [void](Assert-TextContains "Playable HUD exposes previous depth action" $playableHudText "public void SelectPreviousDungeonDepth()")
     [void](Assert-TextContains "Playable HUD exposes next depth action" $playableHudText "public void SelectNextDungeonDepth()")
     [void](Assert-TextContains "Playable HUD exposes contract actions" $playableHudText "public void SelectFirstDungeonContract()")
+    [void](Assert-TextContains "Playable HUD exposes encounter text" $playableHudText "BuildDungeonEncounterText")
 }
 
 if ((Test-Path -LiteralPath $itemRegistryPath) -and
@@ -502,6 +513,7 @@ if (Test-Path -LiteralPath $enemySpawnerPath) {
     [void](Assert-TextContains "Enemy spawner validates prefab contract" $enemySpawnerText "TryValidateEnemyPrefab")
     [void](Assert-TextContains "Enemy spawner validates NavMesh placement" $enemySpawnerText "NavMesh.SamplePosition")
     [void](Assert-TextContains "Enemy spawner applies depth combat scaling" $enemySpawnerText "SetRuntimeCombatMultipliers")
+    [void](Assert-TextContains "Enemy spawner reports active encounter" $enemySpawnerText "combatRoom.ActiveEncounter")
 }
 
 if (Test-Path -LiteralPath $depthBalanceModelPath) {
@@ -519,6 +531,16 @@ if (Test-Path -LiteralPath $dungeonContractModelPath) {
     [void](Assert-TextContains "Dungeon contracts generate two offers" $dungeonContractModelText "BuildOffer")
     [void](Assert-TextContains "Dungeon contracts state denominator" $dungeonContractModelText "per-clear guaranteed item reward")
     [void](Assert-TextContains "Dungeon contracts include risk reward" $dungeonContractModelText "RewardDepthOffset")
+}
+
+if (Test-Path -LiteralPath $dungeonEncounterModelPath) {
+    $dungeonEncounterModelText = Read-TextFile $dungeonEncounterModelPath
+    [void](Assert-TextContains "Dungeon encounters define default id" $dungeonEncounterModelText "DefaultEncounterId")
+    [void](Assert-TextContains "Dungeon encounters expose starter set" $dungeonEncounterModelText "StarterEncounters")
+    [void](Assert-TextContains "Dungeon encounters generate reusable rules" $dungeonEncounterModelText "BuildEncounter")
+    [void](Assert-TextContains "Dungeon encounters state denominator" $dungeonEncounterModelText "per dungeon run spawned encounter")
+    [void](Assert-TextContains "Dungeon encounters include elite rule" $dungeonEncounterModelText "IsElite")
+    [void](Assert-TextContains "Dungeon encounters include boss rule" $dungeonEncounterModelText "IsBoss")
 }
 
 if ((Test-Path -LiteralPath $groundBalanceModelPath) -and
@@ -606,7 +628,7 @@ if (Test-Path -LiteralPath $planPath) {
         "Current product queue",
         "E1-A | P0 | Formula-driven dungeon contract choice | Done / User accepted Play Mode validation",
         "E1-B | P0 | Authored Rare affix pool | Done / User accepted Play Mode validation",
-        "E1-C | P1 | Reusable dungeon encounter variety | Pending",
+        "E1-C | P1 | Reusable dungeon encounter variety | Done / User accepted Play Mode validation",
         "RTS-readable automatic defense",
         "Actual NavMesh battlefield",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
@@ -641,6 +663,7 @@ if (Test-Path -LiteralPath $releaseReadinessPath) {
         "Ten-Hour Alpha Loop",
         "E1-A | Done / P0",
         "E1-B | Done / P0",
+        "E1-C | Done / P1",
         "900+ hour target is a long-horizon design constraint",
         "A green harness means safe structure, not a completed product gate"
     )
@@ -678,6 +701,11 @@ if (Test-Path -LiteralPath $depthBalanceExportPath) {
 $dungeonContractExportPath = Join-ProjectPath "Tools\Automation\Export-DungeonContracts.ps1"
 if (Test-Path -LiteralPath $dungeonContractExportPath) {
     Invoke-CheckedCommand "Dungeon contract export" { powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Automation\Export-DungeonContracts.ps1 -CheckOnly }
+}
+
+$dungeonEncounterExportPath = Join-ProjectPath "Tools\Automation\Export-DungeonEncounters.ps1"
+if (Test-Path -LiteralPath $dungeonEncounterExportPath) {
+    Invoke-CheckedCommand "Dungeon encounter export" { powershell -NoProfile -ExecutionPolicy Bypass -File .\Tools\Automation\Export-DungeonEncounters.ps1 -CheckOnly }
 }
 
 $rareAffixExportPath = Join-ProjectPath "Tools\Automation\Export-RareAffixes.ps1"

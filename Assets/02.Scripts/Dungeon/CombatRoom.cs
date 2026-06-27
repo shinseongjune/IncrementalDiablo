@@ -54,6 +54,9 @@ public class CombatRoom : MonoBehaviour
     public string TrackedEnemySetupBlocker => trackedEnemySetupBlocker;
     public bool IsPrototypeSimulationAvailable => simulateWhenNoEnemies && !HasAnyEnemyReference() && (!HasTrackedEnemySetupBlocker || !blockPrototypeSimulationWhenEnemySetupBlocked);
     public int ActiveDepth => expedition == null ? 1 : expedition.Depth;
+    public DungeonEncounterProfile ActiveEncounter => expedition == null
+        ? DungeonEncounterModel.GetDefault()
+        : expedition.ActiveEncounter;
     public DungeonDepthBalanceProfile DepthBalance => expedition == null
         ? DungeonDepthBalanceModel.Evaluate(ActiveDepth)
         : expedition.GetEffectiveDepthBalance(ActiveDepth);
@@ -126,7 +129,7 @@ public class CombatRoom : MonoBehaviour
         elapsedSeconds = 0f;
         currentHeroHealth = ResolveInitialHeroHealth();
         currentEnemyHealth = ResolveInitialEnemyHealth();
-        SetLastResult(CombatRoomResolution.None, "Room starting");
+        SetLastResult(CombatRoomResolution.None, $"Room starting / Encounter: {ActiveEncounter.DisplayName}");
         NotifyChanged();
 
         if (Mathf.Approximately(countdownRemaining, 0f))
@@ -247,7 +250,7 @@ public class CombatRoom : MonoBehaviour
         state = CombatRoomState.Running;
         countdownRemaining = 0f;
         SetTrackedEnemiesActive(true);
-        SetLastResult(CombatRoomResolution.None, "Room combat running");
+        SetLastResult(CombatRoomResolution.None, $"Room combat running / Encounter: {ActiveEncounter.DisplayName}");
         NotifyChanged();
     }
 

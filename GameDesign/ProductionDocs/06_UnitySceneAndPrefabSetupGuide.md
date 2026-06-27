@@ -73,6 +73,19 @@ Use this path only when authored Rare affix reroll, stat refresh, or save/load r
 5. Expected: the result text shows an authored affix name such as `Wounding Edge`, `Vital Plating`, `Swift Band`, or `Runner Band`, plus a clear stat modifier. If the item already had an authored affix and another slot-valid candidate exists, the new affix id should change.
 6. Save and load. Expected: the item remains resolved, the authored affix id/text and modifier remain coherent, and equipped stat text refreshes after load/equip.
 
+## E1-C encounter regression validation path
+
+Use this path only when reusable encounter text, threat/reward effects, or save/load regresses. E1-C was accepted on 2026-06-27:
+
+1. Open `Gameplay`; reload the scene if Unity reports external file changes.
+2. Enter Play Mode and read the Dungeon line. Expected: `Next encounter` names `Crypt Skirmish`, `Elite Guard`, or `Tomb Warden` with HP, damage, and reward-depth effects.
+3. Select/refresh a contract, then start a dungeon. Expected: the start message and Dungeon line name the active encounter and keep the selected contract visible.
+4. Clear or fail the room. Expected: the result text includes the same active encounter, and reward depth includes the contract plus encounter reward-depth offset.
+5. Save and load during a ready state and, if practical, during a running or reward-pending state. Expected: selected/active encounter ids remain valid and the loaded Dungeon line still names the correct encounter.
+6. Repeat starts until `Elite Guard` or `Tomb Warden` appears. Expected: the threat multipliers change without adding manual room-list or camera/layout changes.
+
+Do not move room geometry, spawn anchors, cameras, or HUD placement for this validation unless the user explicitly asks for a visual-authoring pass.
+
 ## Visual-authoring boundary
 
 Do not autonomously change room size, camera framing, HUD placement, object scale, silhouette, or composition based on source text alone. For a necessary manual pass, provide:

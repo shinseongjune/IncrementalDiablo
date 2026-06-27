@@ -52,6 +52,14 @@ defense state and resources
 - The crafting overlay keeps the same normal action path: select a Rare item, spend `Gold + Essence + AlterStone`, show the before -> after affix summary, and refresh equipped stats when needed.
 - Production evidence accepted 2026-06-26: a rewarded Rare can be equipped, rerolled, saved, and loaded with the authored affix text still coherent. Reopen only for UI/stat/save regressions.
 
+## 2026-06-27 E1-C encounter presentation status
+
+- The Dungeon line now includes `Next encounter` before entry and `Encounter active` during a run or reward-pending state.
+- Encounter text names the reusable profile and states the direct player consequences: normal/elite/boss kind, HP multiplier, damage multiplier, and reward-depth offset.
+- `CombatRoom`, `EnemySpawner`, clear/fail result text, and reward text keep the same active encounter name so a run does not silently change identity across combat, reward, or save/load.
+- Production evidence accepted 2026-06-27: next encounter -> active elite/boss -> clear/fail -> reward -> save/load remained coherent in Play Mode.
+- This is the first production-owned encounter presentation pass. It does not author boss silhouettes, room geometry, spawn placement, camera framing, or new VFX. Those remain manual visual-authoring decisions after onboarding/recovery makes the accepted loop teachable.
+
 ## Text policy
 
 - Normal-player text states consequences and actions, not implementation state.

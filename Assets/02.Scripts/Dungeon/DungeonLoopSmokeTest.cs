@@ -152,7 +152,13 @@ public static class DungeonLoopSmokeTest
             return false;
         }
 
-        AppendStep(builder, $"Started dungeon expedition with {expedition.ActiveContract.DisplayName}.");
+        if (string.IsNullOrWhiteSpace(expedition.ActiveEncounterId))
+        {
+            failure = "Expedition started without an active dungeon encounter.";
+            return false;
+        }
+
+        AppendStep(builder, $"Started dungeon expedition with {expedition.ActiveContract.DisplayName} / {expedition.ActiveEncounter.DisplayName}.");
 
         int guard = Mathf.Max(1, expedition.TotalRooms) + 2;
         while (expedition.IsRunning && guard > 0)

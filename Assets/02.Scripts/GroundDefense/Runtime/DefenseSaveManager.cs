@@ -6,7 +6,7 @@ using UnityEngine;
 [DefaultExecutionOrder(1000)]
 public class DefenseSaveManager : MonoBehaviour
 {
-    private const int CurrentSaveVersion = 4;
+    private const int CurrentSaveVersion = 5;
 
     [SerializeField] private DefenseDirector director;
     [SerializeField] private ExpeditionDirector expedition;
@@ -325,6 +325,7 @@ public class DefenseSaveManager : MonoBehaviour
         }
 
         MigrateDungeonContractSaveData(saveData.dungeon);
+        MigrateDungeonEncounterSaveData(saveData.dungeon);
 
         ItemDefinitionRegistry registry = inventory?.DefinitionRegistry;
         ItemDefinitionMigrationReport itemReport = registry?.MigrateInventorySaveData(saveData.inventory);
@@ -387,6 +388,44 @@ public class DefenseSaveManager : MonoBehaviour
             dungeon.lastContractSummary = DungeonContractModel.FormatOfferText(
                 dungeon.offeredContractIdA,
                 dungeon.offeredContractIdB);
+        }
+    }
+
+    private static void MigrateDungeonEncounterSaveData(DungeonSaveData dungeon)
+    {
+        if (dungeon == null)
+        {
+            return;
+        }
+
+        dungeon.encounterSeed = Mathf.Max(0, dungeon.encounterSeed);
+        if (!DungeonEncounterModel.TryGetEncounter(dungeon.selectedEncounterId, out _))
+        {
+            DungeonEncounterProfile encounter = DungeonEncounterModel.BuildEncounter(
+                Mathf.Max(1, dungeon.selectedDepth),
+                dungeon.encounterSeed,
+                dungeon.selectedContractId);
+            dungeon.selectedEncounterId = encounter.Id;
+        }
+
+        if (dungeon.state == DungeonRunState.Running ||
+            dungeon.state == DungeonRunState.Cleared ||
+            dungeon.state == DungeonRunState.Failed)
+        {
+            if (!DungeonEncounterModel.TryGetEncounter(dungeon.activeEncounterId, out _))
+            {
+                dungeon.activeEncounterId = dungeon.selectedEncounterId;
+            }
+        }
+        else if (!DungeonEncounterModel.TryGetEncounter(dungeon.activeEncounterId, out _))
+        {
+            dungeon.activeEncounterId = string.Empty;
+        }
+
+        if (string.IsNullOrWhiteSpace(dungeon.lastEncounterSummary))
+        {
+            dungeon.lastEncounterSummary = DungeonEncounterModel.FormatDetailText(
+                DungeonEncounterModel.GetEncounterOrDefault(dungeon.selectedEncounterId));
         }
     }
 

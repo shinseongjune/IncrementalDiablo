@@ -42,16 +42,24 @@ public class ExpeditionDirector : MonoBehaviour
     public string SelectedContractId => runtime == null ? DungeonContractModel.DefaultContractId : runtime.selectedContractId;
     public string ActiveContractId => runtime == null ? DungeonContractModel.DefaultContractId : runtime.activeContractId;
     public string LastContractSummary => runtime == null ? string.Empty : runtime.lastContractSummary;
+    public int EncounterSeed => runtime == null ? 0 : Mathf.Max(0, runtime.encounterSeed);
+    public string SelectedEncounterId => runtime == null ? DungeonEncounterModel.DefaultEncounterId : runtime.selectedEncounterId;
+    public string ActiveEncounterId => runtime == null ? DungeonEncounterModel.DefaultEncounterId : runtime.activeEncounterId;
+    public string LastEncounterSummary => runtime == null ? string.Empty : runtime.lastEncounterSummary;
     public DungeonContractProfile OfferedContractA => DungeonContractModel.GetContractOrDefault(OfferedContractIdA);
     public DungeonContractProfile OfferedContractB => DungeonContractModel.GetContractOrDefault(OfferedContractIdB);
     public DungeonContractProfile SelectedContract => DungeonContractModel.GetContractOrDefault(SelectedContractId);
     public DungeonContractProfile ActiveContract => DungeonContractModel.TryGetContract(ActiveContractId, out DungeonContractProfile activeContract)
         ? activeContract
         : SelectedContract;
-    public float ActiveEnemyHealthMultiplier => ActiveContract.EnemyHealthMultiplier;
-    public float ActiveEnemyDamageMultiplier => ActiveContract.EnemyDamageMultiplier;
-    public int ActiveRewardDepthOffset => ActiveContract.RewardDepthOffset;
-    public int ActiveRewardDepth => GetRewardDepth(Depth, ActiveContract);
+    public DungeonEncounterProfile SelectedEncounter => DungeonEncounterModel.GetEncounterOrDefault(SelectedEncounterId);
+    public DungeonEncounterProfile ActiveEncounter => DungeonEncounterModel.TryGetEncounter(ActiveEncounterId, out DungeonEncounterProfile activeEncounter)
+        ? activeEncounter
+        : SelectedEncounter;
+    public float ActiveEnemyHealthMultiplier => ActiveContract.EnemyHealthMultiplier * ActiveEncounter.EnemyHealthMultiplier;
+    public float ActiveEnemyDamageMultiplier => ActiveContract.EnemyDamageMultiplier * ActiveEncounter.EnemyDamageMultiplier;
+    public int ActiveRewardDepthOffset => ActiveContract.RewardDepthOffset + ActiveEncounter.RewardDepthOffset;
+    public int ActiveRewardDepth => GetRewardDepth(Depth, ActiveContract, ActiveEncounter);
     public bool CanSelectContract => !IsRunning;
 
     private void Awake()
@@ -97,11 +105,14 @@ public class ExpeditionDirector : MonoBehaviour
         runtime.elapsedSeconds = 0f;
         runtime.rewardPending = false;
         runtime.activeContractId = string.Empty;
+        runtime.activeEncounterId = string.Empty;
         EnsureContractOffer();
         EnsureSelectedContract();
+        EnsureSelectedEncounter();
         runtime.lastContractSummary = DungeonContractModel.FormatOfferText(
             runtime.offeredContractIdA,
             runtime.offeredContractIdB);
+        runtime.lastEncounterSummary = DungeonEncounterModel.FormatDetailText(SelectedEncounter);
         runtime.lastResult = "Ready";
         NotifyChanged();
     }
@@ -117,18 +128,24 @@ public class ExpeditionDirector : MonoBehaviour
 
         EnsureContractOffer();
         EnsureSelectedContract();
+        EnsureSelectedEncounter();
         DungeonContractProfile contract = SelectedContract;
+        DungeonEncounterProfile encounter = SelectedEncounter;
         runtime.state = DungeonRunState.Running;
         runtime.dungeonId = dungeonId;
         runtime.depth = SelectedDepth;
         runtime.activeContractId = contract.Id;
+        runtime.activeEncounterId = encounter.Id;
+        runtime.encounterSeed++;
+        GenerateSelectedEncounter();
         runtime.totalRooms = Mathf.Max(1, totalRooms);
         runtime.currentRoomIndex = 0;
         runtime.roomsCompleted = 0;
         runtime.elapsedSeconds = 0f;
         runtime.rewardPending = false;
         runtime.lastContractSummary = DungeonContractModel.FormatDetailText(contract);
-        runtime.lastResult = $"Expedition started / Contract: {contract.DisplayName}";
+        runtime.lastEncounterSummary = DungeonEncounterModel.FormatDetailText(encounter);
+        runtime.lastResult = $"Expedition started / Contract: {contract.DisplayName} / Encounter: {encounter.DisplayName}";
         NotifyChanged();
         return true;
     }
@@ -147,6 +164,8 @@ public class ExpeditionDirector : MonoBehaviour
         runtime.selectedDepth = targetDepth;
         GenerateContractOffer(clearSelection: true);
         EnsureSelectedContract();
+        GenerateSelectedEncounter();
+        runtime.lastEncounterSummary = DungeonEncounterModel.FormatDetailText(SelectedEncounter);
         NotifyChanged();
         return true;
     }
@@ -169,14 +188,16 @@ public class ExpeditionDirector : MonoBehaviour
     public DungeonDepthBalanceProfile GetEffectiveDepthBalance(int targetDepth)
     {
         DungeonDepthBalanceProfile baseProfile = DungeonDepthBalanceModel.Evaluate(targetDepth);
-        DungeonContractProfile contract = State == DungeonRunState.Ready ? SelectedContract : ActiveContract;
-        DungeonDepthBalanceProfile rewardProfile = DungeonDepthBalanceModel.Evaluate(GetRewardDepth(targetDepth, contract));
+        bool useActiveRunProfile = IsRunning || RewardPending;
+        DungeonContractProfile contract = useActiveRunProfile ? ActiveContract : SelectedContract;
+        DungeonEncounterProfile encounter = useActiveRunProfile ? ActiveEncounter : SelectedEncounter;
+        DungeonDepthBalanceProfile rewardProfile = DungeonDepthBalanceModel.Evaluate(GetRewardDepth(targetDepth, contract, encounter));
         return new DungeonDepthBalanceProfile(
             baseProfile.Depth,
             baseProfile.BandNumber,
             baseProfile.DepthInBand,
-            baseProfile.EnemyHealthMultiplier * contract.EnemyHealthMultiplier,
-            baseProfile.EnemyDamageMultiplier * contract.EnemyDamageMultiplier,
+            baseProfile.EnemyHealthMultiplier * contract.EnemyHealthMultiplier * encounter.EnemyHealthMultiplier,
+            baseProfile.EnemyDamageMultiplier * contract.EnemyDamageMultiplier * encounter.EnemyDamageMultiplier,
             rewardProfile.RewardPowerMultiplier,
             rewardProfile.MaterialYieldMultiplier);
     }
@@ -206,8 +227,10 @@ public class ExpeditionDirector : MonoBehaviour
         }
 
         runtime.selectedContractId = contract.Id;
+        GenerateSelectedEncounter();
         runtime.lastContractSummary = DungeonContractModel.FormatDetailText(contract);
-        runtime.lastResult = $"Contract selected: {contract.DisplayName}";
+        runtime.lastEncounterSummary = DungeonEncounterModel.FormatDetailText(SelectedEncounter);
+        runtime.lastResult = $"Contract selected: {contract.DisplayName} / Next encounter: {SelectedEncounter.DisplayName}";
         NotifyChanged();
         return true;
     }
@@ -227,7 +250,9 @@ public class ExpeditionDirector : MonoBehaviour
         runtime.lastContractSummary = DungeonContractModel.FormatOfferText(
             runtime.offeredContractIdA,
             runtime.offeredContractIdB);
-        runtime.lastResult = "Dungeon contract offer refreshed";
+        GenerateSelectedEncounter();
+        runtime.lastEncounterSummary = DungeonEncounterModel.FormatDetailText(SelectedEncounter);
+        runtime.lastResult = $"Dungeon contract offer refreshed / Next encounter: {SelectedEncounter.DisplayName}";
         NotifyChanged();
         return true;
     }
@@ -264,11 +289,16 @@ public class ExpeditionDirector : MonoBehaviour
             {
                 runtime.lastResult = $"{runtime.lastResult} / Contract: {ActiveContract.DisplayName}";
             }
+
+            if (!string.IsNullOrWhiteSpace(runtime.activeEncounterId))
+            {
+                runtime.lastResult = $"{runtime.lastResult} / Encounter: {ActiveEncounter.DisplayName}";
+            }
         }
         else
         {
             runtime.currentRoomIndex = runtime.roomsCompleted;
-            runtime.lastResult = "Room cleared";
+            runtime.lastResult = $"Room cleared / Encounter: {ActiveEncounter.DisplayName}";
         }
 
         NotifyChanged();
@@ -291,7 +321,7 @@ public class ExpeditionDirector : MonoBehaviour
 
         runtime.state = DungeonRunState.Failed;
         runtime.rewardPending = false;
-        runtime.lastResult = $"Expedition failed / Contract: {ActiveContract.DisplayName}";
+        runtime.lastResult = $"Expedition failed / Contract: {ActiveContract.DisplayName} / Encounter: {ActiveEncounter.DisplayName}";
         NotifyChanged();
         return true;
     }
@@ -330,8 +360,8 @@ public class ExpeditionDirector : MonoBehaviour
 
         runtime.rewardPending = false;
         runtime.lastResult = lootDropper.LastRewardAutoConverted
-            ? $"Reward converted: {item.DisplayName} -> {FormatRewards(lootDropper.LastConversionRewards)} / Contract: {ActiveContract.DisplayName}"
-            : $"Reward granted: {item.DisplayName} / Contract: {ActiveContract.DisplayName}";
+            ? $"Reward converted: {item.DisplayName} -> {FormatRewards(lootDropper.LastConversionRewards)} / Contract: {ActiveContract.DisplayName} / Encounter: {ActiveEncounter.DisplayName}"
+            : $"Reward granted: {item.DisplayName} / Contract: {ActiveContract.DisplayName} / Encounter: {ActiveEncounter.DisplayName}";
         NotifyChanged();
         return true;
     }
@@ -358,6 +388,10 @@ public class ExpeditionDirector : MonoBehaviour
             selectedContractId = runtime.selectedContractId,
             activeContractId = runtime.activeContractId,
             lastContractSummary = runtime.lastContractSummary,
+            encounterSeed = Mathf.Max(0, runtime.encounterSeed),
+            selectedEncounterId = runtime.selectedEncounterId,
+            activeEncounterId = runtime.activeEncounterId,
+            lastEncounterSummary = runtime.lastEncounterSummary,
             totalRooms = Mathf.Max(1, runtime.totalRooms),
             currentRoomIndex = Mathf.Max(0, runtime.currentRoomIndex),
             roomsCompleted = Mathf.Clamp(runtime.roomsCompleted, 0, Mathf.Max(1, runtime.totalRooms)),
@@ -397,6 +431,10 @@ public class ExpeditionDirector : MonoBehaviour
             selectedContractId = saveData.selectedContractId,
             activeContractId = saveData.activeContractId,
             lastContractSummary = saveData.lastContractSummary,
+            encounterSeed = Mathf.Max(0, saveData.encounterSeed),
+            selectedEncounterId = saveData.selectedEncounterId,
+            activeEncounterId = saveData.activeEncounterId,
+            lastEncounterSummary = saveData.lastEncounterSummary,
             totalRooms = Mathf.Max(1, saveData.totalRooms),
             currentRoomIndex = Mathf.Max(0, saveData.currentRoomIndex),
             roomsCompleted = Mathf.Max(0, saveData.roomsCompleted),
@@ -418,13 +456,21 @@ public class ExpeditionDirector : MonoBehaviour
 
         EnsureContractOffer();
         EnsureSelectedContract();
+        EnsureSelectedEncounter();
         if (runtime.state == DungeonRunState.Ready)
         {
             runtime.activeContractId = string.Empty;
+            runtime.activeEncounterId = string.Empty;
         }
         else if (!DungeonContractModel.TryGetContract(runtime.activeContractId, out _))
         {
             runtime.activeContractId = runtime.selectedContractId;
+        }
+
+        if (runtime.state != DungeonRunState.Ready &&
+            !DungeonEncounterModel.TryGetEncounter(runtime.activeEncounterId, out _))
+        {
+            runtime.activeEncounterId = runtime.selectedEncounterId;
         }
 
         NotifyChanged();
@@ -451,13 +497,21 @@ public class ExpeditionDirector : MonoBehaviour
         runtime.depth = Mathf.Clamp(activeDepth, 1, runtime.highestUnlockedDepth);
         EnsureContractOffer();
         EnsureSelectedContract();
+        EnsureSelectedEncounter();
         if (runtime.state == DungeonRunState.Ready)
         {
             runtime.activeContractId = string.Empty;
+            runtime.activeEncounterId = string.Empty;
         }
         else if (!DungeonContractModel.TryGetContract(runtime.activeContractId, out _))
         {
             runtime.activeContractId = runtime.selectedContractId;
+        }
+
+        if (runtime.state != DungeonRunState.Ready &&
+            !DungeonEncounterModel.TryGetEncounter(runtime.activeEncounterId, out _))
+        {
+            runtime.activeEncounterId = runtime.selectedEncounterId;
         }
     }
 
@@ -496,15 +550,39 @@ public class ExpeditionDirector : MonoBehaviour
         }
     }
 
+    private void GenerateSelectedEncounter()
+    {
+        DungeonEncounterProfile encounter = DungeonEncounterModel.BuildEncounter(
+            SelectedDepth,
+            runtime.encounterSeed,
+            runtime.selectedContractId);
+        runtime.selectedEncounterId = encounter.Id;
+    }
+
+    private void EnsureSelectedEncounter()
+    {
+        runtime.encounterSeed = Mathf.Max(0, runtime.encounterSeed);
+        if (!DungeonEncounterModel.TryGetEncounter(runtime.selectedEncounterId, out _))
+        {
+            GenerateSelectedEncounter();
+        }
+
+        if (string.IsNullOrWhiteSpace(runtime.lastEncounterSummary))
+        {
+            runtime.lastEncounterSummary = DungeonEncounterModel.FormatDetailText(SelectedEncounter);
+        }
+    }
+
     private bool IsOfferedContract(string contractId)
     {
         return string.Equals(contractId, runtime.offeredContractIdA, StringComparison.OrdinalIgnoreCase) ||
                string.Equals(contractId, runtime.offeredContractIdB, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static int GetRewardDepth(int sourceDepth, DungeonContractProfile contract)
+    private static int GetRewardDepth(int sourceDepth, DungeonContractProfile contract, DungeonEncounterProfile encounter)
     {
-        return Mathf.Max(1, sourceDepth + Mathf.Max(0, contract.RewardDepthOffset));
+        int rewardDepthOffset = Mathf.Max(0, contract.RewardDepthOffset) + Mathf.Max(0, encounter.RewardDepthOffset);
+        return Mathf.Max(1, sourceDepth + rewardDepthOffset);
     }
 
     private int TryUnlockNextDepth()

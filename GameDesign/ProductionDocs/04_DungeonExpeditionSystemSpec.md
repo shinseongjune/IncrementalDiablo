@@ -3,8 +3,18 @@
 ## 2026-06-21 Current Production Boundary
 
 - The accepted normal path is one direct-control room with a real spawned enemy, depth progression, reward continuity, and retry. It is a foundation, not proof of a repeatable dungeon game.
-- The next dungeon feature is E1-A: choose one of two generated risk/reward contracts before a run. Contract selection must be transparent, use reusable data, affect the active run, persist through save/load, and leave the existing direct-control path authoritative.
-- Boss breadth, multi-room sequences, and a new calculation-only auto-expedition path remain deferred until contract choice and encounter variety have an evidence-backed production route.
+- E1-A contract choice, E1-B authored Rare affix reroll, and E1-C reusable encounter variety are accepted. The next dungeon-adjacent feature is E2-A onboarding/settings/recovery.
+- Boss breadth, multi-room sequences, and a new calculation-only auto-expedition path remain deferred until the accepted encounter route is teachable from a fresh save.
+
+## 2026-06-27 E1-C Encounter Core
+
+- `DungeonEncounterModel` owns the first reusable encounter set: `crypt_skirmish` baseline, `elite_guard` elite rule, and `tomb_warden` boss-style rule.
+- `BuildEncounter(selectedDepth, encounterSeed, selectedContractId)` chooses the next encounter without a hand-authored room ladder. Depth 5 and later milestone depths force the boss-style rule; the seed/contract path can surface elite/boss variation across repeated runs.
+- `ExpeditionDirector` stores selected and active encounter ids. Starting a run copies selected encounter into active run state, increments the next encounter seed, and keeps the active id through running/reward-pending saves.
+- Encounter HP/damage multipliers are applied inside `GetEffectiveDepthBalance(...)` alongside depth and contract multipliers. Encounter reward-depth offset stacks with the selected contract and still uses the existing `LootDropper.TryGrantClearReward(depth)` denominator.
+- `PlayableLoopHud`, `CombatRoom`, and `EnemySpawner` now name the next/active encounter in normal status/result text. This is player-facing consequence text, not a debug-only route.
+- `Tools/Automation/Export-DungeonEncounters.ps1` exports `GameDesign/Balance/DungeonEncounterBalance.csv` and verifies baseline, elite, boss, denominator, and multiplier coverage.
+- Production evidence accepted 2026-06-27: next encounter text -> start run -> elite/boss active text -> clear/fail -> reward -> save/load in Play Mode. Reopen E1-C only for encounter/save/reward regressions or a deliberate visual-authoring pass.
 
 ## 2026-06-25 E1-A Contract Core
 

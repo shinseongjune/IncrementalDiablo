@@ -136,9 +136,10 @@ public class EnemySpawner : MonoBehaviour
         combatRoom.RegisterTrackedEnemies(spawnedEnemyHealths, refill: true);
         SyncSpawnedEnemyActivity();
         string placementText = snapSpawnPointsToNavMesh ? " on NavMesh" : string.Empty;
+        DungeonEncounterProfile encounter = combatRoom.ActiveEncounter;
         SetLastSpawnMessage(
             $"EnemySpawner spawned {spawnedEnemyHealths.Count} tracked enemy record(s){placementText} for room {roomIndex + 1} " +
-            $"at depth {balance.Depth} (HP x{balance.EnemyHealthMultiplier:0.##}, damage x{balance.EnemyDamageMultiplier:0.##}).");
+            $"at depth {balance.Depth} with {encounter.DisplayName} (HP x{balance.EnemyHealthMultiplier:0.##}, damage x{balance.EnemyDamageMultiplier:0.##}).");
         return true;
     }
 

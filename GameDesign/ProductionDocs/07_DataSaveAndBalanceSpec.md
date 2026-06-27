@@ -6,6 +6,19 @@
 - The `1,000,000,000` multiplier clamp is a runtime safety boundary, not a target content tier. Curve shape must be reviewed before normal progression approaches a clamp plateau.
 - New run choices such as E1-A dungeon contracts require a stable id, active-run save field, migration/default rule, deterministic export, and explicit reward denominator before implementation is called complete.
 - 2026-06-25 update: save schema v4 adds dungeon contract offer/selection/active fields. `DefenseSaveManager` migrates older saves by generating a default two-contract offer from selected depth and seed, then preserving an active contract for running or reward-pending clears.
+- 2026-06-27 update: save schema v5 adds dungeon encounter seed, selected encounter id, active encounter id, and last encounter summary. `DefenseSaveManager` migrates older saves by generating a deterministic selected encounter and preserving an active encounter for running or reward-pending clears.
+
+## 2026-06-27 Dungeon Encounter Balance Export
+
+`DungeonEncounterModel` is the runtime source of truth for the first E1-C encounter set.
+
+- Stable ids: `crypt_skirmish`, `elite_guard`, `tomb_warden`.
+- Selection denominator: `per dungeon run spawned encounter`.
+- Generation: `BuildEncounter(selectedDepth, encounterSeed, selectedContractId)`; no hand-authored room ladder.
+- Threat denominator: active dungeon run enemy HP/damage multipliers, stacked after depth and contract multipliers.
+- Reward denominator: one guaranteed per-clear item reward. Encounter reward-depth offset stacks with contract reward-depth offset and still feeds the existing clear-reward path.
+- Save behavior: schema v5 stores `encounterSeed`, `selectedEncounterId`, `activeEncounterId`, and `lastEncounterSummary` in `DungeonSaveData`. Running or reward-pending saves require a valid active encounter id.
+- `Tools/Automation/Export-DungeonEncounters.ps1` reads the C# starter set, verifies baseline/elite/boss coverage, and exports `GameDesign/Balance/DungeonEncounterBalance.csv`.
 
 ## 2026-06-25 Dungeon Contract Balance Export
 
@@ -252,6 +265,8 @@ equipped
 2026-06-09 Phase D item identity note: save schema v3 adds a production item-id migration stage without changing the serialized `ItemInstanceSaveData` shape. `DefenseSaveManager` asks the scene's `ItemDefinitionRegistry` to remap legacy ids before validation and inventory restore. Canonical ids reconnect to live assets; unknown ids remain serialized and visible but are quarantined from equip/salvage/reroll. `LastLoadReport`, save diagnostics, HUD text, and overlay text expose resolved/remapped/unresolved counts so content deletion or id drift cannot silently become snapshot-based gameplay power.
 
 2026-06-25 E1-A contract note: save schema v4 adds `contractOfferSeed`, `offeredContractIdA`, `offeredContractIdB`, `selectedContractId`, `activeContractId`, and `lastContractSummary` to `DungeonSaveData`. Save diagnostics require valid offered/selected ids and require `activeContractId` for running or reward-pending contract resolution.
+
+2026-06-27 E1-C encounter note: save schema v5 adds `encounterSeed`, `selectedEncounterId`, `activeEncounterId`, and `lastEncounterSummary` to `DungeonSaveData`. Save diagnostics require valid selected/active encounter ids and require `activeEncounterId` for running or reward-pending encounter resolution.
 
 2026-06-25 defense restore note: loading a save now emits `DefenseDirector.SaveDataApplied`, rebuilds `GroundDefenseNavMeshBattlefield` from the restored authoritative `DefenseRuntimeState`, and stops visual actors from attacking while the restored state is not running. Manual saves also reset the auto-save timer so a player-triggered checkpoint is not immediately overwritten by the next auto-save tick.
 

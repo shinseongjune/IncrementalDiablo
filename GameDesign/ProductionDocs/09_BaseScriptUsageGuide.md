@@ -20,6 +20,7 @@ The deleted ground-presentation stack is not an alternative implementation. It m
 | `ExpeditionDirector` | Dungeon state, room outcome, contract selection/active state, reward handoff, save recovery | Active contracts persist across running/reward-pending saves and must use the existing reward path. |
 | `DungeonDepthBalanceModel` | Formula-driven depth threat/reward bands and export | No manual depth ladder as the default scaling solution. |
 | `DungeonContractModel` | E1-A starter contracts, deterministic two-offer generation, denominator/export source | Do not hide contract effects in scene-only values or a second reward system. |
+| `DungeonEncounterModel` | E1-C starter encounters, deterministic elite/boss generation, denominator/export source | Do not solve encounter variety with hand-authored room ladders, scene-only multipliers, or a calculation-only expedition path. |
 | `EnemySpawner` | Spawned dungeon enemies | Failure and completion must remain visible. |
 | `LootDropper` / `SimpleInventory` | Rewards, inventory, duplicate conversion, salvage link | Production scenes must not silently use fallback rewards. |
 | `ItemDefinitionRegistry` | Authored definitions and migration IDs | Unknown saved IDs remain visible/quarantined. |
@@ -49,6 +50,12 @@ The first E1-B implementation replaces prototype Rare reroll output with `ItemEc
 
 Do not solve E1-B with scene-only stat values, debug item seeding, silent rarity changes, a second crafting currency, or an affix result that cannot be exported through `Tools/Automation/Export-RareAffixes.ps1`.
 
+## E1-C implementation boundary
+
+The first E1-C implementation adds a reusable encounter core. `DungeonEncounterModel` defines `crypt_skirmish`, `elite_guard`, and `tomb_warden`; `ExpeditionDirector` stores selected/active encounter ids in `DungeonSaveData`; `GetEffectiveDepthBalance(...)` stacks encounter HP/damage/reward-depth effects with the selected depth and contract; and `PlayableLoopHud` shows next/active encounter consequences in normal Dungeon text.
+
+Do not solve E1-C with a hidden scene multiplier, one-off room ladder, new reward path, manual wave list, or boss art/layout decision made outside the Unity Editor. Use `Tools/Automation/Export-DungeonEncounters.ps1` when ids, multipliers, reward-depth offsets, or generation rules change.
+
 ## Defense save/load boundary
 
 `DefenseRuntimeState` remains the saved authority for frontline level, state, mode, wall health, pressure, progress, and elapsed time. Loading a save applies that state through `DefenseDirector.ApplySaveData(...)`, emits `SaveDataApplied`, and lets `GroundDefenseNavMeshBattlefield` rebuild presentation actors from the restored state. Visual actor positions are not saved; they must never become a second defense simulation or keep damaging the wall when `DefenseRuntimeState.IsRunning` is false.
@@ -58,5 +65,6 @@ Do not solve E1-B with scene-only stat values, debug item seeding, silent rarity
 - Run `Tools/Automation/Invoke-IncrementalDiabloChecks.ps1` after changing a live script or wiring contract.
 - Add focused checks for new data/save contracts.
 - Run `Tools/Automation/Export-DungeonContracts.ps1` when contract ids/effects change; the harness checks it in `-CheckOnly` mode.
+- Run `Tools/Automation/Export-DungeonEncounters.ps1` when encounter ids/effects change; the harness checks it in `-CheckOnly` mode.
 - Run `Tools/Automation/Export-RareAffixes.ps1` when Rare affix ids, weights, stat formulas, tags, or slot rules change; the harness checks it in `-CheckOnly` mode.
 - Use Play Mode for player input, reward flow, combat feedback, or presentation changes.

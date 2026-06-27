@@ -19,7 +19,6 @@ Track only temporary, debug, fallback, or prototype behavior that still exists. 
 | TD-01 | OnGUI smoke-test HUDs and buttons | Debug | `Assets/02.Scripts/Dungeon/UI/DungeonDebugHud.cs`, `Assets/02.Scripts/Items/UI/InventoryDebugHud.cs`, `Assets/02.Scripts/Dungeon/DungeonLoopSmokeTest.cs` | Keep at the dev/test edge; never make normal play depend on it. | No | 2026-06-06: normal Canvas path accepted independently. |
 | TD-02 | Dungeon combat simulation fallback | Fallback | `Assets/02.Scripts/Dungeon/CombatRoom.cs` | Keep only as explicit dev/test safety; production scenes fail visibly when real enemy wiring breaks. | No while disabled in production scenes | 2026-06-06: real spawned-enemy path accepted. |
 | TD-03 | Runtime fallback loot | Fallback | `Assets/02.Scripts/Items/LootDropper.cs`, `ItemDefinition.cs` | Keep only for empty-table development safety; normal scenes must never silently award fallback loot. | No while production fallback is disabled | 2026-06-09: registry/migration production path established. |
-| TD-05 | Tint-led dungeon room presentation | Prototype | `Assets/02.Scripts/Dungeon/DungeonRoomPresenter.cs` | Replace with reusable encounter/elite/boss presentation and readable room consequences. | Yes | 2026-06-21: assigned to E1-C. |
 | TD-06 | Temporary screen/camera layout values | Temporary MVP values | `PlayableScreenLayoutController.cs`, `PanelCameraRenderTarget.cs` | Keep accepted defaults until a production UI pass; do not expose implementation diagnostics in normal HUD text. | No | 2026-06-21: viewport/review diagnostics removed from normal player text. |
 
 ## Retired record
@@ -27,11 +26,12 @@ Track only temporary, debug, fallback, or prototype behavior that still exists. 
 | ID | Retired surface | Decision | Evidence |
 | --- | --- | --- | --- |
 | TD-04 | Prototype Rare affix reroll | Replace with authored affix pool | 2026-06-26: `ItemEconomyModel.AuthoredRareAffixes`, `RareAffixPool.csv`, readable crafting result text, and user-accepted reward -> equip -> reroll -> save/load Play Mode evidence. |
+| TD-05 | Tint-led dungeon room presentation as encounter identity | Replace with reusable encounter rules and readable room consequences | 2026-06-27: `DungeonEncounterModel`, schema-v5 selected/active encounter ids, normal HUD/result text, encounter reward-depth offsets, `DungeonEncounterBalance.csv`, and user-accepted next encounter -> active elite/boss -> clear/fail -> reward -> save/load Play Mode evidence. Future boss art/room geometry is a visual polish pass, not the alpha-blocking tint-only route. |
 | TD-08 | Legacy ground lane, actor projection, pooling/presentation stack, review-only density override, and player-facing review diagnostics | Delete | 2026-06-21: actual NavMesh battlefield was accepted; legacy scripts, prefab/assets, scene components, review controls, and stale HUD text were removed. The harness now requires those scene components to be absent. |
 
 ## Current production link
 
 - E1-A must not add a new prototype contract path; selected contract data and active-run/save state must be production-owned.
 - E1-B retired TD-04 through an authored affix pool and normal-path Play Mode evidence.
-- E1-C retires TD-05 through reusable encounter presentation.
+- E1-C retired TD-05 as an alpha blocker through reusable encounter data/save/HUD consequences and normal-path Play Mode evidence. Future authored boss silhouettes or room geometry should be tracked as presentation polish, not as the old tint-only prototype route.
 - A green harness is structural verification. It does not close a debt row without normal-path evidence.

@@ -3,7 +3,7 @@ using System;
 [Serializable]
 public class GameSaveData
 {
-    public int version = 4;
+    public int version = 5;
     public string savedAtUtc;
     public float playTimeSeconds;
     public ResourceAmount[] currencies;
@@ -53,6 +53,10 @@ public class DungeonSaveData
     public string selectedContractId = DungeonContractModel.DefaultContractId;
     public string activeContractId = DungeonContractModel.DefaultContractId;
     public string lastContractSummary;
+    public int encounterSeed;
+    public string selectedEncounterId = DungeonEncounterModel.DefaultEncounterId;
+    public string activeEncounterId = DungeonEncounterModel.DefaultEncounterId;
+    public string lastEncounterSummary;
     public int totalRooms = 1;
     public int currentRoomIndex;
     public int roomsCompleted;
