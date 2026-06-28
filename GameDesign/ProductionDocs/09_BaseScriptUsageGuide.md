@@ -30,7 +30,7 @@ The deleted ground-presentation stack is not an alternative implementation. It m
 
 | Component | Responsibility |
 | --- | --- |
-| `PlayableLoopHud` | Current frontline/dungeon state, meaningful actions, depth selection, and normal status. |
+| `PlayableLoopHud` | Compact current frontline/dungeon state, meaningful actions, depth selection, first-session guidance, recovery copy, and normal status. |
 | `PlayableScreenLayoutController` | Defense/dungeon focus and overlay visibility safety. |
 | `PanelCameraRenderTarget` | Camera-to-`RawImage` viewport bridge. |
 | `DungeonViewportInputRouter` | Converts dungeon viewport clicks to player input. |
@@ -55,6 +55,12 @@ Do not solve E1-B with scene-only stat values, debug item seeding, silent rarity
 The first E1-C implementation adds a reusable encounter core. `DungeonEncounterModel` defines `crypt_skirmish`, `elite_guard`, and `tomb_warden`; `ExpeditionDirector` stores selected/active encounter ids in `DungeonSaveData`; `GetEffectiveDepthBalance(...)` stacks encounter HP/damage/reward-depth effects with the selected depth and contract; and `PlayableLoopHud` shows next/active encounter consequences in normal Dungeon text.
 
 Do not solve E1-C with a hidden scene multiplier, one-off room ladder, new reward path, manual wave list, or boss art/layout decision made outside the Unity Editor. Use `Tools/Automation/Export-DungeonEncounters.ps1` when ids, multipliers, reward-depth offsets, or generation rules change.
+
+## E2-A first-session guide boundary
+
+The first E2-A pass keeps onboarding inside `PlayableLoopHud` normal `Next:` guidance. It routes fresh saves through frontline start, contract comparison, dungeon run/failure, reward handling, equip/salvage, and the first recovery save without adding a separate tutorial overlay or scene object. The default HUD status uses compact text and keeps detailed balance/diagnostic output behind code toggles.
+
+Do not treat this as full E2-A completion. Settings persistence, a player-facing settings control, and focused fresh-save recovery Play Mode QA remain separate work.
 
 ## Defense save/load boundary
 

@@ -22,6 +22,15 @@ public class PlayableLoopHud : MonoBehaviour
     [SerializeField] private bool syncScreenFocusWithDungeon = true;
     [SerializeField] private bool openRewardOverlayOnDungeonClear = true;
 
+    [Header("First Session Guide")]
+    [SerializeField] private bool showFirstSessionGuide = true;
+    [SerializeField] private bool emphasizeFirstRecoverySave = true;
+
+    [Header("Text Density")]
+    [SerializeField] private bool useCompactStatusText = true;
+    [SerializeField] private bool showDetailedBalanceText;
+    [SerializeField] private bool showDiagnosticStatusText;
+
     [Header("Defense Alerts")]
     [SerializeField] private bool showDefenseAlertInSummary = true;
     [SerializeField] private bool prioritizeDefenseAlertDuringDungeon = true;
@@ -354,7 +363,9 @@ public class PlayableLoopHud : MonoBehaviour
             return;
         }
 
-        SetMessage(saveManager.TrySave() ? "Game saved." : "Save failed.");
+        SetMessage(saveManager.TrySave()
+            ? "Game saved. Recovery point ready for frontline, dungeon, inventory, and equipment."
+            : "Save failed.");
     }
 
     public void LoadGame()
@@ -366,9 +377,16 @@ public class PlayableLoopHud : MonoBehaviour
             return;
         }
 
-        SetMessage(saveManager.TryLoad()
-            ? $"Game loaded. {saveManager.LastLoadReport}"
-            : $"Load failed. {saveManager.LastLoadReport}");
+        bool loaded = saveManager.TryLoad();
+        if (loaded)
+        {
+            SetMessage($"Game loaded. {saveManager.LastLoadReport}");
+            return;
+        }
+
+        SetMessage(saveManager.HasSaveFile
+            ? $"Load failed. {saveManager.LastLoadReport}"
+            : "No save yet. Start the frontline, choose a contract, clear a room, then save after handling the reward.");
     }
 
     public void OpenInventoryOverlay()
@@ -433,7 +451,17 @@ public class PlayableLoopHud : MonoBehaviour
 
         string defenseAlertText = showDefenseAlertInSummary ? BuildDefenseAlertText(runtime) : string.Empty;
         string alertText = string.IsNullOrWhiteSpace(defenseAlertText) ? string.Empty : $"\nDefense alert: {defenseAlertText}";
-        string screenText = screenLayout == null ? string.Empty : $"\n{BuildScreenLayoutText()}";
+        string screenText = screenLayout == null || !showDiagnosticStatusText ? string.Empty : $"\n{BuildScreenLayoutText()}";
+
+        if (useCompactStatusText)
+        {
+            string compactUpgradeText = defense.Upgrades == null
+                ? "Upgrades unavailable"
+                : $"Wall {defense.Upgrades.WallLevel} / Tower {defense.Upgrades.TowerLevel} / Defenders {defense.Upgrades.DefenderLevel}";
+            return $"Frontline Lv.{runtime.FrontlineLevel} / {runtime.Mode} / Wall {Mathf.RoundToInt(runtime.WallHealthPercent * 100f)}%\n" +
+                   $"Pressure {Mathf.RoundToInt(runtime.PressurePercent * 100f)}% / Progress {progressText} / {compactUpgradeText}{alertText}{screenText}";
+        }
+
         return $"Frontline Lv.{runtime.FrontlineLevel} / {runtime.State} / {runtime.Mode} / Wall {Mathf.CeilToInt(runtime.WallHealth)}/{Mathf.CeilToInt(runtime.WallMaxHealth)}\n" +
                $"Pressure {pressureText} / Progress {progressText}\n{balanceText}\n{upgradeText}{alertText}{screenText}";
     }
@@ -454,6 +482,19 @@ public class PlayableLoopHud : MonoBehaviour
             $"Reward x{balance.RewardPowerMultiplier:0.##} Materials x{balance.MaterialYieldMultiplier:0.##}";
         string contractText = BuildDungeonContractText();
         string encounterText = BuildDungeonEncounterText();
+
+        if (useCompactStatusText)
+        {
+            string activeDepthText = expedition.IsRunning ? $"Depth {expedition.Depth}" : $"Depth {expedition.SelectedDepth}/{expedition.HighestUnlockedDepth}";
+            string dungeonTextValue = $"Dungeon: {expedition.State} / {activeDepthText} / {rewardState}\n{contractText}\n{encounterText}";
+            if (combatRoom == null || !expedition.IsRunning)
+            {
+                return dungeonTextValue;
+            }
+
+            return $"{dungeonTextValue}\nRoom: {combatRoom.State} / Hero {combatRoom.CurrentHeroHealth:0.#} / Enemy {combatRoom.CurrentEnemyHealth:0.#}";
+        }
+
         string dungeonTextValue = $"Dungeon: {expedition.State} / Depth {expedition.Depth} / Selected {expedition.SelectedDepth}/{expedition.HighestUnlockedDepth} unlocked\n{balanceText}\n{contractText}\n{encounterText}\nRoom {expedition.RoomsCompleted}/{expedition.TotalRooms} / {expedition.ElapsedSeconds:0.0}s / {rewardState} / Loot {BuildLootSourceText()}\nLast: {result}";
 
         if (combatRoom == null)
@@ -479,7 +520,17 @@ public class PlayableLoopHud : MonoBehaviour
 
         if (expedition.IsRunning)
         {
+            if (useCompactStatusText)
+            {
+                return $"Contract: {FormatCompactContractText(expedition.ActiveContract)} / Reward depth {expedition.ActiveRewardDepth}";
+            }
+
             return $"Contract active: {DungeonContractModel.FormatShortText(expedition.ActiveContract)} / Reward depth {expedition.ActiveRewardDepth}";
+        }
+
+        if (useCompactStatusText)
+        {
+            return $"Offers: A {expedition.OfferedContractA.DisplayName} / B {expedition.OfferedContractB.DisplayName}\nSelected: {FormatCompactContractText(expedition.SelectedContract)}";
         }
 
         return $"Contracts: {DungeonContractModel.FormatOfferText(expedition.OfferedContractIdA, expedition.OfferedContractIdB)}\nSelected: {DungeonContractModel.FormatShortText(expedition.SelectedContract)}";
@@ -494,7 +545,17 @@ public class PlayableLoopHud : MonoBehaviour
 
         if (expedition.IsRunning || expedition.RewardPending)
         {
+            if (useCompactStatusText)
+            {
+                return $"Encounter: {FormatCompactEncounterText(expedition.ActiveEncounter)} / Reward depth {expedition.ActiveRewardDepth}";
+            }
+
             return $"Encounter active: {DungeonEncounterModel.FormatShortText(expedition.ActiveEncounter)} / Reward depth {expedition.ActiveRewardDepth}";
+        }
+
+        if (useCompactStatusText)
+        {
+            return $"Next: {FormatCompactEncounterText(expedition.SelectedEncounter)}";
         }
 
         return $"Next encounter: {DungeonEncounterModel.FormatShortText(expedition.SelectedEncounter)} / Seed {expedition.EncounterSeed}";
@@ -579,11 +640,20 @@ public class PlayableLoopHud : MonoBehaviour
         ItemInstance item = GetLatestItem();
         if (item == null)
         {
-            return inventory == null ? "Inventory: unavailable" : $"Inventory: {inventory.Count}/{inventory.Capacity} / Latest: none";
+            return inventory == null
+                ? "Inventory: unavailable"
+                : useCompactStatusText
+                    ? "Item: none"
+                    : $"Inventory: {inventory.Count}/{inventory.Capacity} / Latest: none";
         }
 
         string equippedText = item.Equipped ? " / Equipped" : string.Empty;
         string resolutionText = item.IsDefinitionResolved ? string.Empty : $" / Unresolved {item.DefinitionId}";
+        if (useCompactStatusText)
+        {
+            return $"Item: {item.DisplayName} / {item.Rarity} {item.Slot} / Power {item.RolledPower}{equippedText}{resolutionText}";
+        }
+
         return $"Inventory: {inventory.Count}/{inventory.Capacity} / Latest: {item.DisplayName} / {item.Rarity} {item.Slot} Power {item.RolledPower}{equippedText}{resolutionText}";
     }
 
@@ -597,7 +667,37 @@ public class PlayableLoopHud : MonoBehaviour
         string healthText = heroHealth == null
             ? $"{characterStats.GetValue(StatId.MaxHealth):0.#}"
             : $"{heroHealth.Current:0.#}/{heroHealth.Max:0.#}";
-        return $"Hero: ATK {characterStats.GetValue(StatId.AttackDamage):0.#} / HP {healthText} / APS {characterStats.GetValue(StatId.AttackSpeed):0.##}";
+        return showDetailedBalanceText
+            ? $"Hero: ATK {characterStats.GetValue(StatId.AttackDamage):0.#} / HP {healthText} / APS {characterStats.GetValue(StatId.AttackSpeed):0.##}"
+            : $"Hero: ATK {characterStats.GetValue(StatId.AttackDamage):0.#} / HP {healthText}";
+    }
+
+    private static string FormatCompactContractText(DungeonContractProfile profile)
+    {
+        if (!profile.IsValid)
+        {
+            profile = DungeonContractModel.GetDefault();
+        }
+
+        string rewardText = profile.RewardDepthOffset <= 0 ? "baseline reward" : $"reward D+{profile.RewardDepthOffset}";
+        if (profile.EnemyHealthMultiplier <= 1.001f && profile.EnemyDamageMultiplier <= 1.001f)
+        {
+            return $"{profile.DisplayName} / {rewardText}";
+        }
+
+        return $"{profile.DisplayName} / threat x{Mathf.Max(profile.EnemyHealthMultiplier, profile.EnemyDamageMultiplier):0.##} / {rewardText}";
+    }
+
+    private static string FormatCompactEncounterText(DungeonEncounterProfile profile)
+    {
+        if (!profile.IsValid)
+        {
+            profile = DungeonEncounterModel.GetDefault();
+        }
+
+        string kind = profile.IsBoss ? "Boss" : profile.IsElite ? "Elite" : "Normal";
+        string rewardText = profile.RewardDepthOffset <= 0 ? "baseline reward" : $"reward D+{profile.RewardDepthOffset}";
+        return $"{profile.DisplayName} / {kind} / {rewardText}";
     }
 
     private string BuildScreenLayoutText()
@@ -648,6 +748,11 @@ public class PlayableLoopHud : MonoBehaviour
             return "Next: connect ExpeditionDirector so dungeon attempts are available.";
         }
 
+        if (TryBuildFirstSessionGuideHint(runtime, out string guideHint))
+        {
+            return guideHint;
+        }
+
         if (expedition.IsRunning)
         {
             if (combatRoom != null && combatRoom.HasTrackedEnemySetupBlocker)
@@ -694,6 +799,79 @@ public class PlayableLoopHud : MonoBehaviour
         return expedition.SelectedDepth < expedition.HighestUnlockedDepth
             ? $"Next: choose up to Depth {expedition.HighestUnlockedDepth}, then start the selected dungeon."
             : "Next: start a dungeon, then use its reward to choose equip or salvage.";
+    }
+
+    private bool TryBuildFirstSessionGuideHint(DefenseRuntimeState runtime, out string hint)
+    {
+        hint = string.Empty;
+        if (!showFirstSessionGuide || expedition == null || runtime == null)
+        {
+            return false;
+        }
+
+        ItemInstance latest = GetLatestItem();
+        bool hasSave = saveManager != null && saveManager.HasSaveFile;
+
+        if (expedition.IsRunning)
+        {
+            hint = combatRoom != null && combatRoom.UsesTrackedCombatants
+                ? "Next: finish the room; failure returns you to defense without the item reward."
+                : "Next: wait for the room result; failure should explain what to improve.";
+            return true;
+        }
+
+        if (expedition.RewardPending)
+        {
+            hint = "Next: claim the reward, then compare equip versus salvage.";
+            return true;
+        }
+
+        if (expedition.State == DungeonRunState.Failed)
+        {
+            hint = "Next: failure keeps your frontline state; repair or upgrade, then choose another contract.";
+            return true;
+        }
+
+        if (latest != null && !latest.IsDefinitionResolved)
+        {
+            return false;
+        }
+
+        if (latest != null && !latest.Equipped)
+        {
+            hint = "Next: equip the latest item for hero power, or salvage it into upgrade materials.";
+            return true;
+        }
+
+        if (emphasizeFirstRecoverySave && !hasSave && HasRecoverableFirstSessionProgress(runtime, latest))
+        {
+            hint = "Next: save now to create a recovery point for frontline, contract, encounter, item, and equipment.";
+            return true;
+        }
+
+        if (expedition.State == DungeonRunState.Ready && latest == null)
+        {
+            hint = $"Next: compare the two contracts, then start with {expedition.SelectedContract.DisplayName}.";
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool HasRecoverableFirstSessionProgress(DefenseRuntimeState runtime, ItemInstance latest)
+    {
+        if (runtime == null)
+        {
+            return false;
+        }
+
+        return latest != null ||
+               runtime.FrontlineLevel > 1 ||
+               runtime.WallDamaged ||
+               runtime.EnemyPressure > 0f ||
+               runtime.FrontlineProgressPercent > 0f ||
+               expedition != null && expedition.HighestUnlockedDepth > 1 ||
+               expedition != null && expedition.State == DungeonRunState.Failed;
     }
 
     private string BuildDefenseAlertText(DefenseRuntimeState runtime)

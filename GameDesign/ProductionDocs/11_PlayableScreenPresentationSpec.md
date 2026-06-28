@@ -60,9 +60,18 @@ defense state and resources
 - Production evidence accepted 2026-06-27: next encounter -> active elite/boss -> clear/fail -> reward -> save/load remained coherent in Play Mode.
 - This is the first production-owned encounter presentation pass. It does not author boss silhouettes, room geometry, spawn placement, camera framing, or new VFX. Those remain manual visual-authoring decisions after onboarding/recovery makes the accepted loop teachable.
 
+## 2026-06-28 E2-A first-session guide status
+
+- `PlayableLoopHud` now uses compact first-session `Next:` guidance to route a fresh player through start frontline, compare contracts, run/fail/reward, equip or salvage, and create the first recovery save.
+- Normal status text is compact by default: it keeps current action, wall/pressure/progress, selected contract, next/active encounter, reward state, latest item, and hero basics. Detailed balance multipliers, seeds, loot-source diagnostics, screen-layout state, and last-result logs are hidden from the default HUD and remain code-toggleable for QA.
+- Missing first-save load attempts no longer surface the raw save path in normal HUD text; they explain the playable path to create a save.
+- Manual save feedback now states that the recovery point covers frontline, dungeon, inventory, and equipment.
+- This is onboarding copy only. It does not add a settings menu, visual layout pass, camera change, tutorial overlay, or new scene object.
+
 ## Text policy
 
 - Normal-player text states consequences and actions, not implementation state.
+- Default HUD text should fit a normal play read: one compact frontline block, one compact dungeon block, one item line, one hero line, and one `Next:` line.
 - Keep `Render Target`, `input router`, scene-component names, review scales, and other diagnostics out of the normal HUD.
 - Avoid temporary labels that imply unavailable systems or accepted work still needs review.
 

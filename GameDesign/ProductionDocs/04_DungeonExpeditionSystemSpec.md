@@ -16,6 +16,13 @@
 - `Tools/Automation/Export-DungeonEncounters.ps1` exports `GameDesign/Balance/DungeonEncounterBalance.csv` and verifies baseline, elite, boss, denominator, and multiplier coverage.
 - Production evidence accepted 2026-06-27: next encounter text -> start run -> elite/boss active text -> clear/fail -> reward -> save/load in Play Mode. Reopen E1-C only for encounter/save/reward regressions or a deliberate visual-authoring pass.
 
+## 2026-06-28 E2-A First-Session Guide
+
+- `PlayableLoopHud` now explains the accepted dungeon loop as normal next-step copy: compare contracts, start the selected run, finish or fail, claim the reward, then equip or salvage.
+- A failed room now routes the player back to defense recovery instead of sounding like a silent dead end.
+- The first manual save is described as a recovery point for frontline, dungeon, inventory, and equipment. This uses existing save schema v5; no new dungeon save field is added.
+- Settings persistence remains outside this pass.
+
 ## 2026-06-25 E1-A Contract Core
 
 - `DungeonContractModel` now owns the starter set of three reusable contracts: one baseline and two risk/reward choices. `BuildOffer(selectedDepth, contractOfferSeed)` deterministically exposes two choices without a hand-authored depth ladder.

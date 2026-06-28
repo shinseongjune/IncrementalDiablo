@@ -24,9 +24,9 @@ The ground layer is **RTS-readable automatic defense**. It is not an RTS control
 
 **Current phase | Phase E - Early Access Readiness Slice**
 
-**Last meaningful movement:** E1-C was accepted from the focused Play Mode path. Reusable baseline, elite, and boss-style encounters now have production ownership through `DungeonEncounterModel`, schema v5 selected/active encounter ids, encounter HP/damage/reward-depth effects, normal HUD/result text, save diagnostics, smoke-test coverage, and `DungeonEncounterBalance.csv`.
+**Last meaningful movement:** E2-A started with the first fresh-save guide pass. `PlayableLoopHud` now turns the accepted contract/encounter/reward loop into compact normal `Next:` guidance, hides the raw missing-save path before a first save, and tells the player when a recovery point covers frontline, dungeon, inventory, and equipment.
 
-**Next unlock:** `E2-A | P1 | Onboarding, settings, recovery | Pending`.
+**Next unlock:** `E2-A | P1 | Onboarding, settings, recovery | In progress / Fresh-save guide`. Remaining unlock evidence is settings persistence plus focused fresh-save/recovery Play Mode QA.
 
 ## Current product queue
 
@@ -35,7 +35,7 @@ The ground layer is **RTS-readable automatic defense**. It is not an RTS control
 | E1-A | P0 | Formula-driven dungeon contract choice | Done / User accepted Play Mode validation | Before an expedition, offer two generated choices from a starter set of three. Each states threat and reward-depth effects, applies to that run, survives save/load, and resolves in HUD/result text. | User accepted the focused `Gameplay` Play Mode path on 2026-06-25: contract A/B/refresh -> start -> clear/fail -> reward -> save/load, including the defense restore check. Reopen only for contract/save/reward regressions. |
 | E1-B | P0 | Authored Rare affix pool | Done / User accepted Play Mode validation | Replace prototype reroll output with data-backed tags, weights, slot rules, and clear stat text. | User accepted the focused `Gameplay` Play Mode path on 2026-06-26: reward -> equip -> reroll -> save/load. Six authored Rare affixes in `ItemEconomyModel.AuthoredRareAffixes`, slot-specific weighted reroll, current-affix avoidance when alternatives exist, readable crafting text, and `GameDesign/Balance/RareAffixPool.csv` are complete. |
 | E1-C | P1 | Reusable dungeon encounter variety | Done / User accepted Play Mode validation | Add one elite rule and one boss/encounter rule without hand-authored room ladders. | User accepted the focused `Gameplay` Play Mode path on 2026-06-27: next encounter text -> start run -> elite/boss active text -> clear/fail -> reward -> save/load. `DungeonEncounterModel` defines `crypt_skirmish`, `elite_guard`, and `tomb_warden`; schema v5 stores selected/active encounter ids; `ExpeditionDirector.GetEffectiveDepthBalance(...)` applies encounter HP/damage/reward-depth modifiers; HUD and room/spawn messages name the active encounter; `DungeonEncounterBalance.csv` exports the denominator. |
-| E2-A | P1 | Onboarding, settings, recovery | Pending | Teach the first-session loop after E1-A makes a real decision. | Fresh-save walkthrough, settings persistence, and recovery QA. |
+| E2-A | P1 | Onboarding, settings, recovery | In progress / Fresh-save guide | Teach the first-session loop after E1-A makes a real decision. | Normal HUD now uses compact status plus `Next:` guidance for start frontline -> compare contracts -> run/fail/reward -> equip/salvage -> first recovery save. Settings persistence and focused fresh-save/recovery Play Mode QA remain. |
 
 ## Closed foundation
 
@@ -77,9 +77,9 @@ Use `12_PrototypeDebtRegister.md` and `Tools/Automation/Get-PrototypeDebtInvento
 | Dungeon entry -> direct combat | Working and accepted with E1-A contract UI and E1-C reusable encounter rules | Future changes should add first-session teaching or deeper encounter presentation, not repeat encounter-core acceptance. |
 | Dungeon reward -> inventory/equipment/salvage | Working and accepted with authored affix output and encounter reward-depth offsets | Future reward work should teach comparison and recovery before adding new item breadth. |
 | Crafting -> material sink | Authored affix reroll accepted | Future crafting work should add affix locking/upgrades only after onboarding explains the current loop. |
-| Save/load -> progression recovery | Working for depth/items/defense/contracts/affixes/encounters | E2-A should turn existing recovery into a first-session readable path. |
+| Save/load -> progression recovery | Working for depth/items/defense/contracts/affixes/encounters; first-save HUD copy now explains the recovery point | E2-A still needs settings persistence and focused recovery QA from a fresh save. |
 
-Known blockers: no source-code blocker. E2-A needs a fresh-save onboarding/settings/recovery slice so the accepted systems are understandable without developer explanation. The optional automation prompt update still needs user approval before the TOML freshness warnings can disappear.
+Known blockers: no source-code blocker. E2-A settings persistence needs a product decision on which settings are player-facing in this slice. The optional automation prompt update still needs user approval before the TOML freshness warnings can disappear.
 
 ## Verification and documentation
 

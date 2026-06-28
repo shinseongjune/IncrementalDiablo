@@ -7,6 +7,7 @@
 - New run choices such as E1-A dungeon contracts require a stable id, active-run save field, migration/default rule, deterministic export, and explicit reward denominator before implementation is called complete.
 - 2026-06-25 update: save schema v4 adds dungeon contract offer/selection/active fields. `DefenseSaveManager` migrates older saves by generating a default two-contract offer from selected depth and seed, then preserving an active contract for running or reward-pending clears.
 - 2026-06-27 update: save schema v5 adds dungeon encounter seed, selected encounter id, active encounter id, and last encounter summary. `DefenseSaveManager` migrates older saves by generating a deterministic selected encounter and preserving an active encounter for running or reward-pending clears.
+- 2026-06-28 update: the first E2-A recovery pass adds no schema field. `PlayableLoopHud` explains the first manual save as a recovery point for existing schema-v5 frontline, dungeon, inventory, and equipment state, and hides the raw missing-save file path from normal HUD copy.
 
 ## 2026-06-27 Dungeon Encounter Balance Export
 
