@@ -95,9 +95,22 @@ Use this path to validate the first E2-A onboarding/recovery pass:
 3. Enter Play Mode. Expected: the normal `Next:` line tells the player to start the frontline, then compare the two contracts and start the selected dungeon.
 4. Click `Load` before saving. Expected: the HUD says there is no save yet and explains the frontline -> contract -> reward -> save path, not the raw persistent-data file path.
 5. Start the frontline, select/refresh a contract, start a dungeon, then clear or fail the room. Expected: the `Next:` line explains reward claim or failure recovery.
-6. After a reward, equip or salvage the latest item, then click `Save`. Expected: the message says the recovery point covers frontline, dungeon, inventory, and equipment.
+6. After a reward, equip or salvage the latest item, then click `Save`. Expected: the message says the recovery point covers frontline, dungeon, inventory, equipment, and HUD settings.
 
-This path does not validate settings persistence yet; that remains the next E2-A implementation slice.
+This path validates the first-session copy and recovery flow. It does not require a new scene object or layout change.
+
+## E2-A settings persistence validation path
+
+Use this path when verifying the schema-v6 settings persistence slice:
+
+1. Open `Gameplay`; reload the scene if Unity reports external file changes.
+2. Enter Play Mode and select the object with `PlayableLoopHud` on the Gameplay Canvas.
+3. Change one runtime HUD setting in the Inspector, such as `Use Compact Status Text` off or `Show First Session Guide` off. Do not move HUD objects or create new controls for this check.
+4. Click `Save`. Expected: the message says the recovery point covers HUD settings.
+5. Change the same runtime setting back to a different value.
+6. Click `Load`. Expected: the saved HUD text-density/guide state returns, and the load message includes `HUD settings restored`.
+
+The production scene still has no full settings menu. Adding visible controls for these toggles is a later UI/product decision.
 
 ## Visual-authoring boundary
 

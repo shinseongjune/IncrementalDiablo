@@ -60,7 +60,9 @@ Do not solve E1-C with a hidden scene multiplier, one-off room ladder, new rewar
 
 The first E2-A pass keeps onboarding inside `PlayableLoopHud` normal `Next:` guidance. It routes fresh saves through frontline start, contract comparison, dungeon run/failure, reward handling, equip/salvage, and the first recovery save without adding a separate tutorial overlay or scene object. The default HUD status uses compact text and keeps detailed balance/diagnostic output behind code toggles.
 
-Do not treat this as full E2-A completion. Settings persistence, a player-facing settings control, and focused fresh-save recovery Play Mode QA remain separate work.
+The 2026-06-29 E2-A settings persistence pass adds `UiSettingsSaveData` to schema v6. `PlayableLoopHud.CreateUiSettingsSaveData()` snapshots compact text, detailed balance text, diagnostic status text, first-session guide, and first recovery-save emphasis; `PlayableLoopHud.ApplyUiSettingsSaveData(...)` restores them through `DefenseSaveManager` load. `ToggleCompactStatusText()`, `ToggleDetailedBalanceText()`, `ToggleDiagnosticStatusText()`, and `ToggleFirstSessionGuide()` are public actions for future UI wiring.
+
+Do not treat this as full E2-A completion. A player-facing settings menu/control set and focused fresh-save recovery Play Mode QA remain separate work.
 
 ## Defense save/load boundary
 
@@ -70,6 +72,7 @@ Do not treat this as full E2-A completion. Settings persistence, a player-facing
 
 - Run `Tools/Automation/Invoke-IncrementalDiabloChecks.ps1` after changing a live script or wiring contract.
 - Add focused checks for new data/save contracts.
+- For E2-A UI settings, verify schema-v6 save/load structurally through the harness and use the `06_UnitySceneAndPrefabSetupGuide.md` settings persistence path for Play Mode confirmation.
 - Run `Tools/Automation/Export-DungeonContracts.ps1` when contract ids/effects change; the harness checks it in `-CheckOnly` mode.
 - Run `Tools/Automation/Export-DungeonEncounters.ps1` when encounter ids/effects change; the harness checks it in `-CheckOnly` mode.
 - Run `Tools/Automation/Export-RareAffixes.ps1` when Rare affix ids, weights, stat formulas, tags, or slot rules change; the harness checks it in `-CheckOnly` mode.

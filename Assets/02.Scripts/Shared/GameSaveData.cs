@@ -3,7 +3,7 @@ using System;
 [Serializable]
 public class GameSaveData
 {
-    public int version = 5;
+    public int version = 6;
     public string savedAtUtc;
     public float playTimeSeconds;
     public ResourceAmount[] currencies;
@@ -11,6 +11,17 @@ public class GameSaveData
     public DungeonSaveData dungeon = new DungeonSaveData();
     public HeroSaveData hero = new HeroSaveData();
     public InventorySaveData inventory = new InventorySaveData();
+    public UiSettingsSaveData uiSettings = new UiSettingsSaveData();
+}
+
+[Serializable]
+public class UiSettingsSaveData
+{
+    public bool useCompactStatusText = true;
+    public bool showDetailedBalanceText;
+    public bool showDiagnosticStatusText;
+    public bool showFirstSessionGuide = true;
+    public bool emphasizeFirstRecoverySave = true;
 }
 
 [Serializable]

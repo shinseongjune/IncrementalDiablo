@@ -31,6 +31,7 @@ public static class GameSaveDataDiagnostics
         ValidateDefense(saveData.defense, errors);
         ValidateDungeon(saveData.dungeon, errors);
         ValidateInventoryAndHero(saveData.inventory, saveData.hero, definitionRegistry, errors, warnings);
+        ValidateUiSettings(saveData.uiSettings, warnings);
 
         summary = BuildSummary(saveData, errors, warnings);
         return errors.Count == 0;
@@ -57,8 +58,11 @@ public static class GameSaveDataDiagnostics
         string encounterId = saveData.dungeon == null || string.IsNullOrWhiteSpace(saveData.dungeon.selectedEncounterId)
             ? DungeonEncounterModel.DefaultEncounterId
             : saveData.dungeon.selectedEncounterId;
+        string uiText = saveData.uiSettings == null
+            ? "missing"
+            : saveData.uiSettings.useCompactStatusText ? "compact" : "detailed";
 
-        return $"Save snapshot: currencies {currencyCount}, FL {frontlineLevel}, dungeon {dungeonState} D{dungeonDepth} selected {selectedDepth}/{highestDepth}, contract {contractId}, encounter {encounterId}, inventory {itemCount}, equipped {equippedCount}.";
+        return $"Save snapshot: currencies {currencyCount}, FL {frontlineLevel}, dungeon {dungeonState} D{dungeonDepth} selected {selectedDepth}/{highestDepth}, contract {contractId}, encounter {encounterId}, inventory {itemCount}, equipped {equippedCount}, ui {uiText}.";
     }
 
     private static void ValidateHeader(GameSaveData saveData, List<string> errors, List<string> warnings)
@@ -400,6 +404,20 @@ public static class GameSaveDataDiagnostics
         }
 
         ValidateHeroEquipment(hero, itemsById, errors, warnings);
+    }
+
+    private static void ValidateUiSettings(UiSettingsSaveData uiSettings, List<string> warnings)
+    {
+        if (uiSettings == null)
+        {
+            warnings.Add("uiSettings are missing; older saves should migrate to compact first-session defaults");
+            return;
+        }
+
+        if (uiSettings.showDiagnosticStatusText)
+        {
+            warnings.Add("ui diagnostic status text is enabled; turn it off before normal player capture or release checks");
+        }
     }
 
     private static void ValidateHeroEquipment(HeroSaveData hero, Dictionary<long, ItemInstanceSaveData> itemsById, List<string> errors, List<string> warnings)

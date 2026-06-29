@@ -68,10 +68,19 @@ defense state and resources
 - Manual save feedback now states that the recovery point covers frontline, dungeon, inventory, and equipment.
 - This is onboarding copy only. It does not add a settings menu, visual layout pass, camera change, tutorial overlay, or new scene object.
 
+## 2026-06-29 E2-A settings persistence status
+
+- Save schema v6 adds `UiSettingsSaveData` for the current HUD text-density and first-session guide settings.
+- `PlayableLoopHud` can snapshot and apply compact HUD text, detailed balance text, diagnostic status text, first-session guide, and first recovery-save emphasis.
+- `DefenseSaveManager` saves and restores those settings with the same local JSON recovery point as frontline, dungeon, inventory, and equipment.
+- Normal save feedback now says the recovery point includes HUD settings.
+- This is not a full settings menu or layout pass. Adding visible settings controls needs a separate product/UI decision so the normal HUD does not become crowded again.
+
 ## Text policy
 
 - Normal-player text states consequences and actions, not implementation state.
 - Default HUD text should fit a normal play read: one compact frontline block, one compact dungeon block, one item line, one hero line, and one `Next:` line.
+- Persisted text-density choices may switch between compact and detailed status, but diagnostic status text must stay off for normal player captures unless a QA pass explicitly enables it.
 - Keep `Render Target`, `input router`, scene-component names, review scales, and other diagnostics out of the normal HUD.
 - Avoid temporary labels that imply unavailable systems or accepted work still needs review.
 

@@ -364,7 +364,7 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         SetMessage(saveManager.TrySave()
-            ? "Game saved. Recovery point ready for frontline, dungeon, inventory, and equipment."
+            ? "Game saved. Recovery point ready for frontline, dungeon, inventory, equipment, and HUD settings."
             : "Save failed.");
     }
 
@@ -387,6 +387,57 @@ public class PlayableLoopHud : MonoBehaviour
         SetMessage(saveManager.HasSaveFile
             ? $"Load failed. {saveManager.LastLoadReport}"
             : "No save yet. Start the frontline, choose a contract, clear a room, then save after handling the reward.");
+    }
+
+    public UiSettingsSaveData CreateUiSettingsSaveData()
+    {
+        return new UiSettingsSaveData
+        {
+            useCompactStatusText = useCompactStatusText,
+            showDetailedBalanceText = showDetailedBalanceText,
+            showDiagnosticStatusText = showDiagnosticStatusText,
+            showFirstSessionGuide = showFirstSessionGuide,
+            emphasizeFirstRecoverySave = emphasizeFirstRecoverySave
+        };
+    }
+
+    public void ApplyUiSettingsSaveData(UiSettingsSaveData saveData)
+    {
+        if (saveData == null)
+        {
+            return;
+        }
+
+        useCompactStatusText = saveData.useCompactStatusText;
+        showDetailedBalanceText = saveData.showDetailedBalanceText;
+        showDiagnosticStatusText = saveData.showDiagnosticStatusText;
+        showFirstSessionGuide = saveData.showFirstSessionGuide;
+        emphasizeFirstRecoverySave = saveData.emphasizeFirstRecoverySave;
+        Refresh();
+    }
+
+    public void ToggleCompactStatusText()
+    {
+        useCompactStatusText = !useCompactStatusText;
+        SetMessage($"Settings changed. {FormatUiSettingsSummary()}");
+    }
+
+    public void ToggleDetailedBalanceText()
+    {
+        showDetailedBalanceText = !showDetailedBalanceText;
+        SetMessage($"Settings changed. {FormatUiSettingsSummary()}");
+    }
+
+    public void ToggleDiagnosticStatusText()
+    {
+        showDiagnosticStatusText = !showDiagnosticStatusText;
+        SetMessage($"Settings changed. {FormatUiSettingsSummary()}");
+    }
+
+    public void ToggleFirstSessionGuide()
+    {
+        showFirstSessionGuide = !showFirstSessionGuide;
+        SetMessage($"Settings changed. {FormatUiSettingsSummary()}");
     }
 
     public void OpenInventoryOverlay()
@@ -486,13 +537,13 @@ public class PlayableLoopHud : MonoBehaviour
         if (useCompactStatusText)
         {
             string activeDepthText = expedition.IsRunning ? $"Depth {expedition.Depth}" : $"Depth {expedition.SelectedDepth}/{expedition.HighestUnlockedDepth}";
-            string dungeonTextValue = $"Dungeon: {expedition.State} / {activeDepthText} / {rewardState}\n{contractText}\n{encounterText}";
+            string compactDungeonText = $"Dungeon: {expedition.State} / {activeDepthText} / {rewardState}\n{contractText}\n{encounterText}";
             if (combatRoom == null || !expedition.IsRunning)
             {
-                return dungeonTextValue;
+                return compactDungeonText;
             }
 
-            return $"{dungeonTextValue}\nRoom: {combatRoom.State} / Hero {combatRoom.CurrentHeroHealth:0.#} / Enemy {combatRoom.CurrentEnemyHealth:0.#}";
+            return $"{compactDungeonText}\nRoom: {combatRoom.State} / Hero {combatRoom.CurrentHeroHealth:0.#} / Enemy {combatRoom.CurrentEnemyHealth:0.#}";
         }
 
         string dungeonTextValue = $"Dungeon: {expedition.State} / Depth {expedition.Depth} / Selected {expedition.SelectedDepth}/{expedition.HighestUnlockedDepth} unlocked\n{balanceText}\n{contractText}\n{encounterText}\nRoom {expedition.RoomsCompleted}/{expedition.TotalRooms} / {expedition.ElapsedSeconds:0.0}s / {rewardState} / Loot {BuildLootSourceText()}\nLast: {result}";
@@ -970,6 +1021,14 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         return $"{lastMessage}\n{actionHint}";
+    }
+
+    private string FormatUiSettingsSummary()
+    {
+        string density = useCompactStatusText ? "compact HUD text" : "detailed HUD text";
+        string balance = showDetailedBalanceText ? "balance details on" : "balance details off";
+        string guide = showFirstSessionGuide ? "first-session guide on" : "first-session guide off";
+        return $"{density}, {balance}, {guide}. Save to keep this setup.";
     }
 
     private void RefreshButtons()

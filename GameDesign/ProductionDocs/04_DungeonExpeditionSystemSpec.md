@@ -20,8 +20,8 @@
 
 - `PlayableLoopHud` now explains the accepted dungeon loop as normal next-step copy: compare contracts, start the selected run, finish or fail, claim the reward, then equip or salvage.
 - A failed room now routes the player back to defense recovery instead of sounding like a silent dead end.
-- The first manual save is described as a recovery point for frontline, dungeon, inventory, and equipment. This uses existing save schema v5; no new dungeon save field is added.
-- Settings persistence remains outside this pass.
+- The first manual save is described as a recovery point for frontline, dungeon, inventory, equipment, and HUD settings.
+- 2026-06-29 update: schema v6 persists current HUD text-density and first-session guide settings through `UiSettingsSaveData`. This adds no new dungeon save field and does not change contract, encounter, reward, or room-resolution behavior.
 
 ## 2026-06-25 E1-A Contract Core
 

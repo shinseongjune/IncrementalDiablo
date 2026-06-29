@@ -6,12 +6,13 @@ using UnityEngine;
 [DefaultExecutionOrder(1000)]
 public class DefenseSaveManager : MonoBehaviour
 {
-    private const int CurrentSaveVersion = 5;
+    private const int CurrentSaveVersion = 6;
 
     [SerializeField] private DefenseDirector director;
     [SerializeField] private ExpeditionDirector expedition;
     [SerializeField] private SimpleInventory inventory;
     [SerializeField] private EquipmentSlots equipmentSlots;
+    [SerializeField] private PlayableLoopHud playableHud;
     [SerializeField] private string saveFileName = "incremental_diablo_save.json";
     [SerializeField] private bool loadOnStart = true;
     [SerializeField] private bool simulateOfflineOnLoad = true;
@@ -175,6 +176,12 @@ public class DefenseSaveManager : MonoBehaviour
             }
 
             RestoreEquipmentState(saveData);
+            if (playableHud != null)
+            {
+                playableHud.ApplyUiSettingsSaveData(saveData.uiSettings);
+                LastLoadReport = AppendLoadReport(LastLoadReport, BuildUiSettingsLoadSummary(saveData.uiSettings));
+            }
+
             if (applyOfflineProgress)
             {
                 ApplyOfflineProgress(saveData);
@@ -262,6 +269,18 @@ public class DefenseSaveManager : MonoBehaviour
         return $"Defense restored: FL {Mathf.Max(1, defense.frontlineLevel)}, {defense.state}/{defense.mode}, wall {wallHealth}, progress {progress:0.#}.";
     }
 
+    private static string BuildUiSettingsLoadSummary(UiSettingsSaveData uiSettings)
+    {
+        if (uiSettings == null)
+        {
+            return "HUD settings restored: default compact guide.";
+        }
+
+        string density = uiSettings.useCompactStatusText ? "compact" : "detailed";
+        string guide = uiSettings.showFirstSessionGuide ? "guide on" : "guide off";
+        return $"HUD settings restored: {density}, {guide}.";
+    }
+
     private static string AppendLoadReport(string report, string detail)
     {
         if (string.IsNullOrWhiteSpace(report))
@@ -296,7 +315,8 @@ public class DefenseSaveManager : MonoBehaviour
             defense = director.CreateSaveData(),
             dungeon = expedition == null ? new DungeonSaveData() : expedition.CreateSaveData(),
             hero = CreateHeroSaveData(),
-            inventory = inventory == null ? new InventorySaveData() : inventory.CreateSaveData()
+            inventory = inventory == null ? new InventorySaveData() : inventory.CreateSaveData(),
+            uiSettings = playableHud == null ? new UiSettingsSaveData() : playableHud.CreateUiSettingsSaveData()
         };
 
         return true;
@@ -324,6 +344,7 @@ public class DefenseSaveManager : MonoBehaviour
             saveData.dungeon.selectedDepth = Mathf.Clamp(selectedDepth, 1, highestDepth);
         }
 
+        saveData.uiSettings ??= new UiSettingsSaveData();
         MigrateDungeonContractSaveData(saveData.dungeon);
         MigrateDungeonEncounterSaveData(saveData.dungeon);
 
@@ -495,6 +516,11 @@ public class DefenseSaveManager : MonoBehaviour
         if (equipmentSlots == null)
         {
             equipmentSlots = FindAnyObjectByType<EquipmentSlots>();
+        }
+
+        if (playableHud == null)
+        {
+            playableHud = FindAnyObjectByType<PlayableLoopHud>();
         }
     }
 }

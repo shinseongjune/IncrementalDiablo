@@ -429,10 +429,13 @@ if ((Test-Path -LiteralPath $expeditionDirectorPath) -and
     [void](Assert-TextContains "Dungeon save stores active contract" $saveDataText "public string activeContractId")
     [void](Assert-TextContains "Dungeon save stores selected encounter" $saveDataText "public string selectedEncounterId")
     [void](Assert-TextContains "Dungeon save stores active encounter" $saveDataText "public string activeEncounterId")
-    [void](Assert-TextContains "Save manager writes schema v5" $saveManagerText "private const int CurrentSaveVersion = 5;")
+    [void](Assert-TextContains "Save data stores UI settings" $saveDataText "public UiSettingsSaveData uiSettings")
+    [void](Assert-TextContains "Save manager writes schema v6" $saveManagerText "private const int CurrentSaveVersion = 6;")
     [void](Assert-TextContains "Save manager migrates legacy dungeon depth" $saveManagerText "MigrateSaveData(saveData);")
     [void](Assert-TextContains "Save manager migrates dungeon contracts" $saveManagerText "MigrateDungeonContractSaveData")
     [void](Assert-TextContains "Save manager migrates dungeon encounters" $saveManagerText "MigrateDungeonEncounterSaveData")
+    [void](Assert-TextContains "Save manager snapshots HUD settings" $saveManagerText "playableHud.CreateUiSettingsSaveData")
+    [void](Assert-TextContains "Save manager restores HUD settings" $saveManagerText "playableHud.ApplyUiSettingsSaveData")
     [void](Assert-TextContains "Save manager runs item id migration" $saveManagerText "MigrateInventorySaveData")
     [void](Assert-TextContains "Save manager resets autosave after manual save" $saveManagerText "autoSaveElapsed = 0f;")
     [void](Assert-TextContains "Save manager reports defense restore" $saveManagerText "BuildDefenseLoadSummary")
@@ -440,11 +443,14 @@ if ((Test-Path -LiteralPath $expeditionDirectorPath) -and
     [void](Assert-TextContains "Save diagnostics validate selected depth" $saveDiagnosticsText "dungeon selectedDepth must be within the unlocked depth range")
     [void](Assert-TextContains "Save diagnostics validate selected contract" $saveDiagnosticsText "dungeon selectedContractId must be one of the offered contract ids")
     [void](Assert-TextContains "Save diagnostics validate active encounter" $saveDiagnosticsText "dungeon activeEncounterId is required for active or reward-pending encounter resolution")
+    [void](Assert-TextContains "Save diagnostics validate UI settings" $saveDiagnosticsText "ValidateUiSettings")
     [void](Assert-TextContains "Playable HUD exposes previous depth action" $playableHudText "public void SelectPreviousDungeonDepth()")
     [void](Assert-TextContains "Playable HUD exposes next depth action" $playableHudText "public void SelectNextDungeonDepth()")
     [void](Assert-TextContains "Playable HUD exposes contract actions" $playableHudText "public void SelectFirstDungeonContract()")
     [void](Assert-TextContains "Playable HUD exposes encounter text" $playableHudText "BuildDungeonEncounterText")
     [void](Assert-TextContains "Playable HUD exposes first-session guide" $playableHudText "showFirstSessionGuide")
+    [void](Assert-TextContains "Playable HUD snapshots UI settings" $playableHudText "CreateUiSettingsSaveData")
+    [void](Assert-TextContains "Playable HUD applies UI settings" $playableHudText "ApplyUiSettingsSaveData")
     [void](Assert-TextContains "Playable HUD guides first recovery save" $playableHudText "create a recovery point for frontline, contract, encounter, item, and equipment")
     [void](Assert-TextContains "Playable HUD hides save path before first save" $playableHudText "No save yet. Start the frontline")
 }
@@ -632,7 +638,7 @@ if (Test-Path -LiteralPath $planPath) {
         "E1-A | P0 | Formula-driven dungeon contract choice | Done / User accepted Play Mode validation",
         "E1-B | P0 | Authored Rare affix pool | Done / User accepted Play Mode validation",
         "E1-C | P1 | Reusable dungeon encounter variety | Done / User accepted Play Mode validation",
-        "E2-A | P1 | Onboarding, settings, recovery | In progress / Fresh-save guide",
+        "E2-A | P1 | Onboarding, settings, recovery | In progress / Settings persistence implemented",
         "RTS-readable automatic defense",
         "Actual NavMesh battlefield",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
@@ -669,6 +675,7 @@ if (Test-Path -LiteralPath $releaseReadinessPath) {
         "E1-B | Done / P0",
         "E1-C | Done / P1",
         "E2-A | In progress / P1",
+        "settings persistence",
         "900+ hour target is a long-horizon design constraint",
         "A green harness means safe structure, not a completed product gate"
     )
