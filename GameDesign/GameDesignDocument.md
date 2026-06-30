@@ -42,7 +42,7 @@ The release-gate source of truth is `ProductionDocs/13_ReleaseReadinessAndProduc
 ## Current accepted baseline
 
 - Ground defense has an accepted actual NavMesh battlefield with readable faction/attack ownership, wall damage, reinforcement, formula-driven density, and accepted camera composition.
-- Dungeon depth progression, depth threat/reward bands, E1-A contract choice, normal-player contract buttons, E1-C encounter core, defense save/load visual rebuild, item registry/migration, duplicate conversion, save/load, reward overlays, salvage, the accepted authored Rare affix pool, first fresh-save `Next:` guidance, and schema-v6 HUD settings persistence exist.
+- Dungeon depth progression, depth threat/reward bands, E1-A contract choice, normal-player contract buttons, E1-C encounter core, defense save/load visual rebuild, item registry/migration, duplicate conversion, save/load, no-save recovery guidance, reward overlays, salvage, the accepted authored Rare affix pool, first fresh-save `Next:` guidance, and schema-v6 HUD settings persistence exist.
 - The next product gap is focused first-session recovery QA so the accepted contract/item/encounter loop can be understood without developer explanation. A broader settings menu still needs a scoped UI/product decision.
 
 Accepted baselines reopen only for regressions or explicit contract changes. They are not default polishing work.

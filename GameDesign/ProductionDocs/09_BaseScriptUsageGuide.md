@@ -62,6 +62,8 @@ The first E2-A pass keeps onboarding inside `PlayableLoopHud` normal `Next:` gui
 
 The 2026-06-29 E2-A settings persistence pass adds `UiSettingsSaveData` to schema v6. `PlayableLoopHud.CreateUiSettingsSaveData()` snapshots compact text, detailed balance text, diagnostic status text, first-session guide, and first recovery-save emphasis; `PlayableLoopHud.ApplyUiSettingsSaveData(...)` restores them through `DefenseSaveManager` load. `ToggleCompactStatusText()`, `ToggleDetailedBalanceText()`, `ToggleDiagnosticStatusText()`, and `ToggleFirstSessionGuide()` are public actions for future UI wiring.
 
+The 2026-06-30 E2-A recovery pass keeps `loadButton` enabled whenever `DefenseSaveManager` is present, even before a save exists. This is intentional: `PlayableLoopHud.LoadGame()` owns the no-save player guidance and must stay reachable during a fresh-save onboarding check.
+
 Do not treat this as full E2-A completion. A player-facing settings menu/control set and focused fresh-save recovery Play Mode QA remain separate work.
 
 ## Defense save/load boundary
@@ -73,6 +75,7 @@ Do not treat this as full E2-A completion. A player-facing settings menu/control
 - Run `Tools/Automation/Invoke-IncrementalDiabloChecks.ps1` after changing a live script or wiring contract.
 - Add focused checks for new data/save contracts.
 - For E2-A UI settings, verify schema-v6 save/load structurally through the harness and use the `06_UnitySceneAndPrefabSetupGuide.md` settings persistence path for Play Mode confirmation.
+- For E2-A fresh-save recovery, use the `06_UnitySceneAndPrefabSetupGuide.md` path and include the pre-save `Load` click; the button should show guided no-save copy rather than being disabled.
 - Run `Tools/Automation/Export-DungeonContracts.ps1` when contract ids/effects change; the harness checks it in `-CheckOnly` mode.
 - Run `Tools/Automation/Export-DungeonEncounters.ps1` when encounter ids/effects change; the harness checks it in `-CheckOnly` mode.
 - Run `Tools/Automation/Export-RareAffixes.ps1` when Rare affix ids, weights, stat formulas, tags, or slot rules change; the harness checks it in `-CheckOnly` mode.

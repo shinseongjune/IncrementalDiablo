@@ -55,7 +55,7 @@ The player can complete several runs without repeating the exact same decision p
 - duplicate handling and salvage remain understandable;
 - no accepted ground or dungeon combat path regresses.
 
-`E1-A` is accepted from the focused Play Mode path as of 2026-06-25. `E1-B` is accepted from the focused Play Mode path as of 2026-06-26. `E1-C` is accepted from the focused Play Mode path as of 2026-06-27, so the repeatable slice now has contract choice, authored item-affix outcome, and reusable elite/boss encounter variety. `E2-A` has fresh-save guidance, first recovery-save copy, and schema-v6 settings persistence for current HUD text-density/guide choices; focused recovery QA remains.
+`E1-A` is accepted from the focused Play Mode path as of 2026-06-25. `E1-B` is accepted from the focused Play Mode path as of 2026-06-26. `E1-C` is accepted from the focused Play Mode path as of 2026-06-27, so the repeatable slice now has contract choice, authored item-affix outcome, and reusable elite/boss encounter variety. `E2-A` has fresh-save guidance, first recovery-save copy, schema-v6 settings persistence for current HUD text-density/guide choices, and a clickable no-save `Load` path for first-session recovery guidance; focused recovery QA remains.
 
 ### Gate R2 — Ten-Hour Alpha Loop
 
@@ -84,7 +84,7 @@ Only after R3 should the project expand toward multi-theme depth, broader item b
 | E1-A | Done / P0 | Formula-driven dungeon contract choice. Before each expedition, show two generated choices from a starter set of three contracts. Each choice has a transparent threat modifier and reward-depth modifier, applies to the active run, and persists in the save. | Accepted 2026-06-25 through focused Play Mode contract A/B/refresh -> run -> reward -> save/load evidence, including restored defense state. |
 | E1-B | Done / P0 | Replace the prototype Rare reroll with a small authored affix pool: tags, weights, slot rules, and clear stat text. | Accepted 2026-06-26 through focused reward -> equip -> reroll -> save/load evidence. `RareAffixPool.csv` is the deterministic export, and TD-04 is retired. |
 | E1-C | Done / P1 | Add reusable dungeon encounter variety: one elite rule and one boss/encounter rule that preserves direct-control value. | Accepted 2026-06-27 through focused Play Mode next encounter -> start -> elite/boss active text -> clear/fail -> reward -> save/load evidence. `DungeonEncounterModel`, schema-v5 selected/active encounter save fields, encounter HP/damage/reward-depth modifiers, HUD text, and `DungeonEncounterBalance.csv` are complete. |
-| E2-A | In progress / P1 | First-session onboarding, settings, and recovery handoff after R1 decisions are real. | Fresh-save HUD guidance, first recovery-save copy, and settings persistence for the existing HUD text-density/guide toggles are implemented. Focused fresh-save failure/recovery QA remains. |
+| E2-A | In progress / P1 | First-session onboarding, settings, and recovery handoff after R1 decisions are real. | Fresh-save HUD guidance, first recovery-save copy, settings persistence for the existing HUD text-density/guide toggles, and the no-save `Load` guidance path are implemented. Focused fresh-save failure/recovery QA remains. |
 
 ## 6. Economy and Balance Guardrails
 

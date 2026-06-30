@@ -896,7 +896,7 @@ public class PlayableLoopHud : MonoBehaviour
 
         if (emphasizeFirstRecoverySave && !hasSave && HasRecoverableFirstSessionProgress(runtime, latest))
         {
-            hint = "Next: save now to create a recovery point for frontline, contract, encounter, item, and equipment.";
+            hint = "Next: save now to keep frontline, dungeon, inventory, equipment, and HUD settings.";
             return true;
         }
 
@@ -1056,7 +1056,7 @@ public class PlayableLoopHud : MonoBehaviour
         SetInteractable(equipLatestButton, latest != null && latest.IsDefinitionResolved && inventory != null && equipmentSlots != null);
         SetInteractable(salvageLatestButton, latest != null && latest.IsDefinitionResolved && salvageService != null);
         SetInteractable(saveButton, saveManager != null);
-        SetInteractable(loadButton, saveManager != null && saveManager.HasSaveFile);
+        SetInteractable(loadButton, saveManager != null);
         SetInteractable(openInventoryOverlayButton, screenLayout != null && screenLayout.CanOpenInventoryOverlay);
         SetInteractable(openCraftingOverlayButton, screenLayout != null && screenLayout.CanOpenCraftingOverlay);
         SetInteractable(openRewardOverlayButton, screenLayout != null && screenLayout.CanOpenRewardOverlay);

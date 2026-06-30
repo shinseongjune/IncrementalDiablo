@@ -451,8 +451,10 @@ if ((Test-Path -LiteralPath $expeditionDirectorPath) -and
     [void](Assert-TextContains "Playable HUD exposes first-session guide" $playableHudText "showFirstSessionGuide")
     [void](Assert-TextContains "Playable HUD snapshots UI settings" $playableHudText "CreateUiSettingsSaveData")
     [void](Assert-TextContains "Playable HUD applies UI settings" $playableHudText "ApplyUiSettingsSaveData")
-    [void](Assert-TextContains "Playable HUD guides first recovery save" $playableHudText "create a recovery point for frontline, contract, encounter, item, and equipment")
+    [void](Assert-TextContains "Playable HUD guides first recovery save" $playableHudText "keep frontline, dungeon, inventory, equipment, and HUD settings")
     [void](Assert-TextContains "Playable HUD hides save path before first save" $playableHudText "No save yet. Start the frontline")
+    [void](Assert-TextContains "Playable HUD allows no-save load guidance" $playableHudText "SetInteractable(loadButton, saveManager != null);")
+    [void](Assert-TextContains "Save diagnostics summarize guide state" $saveDiagnosticsText "guide off")
 }
 
 if ((Test-Path -LiteralPath $itemRegistryPath) -and
@@ -638,7 +640,7 @@ if (Test-Path -LiteralPath $planPath) {
         "E1-A | P0 | Formula-driven dungeon contract choice | Done / User accepted Play Mode validation",
         "E1-B | P0 | Authored Rare affix pool | Done / User accepted Play Mode validation",
         "E1-C | P1 | Reusable dungeon encounter variety | Done / User accepted Play Mode validation",
-        "E2-A | P1 | Onboarding, settings, recovery | In progress / Settings persistence implemented",
+        "E2-A | P1 | Onboarding, settings, recovery | In progress / Fresh-save recovery path unblocked",
         "RTS-readable automatic defense",
         "Actual NavMesh battlefield",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",

@@ -76,6 +76,13 @@ defense state and resources
 - Normal save feedback now says the recovery point includes HUD settings.
 - This is not a full settings menu or layout pass. Adding visible settings controls needs a separate product/UI decision so the normal HUD does not become crowded again.
 
+## 2026-06-30 E2-A no-save recovery guidance status
+
+- `Load` stays clickable when `DefenseSaveManager` exists, even before a save file exists, so a first-session player can receive the no-save guidance instead of being blocked by a disabled control.
+- The no-save message still explains the playable path: start frontline, choose a contract, clear a room, then save after handling the reward.
+- The first recovery-save `Next:` hint now includes HUD settings in the recovery point, matching the schema-v6 save behavior.
+- This does not add a settings menu, move HUD controls, or change layout.
+
 ## Text policy
 
 - Normal-player text states consequences and actions, not implementation state.

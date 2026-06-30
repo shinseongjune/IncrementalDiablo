@@ -58,9 +58,13 @@ public static class GameSaveDataDiagnostics
         string encounterId = saveData.dungeon == null || string.IsNullOrWhiteSpace(saveData.dungeon.selectedEncounterId)
             ? DungeonEncounterModel.DefaultEncounterId
             : saveData.dungeon.selectedEncounterId;
-        string uiText = saveData.uiSettings == null
-            ? "missing"
-            : saveData.uiSettings.useCompactStatusText ? "compact" : "detailed";
+        string uiText = "missing";
+        if (saveData.uiSettings != null)
+        {
+            string density = saveData.uiSettings.useCompactStatusText ? "compact" : "detailed";
+            string guide = saveData.uiSettings.showFirstSessionGuide ? "guide on" : "guide off";
+            uiText = $"{density}, {guide}";
+        }
 
         return $"Save snapshot: currencies {currencyCount}, FL {frontlineLevel}, dungeon {dungeonState} D{dungeonDepth} selected {selectedDepth}/{highestDepth}, contract {contractId}, encounter {encounterId}, inventory {itemCount}, equipped {equippedCount}, ui {uiText}.";
     }

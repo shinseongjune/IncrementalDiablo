@@ -93,9 +93,9 @@ Use this path to validate the first E2-A onboarding/recovery pass:
 1. Back up or temporarily move the existing local save outside Unity if you need a true fresh-save path.
 2. Open `Gameplay`; reload the scene if Unity reports external file changes.
 3. Enter Play Mode. Expected: the normal `Next:` line tells the player to start the frontline, then compare the two contracts and start the selected dungeon.
-4. Click `Load` before saving. Expected: the HUD says there is no save yet and explains the frontline -> contract -> reward -> save path, not the raw persistent-data file path.
+4. Click `Load` before saving. Expected: the button is clickable, and the HUD says there is no save yet and explains the frontline -> contract -> reward -> save path, not the raw persistent-data file path.
 5. Start the frontline, select/refresh a contract, start a dungeon, then clear or fail the room. Expected: the `Next:` line explains reward claim or failure recovery.
-6. After a reward, equip or salvage the latest item, then click `Save`. Expected: the message says the recovery point covers frontline, dungeon, inventory, equipment, and HUD settings.
+6. After a reward, equip or salvage the latest item, then click `Save`. Expected: the `Next:` line and save message say the recovery point covers frontline, dungeon, inventory, equipment, and HUD settings.
 
 This path validates the first-session copy and recovery flow. It does not require a new scene object or layout change.
 
