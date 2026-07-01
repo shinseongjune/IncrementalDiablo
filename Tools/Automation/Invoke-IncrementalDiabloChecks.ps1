@@ -436,6 +436,8 @@ if ((Test-Path -LiteralPath $expeditionDirectorPath) -and
     [void](Assert-TextContains "Save manager migrates dungeon encounters" $saveManagerText "MigrateDungeonEncounterSaveData")
     [void](Assert-TextContains "Save manager snapshots HUD settings" $saveManagerText "playableHud.CreateUiSettingsSaveData")
     [void](Assert-TextContains "Save manager restores HUD settings" $saveManagerText "playableHud.ApplyUiSettingsSaveData")
+    [void](Assert-TextContains "Save manager owns no-save recovery guidance" $saveManagerText "NoSaveRecoveryGuidance")
+    [void](Assert-TextContains "Save manager hides save path before first save" $saveManagerText "LastLoadReport = NoSaveRecoveryGuidance")
     [void](Assert-TextContains "Save manager runs item id migration" $saveManagerText "MigrateInventorySaveData")
     [void](Assert-TextContains "Save manager resets autosave after manual save" $saveManagerText "autoSaveElapsed = 0f;")
     [void](Assert-TextContains "Save manager reports defense restore" $saveManagerText "BuildDefenseLoadSummary")
@@ -452,7 +454,7 @@ if ((Test-Path -LiteralPath $expeditionDirectorPath) -and
     [void](Assert-TextContains "Playable HUD snapshots UI settings" $playableHudText "CreateUiSettingsSaveData")
     [void](Assert-TextContains "Playable HUD applies UI settings" $playableHudText "ApplyUiSettingsSaveData")
     [void](Assert-TextContains "Playable HUD guides first recovery save" $playableHudText "keep frontline, dungeon, inventory, equipment, and HUD settings")
-    [void](Assert-TextContains "Playable HUD hides save path before first save" $playableHudText "No save yet. Start the frontline")
+    [void](Assert-TextContains "Playable HUD reuses no-save recovery guidance" $playableHudText "DefenseSaveManager.NoSaveRecoveryGuidance")
     [void](Assert-TextContains "Playable HUD allows no-save load guidance" $playableHudText "SetInteractable(loadButton, saveManager != null);")
     [void](Assert-TextContains "Save diagnostics summarize guide state" $saveDiagnosticsText "guide off")
 }
@@ -640,7 +642,7 @@ if (Test-Path -LiteralPath $planPath) {
         "E1-A | P0 | Formula-driven dungeon contract choice | Done / User accepted Play Mode validation",
         "E1-B | P0 | Authored Rare affix pool | Done / User accepted Play Mode validation",
         "E1-C | P1 | Reusable dungeon encounter variety | Done / User accepted Play Mode validation",
-        "E2-A | P1 | Onboarding, settings, recovery | In progress / Fresh-save recovery path unblocked",
+        "E2-A | P1 | Onboarding, settings, recovery | In progress / No-save recovery guidance hardened",
         "RTS-readable automatic defense",
         "Actual NavMesh battlefield",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",

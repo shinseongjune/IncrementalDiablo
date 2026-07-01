@@ -7,6 +7,8 @@ using UnityEngine;
 public class DefenseSaveManager : MonoBehaviour
 {
     private const int CurrentSaveVersion = 6;
+    public const string NoSaveRecoveryGuidance =
+        "No save yet. Start the frontline, choose a contract, clear a room, then save after handling the reward.";
 
     [SerializeField] private DefenseDirector director;
     [SerializeField] private ExpeditionDirector expedition;
@@ -137,7 +139,7 @@ public class DefenseSaveManager : MonoBehaviour
 
         if (!HasSaveFile)
         {
-            LastLoadReport = $"Save file missing at {SavePath}.";
+            LastLoadReport = NoSaveRecoveryGuidance;
             return false;
         }
 

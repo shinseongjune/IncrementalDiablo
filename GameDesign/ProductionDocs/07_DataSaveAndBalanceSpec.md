@@ -9,6 +9,7 @@
 - 2026-06-27 update: save schema v5 adds dungeon encounter seed, selected encounter id, active encounter id, and last encounter summary. `DefenseSaveManager` migrates older saves by generating a deterministic selected encounter and preserving an active encounter for running or reward-pending clears.
 - 2026-06-28 update: the first E2-A recovery pass adds no schema field. `PlayableLoopHud` explains the first manual save as a recovery point for existing schema-v5 frontline, dungeon, inventory, and equipment state, and hides the raw missing-save file path from normal HUD copy.
 - 2026-06-29 update: save schema v6 adds `UiSettingsSaveData` for the current HUD text-density and first-session guide settings. `DefenseSaveManager` migrates older saves to compact/default guide settings, snapshots the current `PlayableLoopHud` settings when saving, restores them when loading, and diagnostics warn if diagnostic HUD text is persisted for a normal capture.
+- 2026-07-01 update: no schema field changed. `DefenseSaveManager.NoSaveRecoveryGuidance` now owns the no-save recovery copy, and `PlayableLoopHud` reuses it so pre-save `Load` attempts do not expose the raw persistent-data path through normal recovery messaging.
 
 ## 2026-06-27 Dungeon Encounter Balance Export
 
@@ -272,6 +273,8 @@ equipped
 2026-06-27 E1-C encounter note: save schema v5 adds `encounterSeed`, `selectedEncounterId`, `activeEncounterId`, and `lastEncounterSummary` to `DungeonSaveData`. Save diagnostics require valid selected/active encounter ids and require `activeEncounterId` for running or reward-pending encounter resolution.
 
 2026-06-29 E2-A settings persistence note: save schema v6 adds `UiSettingsSaveData` to `GameSaveData`. It stores `useCompactStatusText`, `showDetailedBalanceText`, `showDiagnosticStatusText`, `showFirstSessionGuide`, and `emphasizeFirstRecoverySave`. These are UI recovery preferences, not combat progression or economy values. Older saves migrate to compact/default first-session guidance.
+
+2026-07-01 E2-A no-save recovery report note: `DefenseSaveManager.TryLoad()` keeps a first-session missing-save attempt in player-facing recovery language by setting `LastLoadReport` to `NoSaveRecoveryGuidance` before any save file exists. Lower-level saved-file validation can still report the exact file path for developer diagnostics, but the normal HUD path should stay on the playable frontline -> contract -> reward -> save instruction.
 
 2026-06-25 defense restore note: loading a save now emits `DefenseDirector.SaveDataApplied`, rebuilds `GroundDefenseNavMeshBattlefield` from the restored authoritative `DefenseRuntimeState`, and stops visual actors from attacking while the restored state is not running. Manual saves also reset the auto-save timer so a player-triggered checkpoint is not immediately overwritten by the next auto-save tick.
 

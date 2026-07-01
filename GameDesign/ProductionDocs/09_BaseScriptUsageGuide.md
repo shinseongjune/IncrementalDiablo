@@ -64,6 +64,8 @@ The 2026-06-29 E2-A settings persistence pass adds `UiSettingsSaveData` to schem
 
 The 2026-06-30 E2-A recovery pass keeps `loadButton` enabled whenever `DefenseSaveManager` is present, even before a save exists. This is intentional: `PlayableLoopHud.LoadGame()` owns the no-save player guidance and must stay reachable during a fresh-save onboarding check.
 
+The 2026-07-01 E2-A recovery hardening centralizes that no-save copy in `DefenseSaveManager.NoSaveRecoveryGuidance`. `PlayableLoopHud.LoadGame()` reuses the same string, so normal load clicks and save-manager load reports cannot drift into raw save-file paths before the focused Play Mode check.
+
 Do not treat this as full E2-A completion. A player-facing settings menu/control set and focused fresh-save recovery Play Mode QA remain separate work.
 
 ## Defense save/load boundary

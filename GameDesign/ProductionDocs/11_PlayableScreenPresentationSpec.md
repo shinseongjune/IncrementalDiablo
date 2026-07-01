@@ -83,6 +83,12 @@ defense state and resources
 - The first recovery-save `Next:` hint now includes HUD settings in the recovery point, matching the schema-v6 save behavior.
 - This does not add a settings menu, move HUD controls, or change layout.
 
+## 2026-07-01 E2-A no-save report consistency
+
+- `DefenseSaveManager.NoSaveRecoveryGuidance` now owns the no-save recovery copy.
+- `PlayableLoopHud.LoadGame()` reuses that copy when `Load` is clicked before a first save, and the harness checks the save-manager and HUD tokens together.
+- This is structural recovery-message hardening only. It does not replace the focused fresh-save Play Mode QA path or add a settings menu.
+
 ## Text policy
 
 - Normal-player text states consequences and actions, not implementation state.

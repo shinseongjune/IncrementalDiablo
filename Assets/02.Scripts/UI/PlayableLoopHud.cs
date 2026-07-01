@@ -386,7 +386,7 @@ public class PlayableLoopHud : MonoBehaviour
 
         SetMessage(saveManager.HasSaveFile
             ? $"Load failed. {saveManager.LastLoadReport}"
-            : "No save yet. Start the frontline, choose a contract, clear a room, then save after handling the reward.");
+            : DefenseSaveManager.NoSaveRecoveryGuidance);
     }
 
     public UiSettingsSaveData CreateUiSettingsSaveData()

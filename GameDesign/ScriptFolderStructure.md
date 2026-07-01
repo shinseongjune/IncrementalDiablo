@@ -25,7 +25,7 @@ The superseded presentation stack, its prefab/assets, review-only level control,
 - Dungeon encounters must extend `ExpeditionDirector`, `DungeonEncounterModel`, and save data; they must not create a hand-authored room ladder or second reward path.
 - Rare affixes must extend `ItemEconomyModel.AuthoredRareAffixes`, `ItemAffixRoll`, and the existing crafting cost path; they must not create a second item mutation or save model.
 - Player-facing UI shows actions, consequences, first-session next steps, and recovery meaning, not review/debug/render wiring status.
-- HUD settings persistence is limited to `UiSettingsSaveData` and `PlayableLoopHud` settings snapshot/apply. Keep pre-save `Load` guidance reachable from the normal HUD, and do not create a second settings save file unless a full settings menu decision requires it.
+- HUD settings persistence is limited to `UiSettingsSaveData` and `PlayableLoopHud` settings snapshot/apply. `DefenseSaveManager.NoSaveRecoveryGuidance` owns the pre-save `Load` recovery copy and the normal HUD reuses it. Do not create a second settings save file unless a full settings menu decision requires it.
 - New systems need a primary owner, data location, persistence statement, balance knobs, and a harness or Play Mode verification path.
 
 ## Automation notes
