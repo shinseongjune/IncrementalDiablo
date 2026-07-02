@@ -86,9 +86,9 @@ Use this path only when reusable encounter text, threat/reward effects, or save/
 
 Do not move room geometry, spawn anchors, cameras, or HUD placement for this validation unless the user explicitly asks for a visual-authoring pass.
 
-## E2-A fresh-save guide validation path
+## E2-A fresh-save guide regression path
 
-Use this path to validate the first E2-A onboarding/recovery pass:
+E2-A was accepted from the 2026-07-01 user-confirmed recovery guidance check. Use this path only when first-session onboarding/recovery regresses:
 
 1. Back up or temporarily move the existing local save outside Unity if you need a true fresh-save path.
 2. Open `Gameplay`; reload the scene if Unity reports external file changes.
@@ -97,7 +97,7 @@ Use this path to validate the first E2-A onboarding/recovery pass:
 5. Start the frontline, select/refresh a contract, start a dungeon, then clear or fail the room. Expected: the `Next:` line explains reward claim or failure recovery.
 6. After a reward, equip or salvage the latest item, then click `Save`. Expected: the `Next:` line and save message say the recovery point covers frontline, dungeon, inventory, equipment, and HUD settings.
 
-This path validates the first-session copy and recovery flow. It does not require a new scene object or layout change.
+This path validates the accepted first-session copy and recovery flow. It does not require a new scene object or layout change.
 
 ## E2-A settings persistence validation path
 

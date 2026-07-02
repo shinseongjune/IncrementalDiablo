@@ -3,7 +3,7 @@
 ## 2026-06-21 Current Production Boundary
 
 - The accepted normal path is one direct-control room with a real spawned enemy, depth progression, reward continuity, and retry. It is a foundation, not proof of a repeatable dungeon game.
-- E1-A contract choice, E1-B authored Rare affix reroll, and E1-C reusable encounter variety are accepted. The next dungeon-adjacent feature is E2-A onboarding/settings/recovery.
+- E1-A contract choice, E1-B authored Rare affix reroll, E1-C reusable encounter variety, and E2-A onboarding/settings/recovery are accepted. The next dungeon-adjacent feature is E2-B goal comparison clarity.
 - Boss breadth, multi-room sequences, and a new calculation-only auto-expedition path remain deferred until the accepted encounter route is teachable from a fresh save.
 
 ## 2026-06-27 E1-C Encounter Core
@@ -22,6 +22,7 @@
 - A failed room now routes the player back to defense recovery instead of sounding like a silent dead end.
 - The first manual save is described as a recovery point for frontline, dungeon, inventory, equipment, and HUD settings.
 - 2026-06-29 update: schema v6 persists current HUD text-density and first-session guide settings through `UiSettingsSaveData`. This adds no new dungeon save field and does not change contract, encounter, reward, or room-resolution behavior.
+- 2026-07-02 status: E2-A is accepted from the 2026-07-01 user-confirmed recovery guidance check. Reopen only for first-session recovery, no-save load, settings-restore, or reward/recovery text regressions.
 
 ## 2026-06-25 E1-A Contract Core
 

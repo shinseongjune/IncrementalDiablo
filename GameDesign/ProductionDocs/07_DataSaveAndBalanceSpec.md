@@ -9,7 +9,7 @@
 - 2026-06-27 update: save schema v5 adds dungeon encounter seed, selected encounter id, active encounter id, and last encounter summary. `DefenseSaveManager` migrates older saves by generating a deterministic selected encounter and preserving an active encounter for running or reward-pending clears.
 - 2026-06-28 update: the first E2-A recovery pass adds no schema field. `PlayableLoopHud` explains the first manual save as a recovery point for existing schema-v5 frontline, dungeon, inventory, and equipment state, and hides the raw missing-save file path from normal HUD copy.
 - 2026-06-29 update: save schema v6 adds `UiSettingsSaveData` for the current HUD text-density and first-session guide settings. `DefenseSaveManager` migrates older saves to compact/default guide settings, snapshots the current `PlayableLoopHud` settings when saving, restores them when loading, and diagnostics warn if diagnostic HUD text is persisted for a normal capture.
-- 2026-07-01 update: no schema field changed. `DefenseSaveManager.NoSaveRecoveryGuidance` now owns the no-save recovery copy, and `PlayableLoopHud` reuses it so pre-save `Load` attempts do not expose the raw persistent-data path through normal recovery messaging.
+- 2026-07-01 update: no schema field changed. `DefenseSaveManager.NoSaveRecoveryGuidance` now owns the no-save recovery copy, and `PlayableLoopHud` reuses it so pre-save `Load` attempts do not expose the raw persistent-data path through normal recovery messaging. User-confirmed recovery guidance accepts the scoped E2-A recovery path; reopen only for save/recovery regressions.
 
 ## 2026-06-27 Dungeon Encounter Balance Export
 

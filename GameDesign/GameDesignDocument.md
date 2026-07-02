@@ -43,14 +43,14 @@ The release-gate source of truth is `ProductionDocs/13_ReleaseReadinessAndProduc
 
 - Ground defense has an accepted actual NavMesh battlefield with readable faction/attack ownership, wall damage, reinforcement, formula-driven density, and accepted camera composition.
 - Dungeon depth progression, depth threat/reward bands, E1-A contract choice, normal-player contract buttons, E1-C encounter core, defense save/load visual rebuild, item registry/migration, duplicate conversion, save/load, no-save recovery guidance, reward overlays, salvage, the accepted authored Rare affix pool, first fresh-save `Next:` guidance, and schema-v6 HUD settings persistence exist.
-- The next product gap is focused first-session recovery QA so the accepted contract/item/encounter loop can be understood without developer explanation. A broader settings menu still needs a scoped UI/product decision.
+- E2-A first-session recovery guidance is accepted. The next product gap is goal comparison clarity: a fresh player should be able to name why a contract, latest reward, or upgrade is better for the current goal without developer explanation. A broader settings menu still needs a scoped UI/product decision.
 
 Accepted baselines reopen only for regressions or explicit contract changes. They are not default polishing work.
 
 ## Current production priorities
 
-1. Finish `E2-A`: fresh-save recovery QA now that the item/contract/encounter decision loop has first-pass HUD guidance and the current HUD settings persist.
-2. Future presentation pass: authored boss silhouettes, room geometry, and VFX after the teachable loop exists.
+1. Advance `E2-B`: goal comparison clarity for contracts, rewards, and upgrades now that the first-session recovery path is accepted.
+2. Future presentation pass: authored boss silhouettes, room geometry, and VFX after the teachable loop can explain its decisions.
 
 ## Design rules
 

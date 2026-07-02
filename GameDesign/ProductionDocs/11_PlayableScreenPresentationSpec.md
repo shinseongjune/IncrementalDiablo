@@ -87,7 +87,14 @@ defense state and resources
 
 - `DefenseSaveManager.NoSaveRecoveryGuidance` now owns the no-save recovery copy.
 - `PlayableLoopHud.LoadGame()` reuses that copy when `Load` is clicked before a first save, and the harness checks the save-manager and HUD tokens together.
-- This is structural recovery-message hardening only. It does not replace the focused fresh-save Play Mode QA path or add a settings menu.
+- User-confirmed recovery guidance on 2026-07-01 accepts the scoped E2-A onboarding/settings/recovery path. Reopen only for a first-session recovery, no-save load, or settings-restore regression.
+- This does not add a full settings menu. Visible settings controls remain a separate product/UI decision.
+
+## 2026-07-02 E2-B presentation target
+
+- The next player-facing gap is goal comparison clarity: help the player name why the selected contract, latest reward, or next upgrade is better for the current goal.
+- Prefer overlay or contextual copy over a busier always-on HUD. The default compact HUD should stay readable.
+- Do not add diagnostic labels, broad item content, new economy denominators, or a settings menu as part of this target.
 
 ## Text policy
 

@@ -64,9 +64,9 @@ The 2026-06-29 E2-A settings persistence pass adds `UiSettingsSaveData` to schem
 
 The 2026-06-30 E2-A recovery pass keeps `loadButton` enabled whenever `DefenseSaveManager` is present, even before a save exists. This is intentional: `PlayableLoopHud.LoadGame()` owns the no-save player guidance and must stay reachable during a fresh-save onboarding check.
 
-The 2026-07-01 E2-A recovery hardening centralizes that no-save copy in `DefenseSaveManager.NoSaveRecoveryGuidance`. `PlayableLoopHud.LoadGame()` reuses the same string, so normal load clicks and save-manager load reports cannot drift into raw save-file paths before the focused Play Mode check.
+The 2026-07-01 E2-A recovery hardening centralizes that no-save copy in `DefenseSaveManager.NoSaveRecoveryGuidance`. `PlayableLoopHud.LoadGame()` reuses the same string, so normal load clicks and save-manager load reports cannot drift into raw save-file paths.
 
-Do not treat this as full E2-A completion. A player-facing settings menu/control set and focused fresh-save recovery Play Mode QA remain separate work.
+The scoped E2-A path is accepted from the 2026-07-01 user-confirmed recovery guidance check. A full player-facing settings menu/control set remains separate product scope and must not be added just because the current HUD settings persist.
 
 ## Defense save/load boundary
 
@@ -77,7 +77,7 @@ Do not treat this as full E2-A completion. A player-facing settings menu/control
 - Run `Tools/Automation/Invoke-IncrementalDiabloChecks.ps1` after changing a live script or wiring contract.
 - Add focused checks for new data/save contracts.
 - For E2-A UI settings, verify schema-v6 save/load structurally through the harness and use the `06_UnitySceneAndPrefabSetupGuide.md` settings persistence path for Play Mode confirmation.
-- For E2-A fresh-save recovery, use the `06_UnitySceneAndPrefabSetupGuide.md` path and include the pre-save `Load` click; the button should show guided no-save copy rather than being disabled.
+- For E2-A fresh-save recovery regressions, use the `06_UnitySceneAndPrefabSetupGuide.md` path and include the pre-save `Load` click; the button should show guided no-save copy rather than being disabled.
 - Run `Tools/Automation/Export-DungeonContracts.ps1` when contract ids/effects change; the harness checks it in `-CheckOnly` mode.
 - Run `Tools/Automation/Export-DungeonEncounters.ps1` when encounter ids/effects change; the harness checks it in `-CheckOnly` mode.
 - Run `Tools/Automation/Export-RareAffixes.ps1` when Rare affix ids, weights, stat formulas, tags, or slot rules change; the harness checks it in `-CheckOnly` mode.
