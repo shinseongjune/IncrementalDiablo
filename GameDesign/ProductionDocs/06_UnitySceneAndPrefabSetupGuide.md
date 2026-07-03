@@ -112,6 +112,18 @@ Use this path when verifying the schema-v6 settings persistence slice:
 
 The production scene still has no full settings menu. Adding visible controls for these toggles is a later UI/product decision.
 
+## E2-B contract comparison validation path
+
+Use this path when verifying the first E2-B goal-comparison slice:
+
+1. Open `Gameplay`; reload the scene if Unity reports external file changes.
+2. Enter Play Mode and start the frontline if it is stopped.
+3. Read the compact Dungeon contract block. Expected: it shows two offered contracts, the selected contract, and one `Goal:` line that explains safer clear/recovery versus higher reward-depth risk.
+4. Click `Contract A`, `Contract B`, and `Refresh`. Expected: the selected contract and `Goal:` line change together, and the `Next:` hint repeats the practical reason to start, switch, or refresh before entering.
+5. Start the selected dungeon. Expected: the active contract still appears in the Dungeon line, the run uses the selected contract/encounter path, and no diagnostic labels or new settings controls appear.
+
+This path validates player-facing copy density and choice clarity. It does not require moving HUD objects, adding scene controls, changing item drops, or changing contract economy values.
+
 ## Visual-authoring boundary
 
 Do not autonomously change room size, camera framing, HUD placement, object scale, silhouette, or composition based on source text alone. For a necessary manual pass, provide:

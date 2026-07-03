@@ -124,6 +124,85 @@ public static class DungeonContractModel
         return $"{FormatShortText(profile)} - {profile.Description}";
     }
 
+    public static string FormatGoalText(DungeonContractProfile profile)
+    {
+        if (!profile.IsValid)
+        {
+            profile = GetDefault();
+        }
+
+        if (profile.RewardDepthOffset <= 0 && GetThreatScore(profile) <= 1.001f)
+        {
+            return "Goal: safest clear and recovery baseline.";
+        }
+
+        string rewardText = FormatRewardGoal(profile);
+        if (profile.EnemyDamageMultiplier > profile.EnemyHealthMultiplier + 0.05f)
+        {
+            return $"Goal: {rewardText}; accept sharper enemy hits.";
+        }
+
+        if (profile.EnemyHealthMultiplier > profile.EnemyDamageMultiplier + 0.05f)
+        {
+            return $"Goal: {rewardText}; accept longer enemy fights.";
+        }
+
+        return $"Goal: {rewardText}; accept higher listed threat.";
+    }
+
+    public static string FormatGoalComparisonText(DungeonContractProfile selected, DungeonContractProfile alternative)
+    {
+        if (!selected.IsValid)
+        {
+            selected = GetDefault();
+        }
+
+        if (!alternative.IsValid ||
+            string.Equals(selected.Id, alternative.Id, StringComparison.OrdinalIgnoreCase))
+        {
+            return FormatGoalText(selected);
+        }
+
+        float selectedThreat = GetThreatScore(selected);
+        float alternativeThreat = GetThreatScore(alternative);
+        int rewardDelta = selected.RewardDepthOffset - alternative.RewardDepthOffset;
+        string alternativeName = alternative.DisplayName;
+
+        if (selected.RewardDepthOffset <= 0 && selectedThreat <= alternativeThreat + 0.001f)
+        {
+            return alternative.RewardDepthOffset > selected.RewardDepthOffset
+                ? $"Goal: safest clear; switch to {alternativeName} for {FormatRewardGoal(alternative)}."
+                : "Goal: safest clear and recovery baseline.";
+        }
+
+        if (rewardDelta > 0)
+        {
+            return selectedThreat > alternativeThreat + 0.001f
+                ? $"Goal: {FormatRewardGoal(selected)}; accept higher threat than {alternativeName}."
+                : $"Goal: {FormatRewardGoal(selected)} with no extra shown threat versus {alternativeName}.";
+        }
+
+        if (rewardDelta == 0)
+        {
+            if (selectedThreat < alternativeThreat - 0.001f)
+            {
+                return $"Goal: same reward as {alternativeName} with lower threat.";
+            }
+
+            if (selectedThreat > alternativeThreat + 0.001f)
+            {
+                return $"Goal: same reward as {alternativeName}, but higher threat.";
+            }
+        }
+
+        if (selectedThreat < alternativeThreat - 0.001f)
+        {
+            return $"Goal: safer clear than {alternativeName}; lower reward depth.";
+        }
+
+        return $"Goal: weaker tradeoff than {alternativeName}; switch or refresh unless practicing danger.";
+    }
+
     private static int PositiveModulo(int value, int divisor)
     {
         if (divisor <= 0)
@@ -133,6 +212,28 @@ public static class DungeonContractModel
 
         int result = value % divisor;
         return result < 0 ? result + divisor : result;
+    }
+
+    private static float GetThreatScore(DungeonContractProfile profile)
+    {
+        if (!profile.IsValid)
+        {
+            profile = GetDefault();
+        }
+
+        return Mathf.Max(profile.EnemyHealthMultiplier, profile.EnemyDamageMultiplier);
+    }
+
+    private static string FormatRewardGoal(DungeonContractProfile profile)
+    {
+        if (!profile.IsValid)
+        {
+            profile = GetDefault();
+        }
+
+        return profile.RewardDepthOffset <= 0
+            ? "baseline reward"
+            : $"reward D+{profile.RewardDepthOffset}";
     }
 }
 

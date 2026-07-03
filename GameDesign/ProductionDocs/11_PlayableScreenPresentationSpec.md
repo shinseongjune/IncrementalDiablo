@@ -96,6 +96,14 @@ defense state and resources
 - Prefer overlay or contextual copy over a busier always-on HUD. The default compact HUD should stay readable.
 - Do not add diagnostic labels, broad item content, new economy denominators, or a settings menu as part of this target.
 
+## 2026-07-03 E2-B contract comparison status
+
+- `DungeonContractModel.FormatGoalComparisonText(...)` turns the selected contract and the other offered contract into one normal-player `Goal:` line.
+- `PlayableLoopHud` shows that line in the compact contract block, contract select/refresh messages, and first-session `Next:` hint before dungeon entry.
+- The first implemented comparison scope is contract tradeoff only: safer clear/recovery versus higher reward-depth risk. Latest item comparison and defense-upgrade comparison remain later E2-B passes if the contract copy is accepted.
+- This does not add a new HUD panel, settings menu, diagnostic text, contract economy denominator, item table, scene object, or layout change.
+- Remaining evidence: focused `Gameplay` Play Mode validation that A/B/refresh changes the `Goal:` text, the text remains compact enough in the Dungeon block, and starting the selected run preserves the chosen contract consequence.
+
 ## Text policy
 
 - Normal-player text states consequences and actions, not implementation state.

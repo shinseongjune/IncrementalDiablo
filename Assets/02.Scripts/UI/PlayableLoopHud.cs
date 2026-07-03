@@ -175,7 +175,7 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         SetMessage(expedition.RefreshContractOffer()
-            ? $"Contract offer refreshed. Selected {expedition.SelectedContract.DisplayName}; next encounter {expedition.SelectedEncounter.DisplayName}."
+            ? $"Contract offer refreshed. {BuildSelectedContractGoalText()} Next encounter: {expedition.SelectedEncounter.DisplayName}."
             : "Contract offer cannot refresh while an expedition is running.");
     }
 
@@ -581,10 +581,59 @@ public class PlayableLoopHud : MonoBehaviour
 
         if (useCompactStatusText)
         {
-            return $"Offers: A {expedition.OfferedContractA.DisplayName} / B {expedition.OfferedContractB.DisplayName}\nSelected: {FormatCompactContractText(expedition.SelectedContract)}";
+            return $"Offers: A {expedition.OfferedContractA.DisplayName} / B {expedition.OfferedContractB.DisplayName}\nSelected: {FormatCompactContractText(expedition.SelectedContract)}\n{BuildSelectedContractGoalText()}";
         }
 
-        return $"Contracts: {DungeonContractModel.FormatOfferText(expedition.OfferedContractIdA, expedition.OfferedContractIdB)}\nSelected: {DungeonContractModel.FormatShortText(expedition.SelectedContract)}";
+        return $"Contracts: {DungeonContractModel.FormatOfferText(expedition.OfferedContractIdA, expedition.OfferedContractIdB)}\nSelected: {DungeonContractModel.FormatShortText(expedition.SelectedContract)}\n{BuildSelectedContractGoalText()}";
+    }
+
+    private string BuildSelectedContractGoalText()
+    {
+        if (expedition == null)
+        {
+            return "Goal: contract comparison unavailable.";
+        }
+
+        return DungeonContractModel.FormatGoalComparisonText(
+            expedition.SelectedContract,
+            GetAlternativeOfferedContract());
+    }
+
+    private string BuildSelectedContractActionHint()
+    {
+        string goal = BuildSelectedContractGoalText().Trim();
+        const string goalPrefix = "Goal: ";
+        if (goal.StartsWith(goalPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            goal = goal.Substring(goalPrefix.Length);
+        }
+
+        if (goal.EndsWith(".", StringComparison.Ordinal))
+        {
+            goal = goal.Substring(0, goal.Length - 1);
+        }
+
+        return $"Next: {goal}; start, switch, or refresh before entering.";
+    }
+
+    private DungeonContractProfile GetAlternativeOfferedContract()
+    {
+        if (expedition == null)
+        {
+            return default;
+        }
+
+        DungeonContractProfile selected = expedition.SelectedContract;
+        DungeonContractProfile first = expedition.OfferedContractA;
+        DungeonContractProfile second = expedition.OfferedContractB;
+        if (selected.IsValid &&
+            first.IsValid &&
+            string.Equals(selected.Id, first.Id, StringComparison.OrdinalIgnoreCase))
+        {
+            return second;
+        }
+
+        return first;
     }
 
     private string BuildDungeonEncounterText()
@@ -823,7 +872,7 @@ public class PlayableLoopHud : MonoBehaviour
 
         if (expedition.State == DungeonRunState.Ready)
         {
-            return $"Next: choose a dungeon contract or start with {expedition.SelectedContract.DisplayName}.";
+            return BuildSelectedContractActionHint();
         }
 
         ItemInstance latest = GetLatestItem();
@@ -902,7 +951,7 @@ public class PlayableLoopHud : MonoBehaviour
 
         if (expedition.State == DungeonRunState.Ready && latest == null)
         {
-            hint = $"Next: compare the two contracts, then start with {expedition.SelectedContract.DisplayName}.";
+            hint = BuildSelectedContractActionHint();
             return true;
         }
 
@@ -1115,7 +1164,7 @@ public class PlayableLoopHud : MonoBehaviour
             ? expedition.SelectFirstContract()
             : expedition.SelectSecondContract();
         SetMessage(changed
-            ? $"Selected contract: {expedition.SelectedContract.DisplayName}. Next encounter: {expedition.SelectedEncounter.DisplayName}."
+            ? $"Selected contract: {expedition.SelectedContract.DisplayName}. {BuildSelectedContractGoalText()} Next encounter: {expedition.SelectedEncounter.DisplayName}."
             : expedition.IsRunning
                 ? "Dungeon contract cannot change while an expedition is running."
                 : "Dungeon contract selection failed; refresh the offer.");

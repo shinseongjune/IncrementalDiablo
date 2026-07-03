@@ -61,7 +61,7 @@ The player can complete several runs without repeating the exact same decision p
 
 - authored affix data replaces the prototype reroll (`TD-04`) and is verified through the normal crafting overlay;
 - at least one reusable encounter/elite or boss rule replaces the tint-only room presentation (`TD-05`);
-- players can name why one item, contract, or upgrade is better for their current goal;
+- players can name why one item, contract, or upgrade is better for their current goal. E2-B has started with contract goal comparison text, but it still needs focused Play Mode validation before this R2 condition is accepted;
 - the first-session path teaches Hold/Push, contract choice, direct combat, reward handling, and recovery;
 - save migration and negative-path recovery are verified against the production item/contract data.
 
@@ -85,7 +85,7 @@ Only after R3 should the project expand toward multi-theme depth, broader item b
 | E1-B | Done / P0 | Replace the prototype Rare reroll with a small authored affix pool: tags, weights, slot rules, and clear stat text. | Accepted 2026-06-26 through focused reward -> equip -> reroll -> save/load evidence. `RareAffixPool.csv` is the deterministic export, and TD-04 is retired. |
 | E1-C | Done / P1 | Add reusable dungeon encounter variety: one elite rule and one boss/encounter rule that preserves direct-control value. | Accepted 2026-06-27 through focused Play Mode next encounter -> start -> elite/boss active text -> clear/fail -> reward -> save/load evidence. `DungeonEncounterModel`, schema-v5 selected/active encounter save fields, encounter HP/damage/reward-depth modifiers, HUD text, and `DungeonEncounterBalance.csv` are complete. |
 | E2-A | Done / P1 | First-session onboarding, settings, and recovery handoff after R1 decisions are real. | User accepted the recovery guidance check on 2026-07-01. Fresh-save HUD guidance, first recovery-save copy, settings persistence for the existing HUD text-density/guide toggles, and the no-save `Load` guidance path are implemented. The no-save recovery copy is centralized in `DefenseSaveManager.NoSaveRecoveryGuidance` and reused by the normal HUD. |
-| E2-B | Next / P1 | Goal comparison clarity after the first-session path is recoverable. | Add concise normal-path guidance that helps a player explain why a contract, latest item, or upgrade is better for the current goal. This should support R2's comparison requirement without adding a full settings menu or debug-heavy HUD. |
+| E2-B | In progress / P1 | Goal comparison clarity after the first-session path is recoverable. | Contract comparison core is implemented: selected-vs-alternative contract guidance now explains safer clear/recovery versus higher reward-depth risk in the normal HUD/action hint path. Remaining evidence is focused `Gameplay` Play Mode validation of A/B/refresh comparison copy before expanding to latest item or upgrade comparison. |
 
 ## 6. Economy and Balance Guardrails
 

@@ -456,6 +456,8 @@ if ((Test-Path -LiteralPath $expeditionDirectorPath) -and
     [void](Assert-TextContains "Playable HUD guides first recovery save" $playableHudText "keep frontline, dungeon, inventory, equipment, and HUD settings")
     [void](Assert-TextContains "Playable HUD reuses no-save recovery guidance" $playableHudText "DefenseSaveManager.NoSaveRecoveryGuidance")
     [void](Assert-TextContains "Playable HUD allows no-save load guidance" $playableHudText "SetInteractable(loadButton, saveManager != null);")
+    [void](Assert-TextContains "Playable HUD shows contract goal comparison" $playableHudText "BuildSelectedContractGoalText")
+    [void](Assert-TextContains "Playable HUD routes E2-B action hint" $playableHudText "BuildSelectedContractActionHint")
     [void](Assert-TextContains "Save diagnostics summarize guide state" $saveDiagnosticsText "guide off")
 }
 
@@ -544,6 +546,7 @@ if (Test-Path -LiteralPath $dungeonContractModelPath) {
     [void](Assert-TextContains "Dungeon contracts generate two offers" $dungeonContractModelText "BuildOffer")
     [void](Assert-TextContains "Dungeon contracts state denominator" $dungeonContractModelText "per-clear guaranteed item reward")
     [void](Assert-TextContains "Dungeon contracts include risk reward" $dungeonContractModelText "RewardDepthOffset")
+    [void](Assert-TextContains "Dungeon contracts format goal comparison" $dungeonContractModelText "FormatGoalComparisonText")
 }
 
 if (Test-Path -LiteralPath $dungeonEncounterModelPath) {
@@ -643,7 +646,7 @@ if (Test-Path -LiteralPath $planPath) {
         "E1-B | P0 | Authored Rare affix pool | Done / User accepted Play Mode validation",
         "E1-C | P1 | Reusable dungeon encounter variety | Done / User accepted Play Mode validation",
         "E2-A | P1 | Onboarding, settings, recovery | Done / User accepted recovery guidance",
-        "E2-B | P1 | Goal comparison clarity | Next / Product work",
+        "E2-B | P1 | Goal comparison clarity | In progress / Contract comparison core implemented",
         "RTS-readable automatic defense",
         "Actual NavMesh battlefield",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
@@ -680,7 +683,7 @@ if (Test-Path -LiteralPath $releaseReadinessPath) {
         "E1-B | Done / P0",
         "E1-C | Done / P1",
         "E2-A | Done / P1",
-        "E2-B | Next / P1",
+        "E2-B | In progress / P1",
         "settings persistence",
         "900+ hour target is a long-horizon design constraint",
         "A green harness means safe structure, not a completed product gate"

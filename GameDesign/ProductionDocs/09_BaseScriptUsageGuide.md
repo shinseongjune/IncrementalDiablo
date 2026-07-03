@@ -68,6 +68,12 @@ The 2026-07-01 E2-A recovery hardening centralizes that no-save copy in `Defense
 
 The scoped E2-A path is accepted from the 2026-07-01 user-confirmed recovery guidance check. A full player-facing settings menu/control set remains separate product scope and must not be added just because the current HUD settings persist.
 
+## E2-B contract comparison boundary
+
+The first E2-B pass keeps goal comparison inside the existing contract decision path. `DungeonContractModel.FormatGoalComparisonText(...)` compares the selected contract against the other offered contract using listed threat and reward-depth offset. `PlayableLoopHud.BuildSelectedContractGoalText()` shows the result in the compact contract block, contract select/refresh messages, and first-session `Next:` hint.
+
+Do not solve this pass with a new settings menu, debug label, separate contract economy, item-drop denominator change, or scene-only tutorial object. Latest reward comparison and defense-upgrade comparison are valid future E2-B passes after the contract comparison copy is accepted.
+
 ## Defense save/load boundary
 
 `DefenseRuntimeState` remains the saved authority for frontline level, state, mode, wall health, pressure, progress, and elapsed time. Loading a save applies that state through `DefenseDirector.ApplySaveData(...)`, emits `SaveDataApplied`, and lets `GroundDefenseNavMeshBattlefield` rebuild presentation actors from the restored state. Visual actor positions are not saved; they must never become a second defense simulation or keep damaging the wall when `DefenseRuntimeState.IsRunning` is false.

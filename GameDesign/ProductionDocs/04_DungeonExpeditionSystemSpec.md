@@ -3,7 +3,7 @@
 ## 2026-06-21 Current Production Boundary
 
 - The accepted normal path is one direct-control room with a real spawned enemy, depth progression, reward continuity, and retry. It is a foundation, not proof of a repeatable dungeon game.
-- E1-A contract choice, E1-B authored Rare affix reroll, E1-C reusable encounter variety, and E2-A onboarding/settings/recovery are accepted. The next dungeon-adjacent feature is E2-B goal comparison clarity.
+- E1-A contract choice, E1-B authored Rare affix reroll, E1-C reusable encounter variety, and E2-A onboarding/settings/recovery are accepted. E2-B goal comparison clarity is in progress through contract comparison copy before dungeon entry.
 - Boss breadth, multi-room sequences, and a new calculation-only auto-expedition path remain deferred until the accepted encounter route is teachable from a fresh save.
 
 ## 2026-06-27 E1-C Encounter Core
@@ -30,6 +30,7 @@
 - `ExpeditionDirector` owns offered, selected, and active contract ids. Starting a run copies the selected contract into active run state; clear/failure/result text names the active contract.
 - Contract threat applies through `ExpeditionDirector.GetEffectiveDepthBalance(...)`, which feeds `CombatRoom` and `EnemySpawner` enemy HP/damage multipliers without creating a second combat system.
 - Contract reward uses a reward-depth offset and still calls the existing `LootDropper.TryGrantClearReward(depth)` path. This keeps the denominator as one guaranteed per-clear item reward and preserves authored tables, duplicate conversion, salvage, and item save behavior.
+- `DungeonContractModel.FormatGoalComparisonText(...)` owns E2-B selected-vs-alternative contract guidance. It explains safer clear/recovery versus higher reward-depth risk without changing contract math, reward denominator, or save data.
 - `DungeonLoopSmokeTest` now selects a non-default contract before starting its clear path and blocks if the run starts without an active contract.
 - `Gameplay` now wires normal-player contract A, contract B, and refresh buttons into `PlayableLoopHud`; the harness checks these scene references.
 - Production evidence accepted 2026-06-25: choice A/B/refresh -> start run -> clear/fail -> reward -> save/load in Play Mode, including restored defense state. Reopen E1-A only for contract/save/reward regressions.
