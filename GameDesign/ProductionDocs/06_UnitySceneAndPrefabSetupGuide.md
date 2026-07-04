@@ -112,9 +112,9 @@ Use this path when verifying the schema-v6 settings persistence slice:
 
 The production scene still has no full settings menu. Adding visible controls for these toggles is a later UI/product decision.
 
-## E2-B contract comparison validation path
+## E2-B contract comparison regression path
 
-Use this path when verifying the first E2-B goal-comparison slice:
+Use this path only when the accepted contract comparison copy regresses. It was user-accepted on 2026-07-03:
 
 1. Open `Gameplay`; reload the scene if Unity reports external file changes.
 2. Enter Play Mode and start the frontline if it is stopped.
@@ -123,6 +123,18 @@ Use this path when verifying the first E2-B goal-comparison slice:
 5. Start the selected dungeon. Expected: the active contract still appears in the Dungeon line, the run uses the selected contract/encounter path, and no diagnostic labels or new settings controls appear.
 
 This path validates player-facing copy density and choice clarity. It does not require moving HUD objects, adding scene controls, changing item drops, or changing contract economy values.
+
+## E2-B latest item comparison validation path
+
+Use this path when verifying the current E2-B reward-item comparison slice:
+
+1. Open `Gameplay`; reload the scene if Unity reports external file changes.
+2. Enter Play Mode, start the frontline if needed, choose any contract, and clear a dungeon room until a normal reward item reaches the latest Item line.
+3. Expected Item line: it includes one compact `Compare:` phrase such as empty slot, equipped, positive Power delta, sidegrade, or equipped item higher.
+4. Expected `Next:` line: it tells the player whether to equip the latest item, fill an empty slot, treat it as an affix/material sidegrade, or keep the current item and salvage the spare.
+5. Equip or salvage the latest item, then save and load. Expected: inventory/equipment state and the comparison/action hint remain coherent after load.
+
+This path validates reward decision clarity only. It does not require moving HUD objects, changing item drops, changing salvage yields, adding a settings menu, or changing scene wiring.
 
 ## Visual-authoring boundary
 

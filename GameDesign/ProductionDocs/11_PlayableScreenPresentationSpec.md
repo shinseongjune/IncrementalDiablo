@@ -102,7 +102,15 @@ defense state and resources
 - `PlayableLoopHud` shows that line in the compact contract block, contract select/refresh messages, and first-session `Next:` hint before dungeon entry.
 - The first implemented comparison scope is contract tradeoff only: safer clear/recovery versus higher reward-depth risk. Latest item comparison and defense-upgrade comparison remain later E2-B passes if the contract copy is accepted.
 - This does not add a new HUD panel, settings menu, diagnostic text, contract economy denominator, item table, scene object, or layout change.
-- Remaining evidence: focused `Gameplay` Play Mode validation that A/B/refresh changes the `Goal:` text, the text remains compact enough in the Dungeon block, and starting the selected run preserves the chosen contract consequence.
+- Production evidence accepted 2026-07-03: A/B/refresh changed the `Goal:` text, the compact `Next:` hint stayed readable, and starting the selected run preserved the chosen contract consequence.
+
+## 2026-07-04 E2-B latest item comparison status
+
+- `PlayableLoopHud` now adds a compact `Compare:` phrase to the latest Item line when the reward item is resolved.
+- The comparison uses existing same-slot equipment state and saved item power: empty slot, equipped item, positive power delta, sidegrade, or equipped item higher.
+- The normal `Next:` hint now names the practical reward choice: equip an upgrade, fill an empty slot, treat a sidegrade as affix/material choice, or keep the stronger equipped item and salvage the spare.
+- This changes no drop odds, reward count, reward denominator, salvage yield, save schema, scene object, layout, or settings menu.
+- Remaining evidence: focused `Gameplay` Play Mode validation that a reward item updates the Item `Compare:` text, the `Next:` hint remains compact, and equip/salvage followed by save/load remains coherent.
 
 ## Text policy
 

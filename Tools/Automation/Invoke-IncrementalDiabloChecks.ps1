@@ -268,6 +268,7 @@ $requiredPaths = @(
     @{ Name = "Item salvage service"; Path = "Assets\02.Scripts\Items\ItemSalvageService.cs" },
     @{ Name = "Loot dropper script"; Path = "Assets\02.Scripts\Items\LootDropper.cs" },
     @{ Name = "Simple inventory script"; Path = "Assets\02.Scripts\Items\SimpleInventory.cs" },
+    @{ Name = "Equipment slots script"; Path = "Assets\02.Scripts\Character\Core\EquipmentSlots.cs" },
     @{ Name = "Playable HUD script"; Path = "Assets\02.Scripts\UI\PlayableLoopHud.cs" },
     @{ Name = "Screen layout controller script"; Path = "Assets\02.Scripts\UI\PlayableScreenLayoutController.cs" },
     @{ Name = "Automation plan"; Path = "GameDesign\ProductionDocs\10_PlayableLoopMvpAutomationPlan.md" },
@@ -314,6 +315,7 @@ $itemEconomyPath = Join-ProjectPath "Assets\02.Scripts\Items\ItemEconomyModel.cs
 $itemSalvagePath = Join-ProjectPath "Assets\02.Scripts\Items\ItemSalvageService.cs"
 $lootDropperPath = Join-ProjectPath "Assets\02.Scripts\Items\LootDropper.cs"
 $simpleInventoryPath = Join-ProjectPath "Assets\02.Scripts\Items\SimpleInventory.cs"
+$equipmentSlotsPath = Join-ProjectPath "Assets\02.Scripts\Character\Core\EquipmentSlots.cs"
 $playableHudPath = Join-ProjectPath "Assets\02.Scripts\UI\PlayableLoopHud.cs"
 $planPath = Join-ProjectPath "GameDesign\ProductionDocs\10_PlayableLoopMvpAutomationPlan.md"
 $releaseReadinessPath = Join-ProjectPath "GameDesign\ProductionDocs\13_ReleaseReadinessAndProductionGates.md"
@@ -458,7 +460,15 @@ if ((Test-Path -LiteralPath $expeditionDirectorPath) -and
     [void](Assert-TextContains "Playable HUD allows no-save load guidance" $playableHudText "SetInteractable(loadButton, saveManager != null);")
     [void](Assert-TextContains "Playable HUD shows contract goal comparison" $playableHudText "BuildSelectedContractGoalText")
     [void](Assert-TextContains "Playable HUD routes E2-B action hint" $playableHudText "BuildSelectedContractActionHint")
+    [void](Assert-TextContains "Playable HUD shows latest item comparison" $playableHudText "BuildLatestItemComparisonText")
+    [void](Assert-TextContains "Playable HUD routes latest item action hint" $playableHudText "BuildLatestItemActionHint")
+    [void](Assert-TextContains "Playable HUD reads equipped item by slot" $playableHudText "GetEquippedItemForSlot")
     [void](Assert-TextContains "Save diagnostics summarize guide state" $saveDiagnosticsText "guide off")
+}
+
+if (Test-Path -LiteralPath $equipmentSlotsPath) {
+    $equipmentSlotsText = Read-TextFile $equipmentSlotsPath
+    [void](Assert-TextContains "Equipment slots exposes same-slot item" $equipmentSlotsText "public ItemInstance GetEquippedItem")
 }
 
 if ((Test-Path -LiteralPath $itemRegistryPath) -and
@@ -646,7 +656,7 @@ if (Test-Path -LiteralPath $planPath) {
         "E1-B | P0 | Authored Rare affix pool | Done / User accepted Play Mode validation",
         "E1-C | P1 | Reusable dungeon encounter variety | Done / User accepted Play Mode validation",
         "E2-A | P1 | Onboarding, settings, recovery | Done / User accepted recovery guidance",
-        "E2-B | P1 | Goal comparison clarity | In progress / Contract comparison core implemented",
+        "E2-B | P1 | Goal comparison clarity | In progress / Latest item comparison core implemented",
         "RTS-readable automatic defense",
         "Actual NavMesh battlefield",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
@@ -684,6 +694,7 @@ if (Test-Path -LiteralPath $releaseReadinessPath) {
         "E1-C | Done / P1",
         "E2-A | Done / P1",
         "E2-B | In progress / P1",
+        "Latest item comparison core is implemented",
         "settings persistence",
         "900+ hour target is a long-horizon design constraint",
         "A green harness means safe structure, not a completed product gate"

@@ -167,7 +167,7 @@ public class EquipmentSlots : MonoBehaviour
         Changed?.Invoke();
     }
 
-    private ItemInstance GetEquippedItem(ItemSlot slot)
+    public ItemInstance GetEquippedItem(ItemSlot slot)
     {
         switch (slot)
         {

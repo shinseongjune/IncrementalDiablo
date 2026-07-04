@@ -30,7 +30,7 @@ The deleted ground-presentation stack is not an alternative implementation. It m
 
 | Component | Responsibility |
 | --- | --- |
-| `PlayableLoopHud` | Compact current frontline/dungeon state, meaningful actions, depth selection, first-session guidance, recovery copy, and normal status. |
+| `PlayableLoopHud` | Compact current frontline/dungeon state, meaningful actions, depth selection, first-session guidance, recovery copy, E2-B contract/latest-item comparison, and normal status. |
 | `PlayableScreenLayoutController` | Defense/dungeon focus and overlay visibility safety. |
 | `PanelCameraRenderTarget` | Camera-to-`RawImage` viewport bridge. |
 | `DungeonViewportInputRouter` | Converts dungeon viewport clicks to player input. |
@@ -68,11 +68,13 @@ The 2026-07-01 E2-A recovery hardening centralizes that no-save copy in `Defense
 
 The scoped E2-A path is accepted from the 2026-07-01 user-confirmed recovery guidance check. A full player-facing settings menu/control set remains separate product scope and must not be added just because the current HUD settings persist.
 
-## E2-B contract comparison boundary
+## E2-B goal comparison boundary
 
-The first E2-B pass keeps goal comparison inside the existing contract decision path. `DungeonContractModel.FormatGoalComparisonText(...)` compares the selected contract against the other offered contract using listed threat and reward-depth offset. `PlayableLoopHud.BuildSelectedContractGoalText()` shows the result in the compact contract block, contract select/refresh messages, and first-session `Next:` hint.
+The first E2-B pass keeps goal comparison inside the existing contract decision path. `DungeonContractModel.FormatGoalComparisonText(...)` compares the selected contract against the other offered contract using listed threat and reward-depth offset. `PlayableLoopHud.BuildSelectedContractGoalText()` shows the result in the compact contract block, contract select/refresh messages, and first-session `Next:` hint. This contract comparison copy is accepted from the 2026-07-03 user-confirmed check.
 
-Do not solve this pass with a new settings menu, debug label, separate contract economy, item-drop denominator change, or scene-only tutorial object. Latest reward comparison and defense-upgrade comparison are valid future E2-B passes after the contract comparison copy is accepted.
+The 2026-07-04 E2-B latest-item pass keeps reward comparison inside `PlayableLoopHud` and `EquipmentSlots`. `PlayableLoopHud.BuildLatestItemComparisonText()` reads the latest resolved reward item and `EquipmentSlots.GetEquippedItem(...)` for the same slot, then formats the normal Item line and `Next:` hint around empty-slot equip, power upgrade, sidegrade, or salvage-spare decisions.
+
+Do not solve E2-B with a new settings menu, debug label, separate contract economy, item-drop denominator change, scene-only tutorial object, or new save field. Defense-upgrade comparison is a valid future E2-B pass after the latest reward item comparison is accepted.
 
 ## Defense save/load boundary
 

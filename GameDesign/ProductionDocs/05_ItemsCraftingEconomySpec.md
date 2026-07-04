@@ -19,6 +19,13 @@
 - `Tools/Automation/Export-RareAffixes.ps1` exports and checks `GameDesign/Balance/RareAffixPool.csv` with the denominator `per-paid Rare affix reroll`.
 - Production evidence accepted 2026-06-26: in `Gameplay`, reward -> equip -> reroll -> save/load kept the authored affix id/text coherent. Reopen E1-B only for affix id, stat refresh, save/load, or crafting-cost regressions.
 
+## 2026-07-04 E2-B Latest Item Comparison
+
+- `PlayableLoopHud` now compares the latest resolved reward item against the currently equipped same-slot item through `EquipmentSlots.GetEquippedItem(...)` and existing inventory equipped flags.
+- The comparison uses saved `ItemInstance.RolledPower` only for the first normal-player decision line: equip upgrade, fill empty slot, sidegrade, or keep the stronger equipped item and salvage the spare unless its affix matters.
+- This is presentation/decision support for the accepted reward path. It changes no item definition, rarity odds, reward count, reward denominator, salvage yield, affix pool, reroll cost, duplicate-conversion rule, save schema, or D2 pacing assumption.
+- Remaining evidence: focused `Gameplay` Play Mode validation of reward -> Item `Compare:` text -> `Next:` equip/salvage hint -> equip or salvage -> save/load.
+
 ## 2026-06-10 Phase D Duplicate Conversion
 
 - `LootDropper` rolls the candidate item before adding it to inventory. `ItemEconomyModel.TryFindAutoConversionMatch(...)` only matches an already-owned resolved item with the same canonical definition id.

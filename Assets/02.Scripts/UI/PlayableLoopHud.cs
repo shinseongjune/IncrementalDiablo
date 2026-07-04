@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -748,13 +749,119 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         string equippedText = item.Equipped ? " / Equipped" : string.Empty;
+        string comparisonText = BuildLatestItemComparisonText(item);
         string resolutionText = item.IsDefinitionResolved ? string.Empty : $" / Unresolved {item.DefinitionId}";
         if (useCompactStatusText)
         {
-            return $"Item: {item.DisplayName} / {item.Rarity} {item.Slot} / Power {item.RolledPower}{equippedText}{resolutionText}";
+            return $"Item: {item.DisplayName} / {item.Rarity} {item.Slot} / Power {item.RolledPower}{equippedText}{comparisonText}{resolutionText}";
         }
 
-        return $"Inventory: {inventory.Count}/{inventory.Capacity} / Latest: {item.DisplayName} / {item.Rarity} {item.Slot} Power {item.RolledPower}{equippedText}{resolutionText}";
+        return $"Inventory: {inventory.Count}/{inventory.Capacity} / Latest: {item.DisplayName} / {item.Rarity} {item.Slot} Power {item.RolledPower}{equippedText}{comparisonText}{resolutionText}";
+    }
+
+    private string BuildLatestItemComparisonText(ItemInstance latest)
+    {
+        if (latest == null || !latest.IsDefinitionResolved)
+        {
+            return string.Empty;
+        }
+
+        ItemInstance equipped = GetEquippedItemForSlot(latest.Slot);
+        if (IsSameItem(latest, equipped) || latest.Equipped)
+        {
+            return " / Compare: equipped";
+        }
+
+        if (equipped == null)
+        {
+            return " / Compare: empty slot";
+        }
+
+        int powerDelta = latest.RolledPower - equipped.RolledPower;
+        if (powerDelta > 0)
+        {
+            return $" / Compare: +{powerDelta} Power";
+        }
+
+        if (powerDelta == 0)
+        {
+            return " / Compare: sidegrade";
+        }
+
+        return $" / Compare: equipped +{Math.Abs(powerDelta)} Power";
+    }
+
+    private string BuildLatestItemActionHint(ItemInstance latest)
+    {
+        if (latest == null)
+        {
+            return "Next: start a dungeon, then use its reward to choose equip or salvage.";
+        }
+
+        if (!latest.IsDefinitionResolved)
+        {
+            return $"Next: saved item '{latest.DefinitionId}' is quarantined; add an item-id migration before using it.";
+        }
+
+        ItemInstance equipped = GetEquippedItemForSlot(latest.Slot);
+        if (IsSameItem(latest, equipped) || latest.Equipped)
+        {
+            return "Next: keep the equipped item, salvage spares, or start another dungeon.";
+        }
+
+        if (equipped == null)
+        {
+            return $"Next: equip {latest.DisplayName} to fill {latest.Slot}, or salvage it into upgrade materials.";
+        }
+
+        int powerDelta = latest.RolledPower - equipped.RolledPower;
+        if (powerDelta > 0)
+        {
+            return $"Next: equip {latest.DisplayName} for +{powerDelta} Power, or salvage it if materials matter more.";
+        }
+
+        if (powerDelta == 0)
+        {
+            return $"Next: {latest.DisplayName} is a sidegrade; equip for its affix or salvage it into materials.";
+        }
+
+        return $"Next: current {latest.Slot} is {Math.Abs(powerDelta)} Power higher; keep it and salvage the spare unless its affix matters.";
+    }
+
+    private ItemInstance GetEquippedItemForSlot(ItemSlot slot)
+    {
+        ItemInstance equipped = equipmentSlots == null ? null : equipmentSlots.GetEquippedItem(slot);
+        if (equipped != null)
+        {
+            return equipped;
+        }
+
+        if (inventory == null)
+        {
+            return null;
+        }
+
+        IReadOnlyList<ItemInstance> items = inventory.Items;
+        for (int i = 0; i < items.Count; i++)
+        {
+            ItemInstance item = items[i];
+            if (item != null && item.Equipped && item.Slot == slot)
+            {
+                return item;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool IsSameItem(ItemInstance first, ItemInstance second)
+    {
+        if (first == null || second == null)
+        {
+            return false;
+        }
+
+        return first.InstanceId > 0 && first.InstanceId == second.InstanceId;
     }
 
     private string BuildHeroStatsText()
@@ -883,7 +990,7 @@ public class PlayableLoopHud : MonoBehaviour
 
         if (latest != null && !latest.Equipped)
         {
-            return "Next: equip the latest item or salvage it into upgrade materials.";
+            return BuildLatestItemActionHint(latest);
         }
 
         if (CanBuyAnyDefenseUpgrade())
@@ -939,7 +1046,7 @@ public class PlayableLoopHud : MonoBehaviour
 
         if (latest != null && !latest.Equipped)
         {
-            hint = "Next: equip the latest item for hero power, or salvage it into upgrade materials.";
+            hint = BuildLatestItemActionHint(latest);
             return true;
         }
 
