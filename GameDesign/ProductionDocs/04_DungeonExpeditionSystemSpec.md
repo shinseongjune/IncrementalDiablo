@@ -3,7 +3,7 @@
 ## 2026-06-21 Current Production Boundary
 
 - The accepted normal path is one direct-control room with a real spawned enemy, depth progression, reward continuity, and retry. It is a foundation, not proof of a repeatable dungeon game.
-- E1-A contract choice, E1-B authored Rare affix reroll, E1-C reusable encounter variety, and E2-A onboarding/settings/recovery are accepted. E2-B contract comparison copy is accepted from the 2026-07-03 user-confirmed check; current E2-B work is latest reward item comparison after dungeon rewards resolve.
+- E1-A contract choice, E1-B authored Rare affix reroll, E1-C reusable encounter variety, and E2-A onboarding/settings/recovery are accepted. E2-B contract comparison copy is accepted from the 2026-07-03 user-confirmed check; current E2-B work is latest reward item comparison after dungeon rewards resolve, including `Next:` priority when a reward still needs equip/salvage handling.
 - Boss breadth, multi-room sequences, and a new calculation-only auto-expedition path remain deferred until the accepted encounter route is teachable from a fresh save.
 
 ## 2026-06-27 E1-C Encounter Core

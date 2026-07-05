@@ -977,22 +977,17 @@ public class PlayableLoopHud : MonoBehaviour
             return "Next: claim the dungeon reward.";
         }
 
+        if (TryBuildLatestItemDecisionHint(out string itemDecisionHint))
+        {
+            return itemDecisionHint;
+        }
+
         if (expedition.State == DungeonRunState.Ready)
         {
             return BuildSelectedContractActionHint();
         }
 
         ItemInstance latest = GetLatestItem();
-        if (latest != null && !latest.IsDefinitionResolved)
-        {
-            return $"Next: saved item '{latest.DefinitionId}' is quarantined; add an item-id migration before using it.";
-        }
-
-        if (latest != null && !latest.Equipped)
-        {
-            return BuildLatestItemActionHint(latest);
-        }
-
         if (CanBuyAnyDefenseUpgrade())
         {
             return "Next: buy a defense upgrade, then run another dungeon for gear.";
@@ -1006,6 +1001,30 @@ public class PlayableLoopHud : MonoBehaviour
         return expedition.SelectedDepth < expedition.HighestUnlockedDepth
             ? $"Next: choose up to Depth {expedition.HighestUnlockedDepth}, then start the selected dungeon."
             : "Next: start a dungeon, then use its reward to choose equip or salvage.";
+    }
+
+    private bool TryBuildLatestItemDecisionHint(out string hint)
+    {
+        hint = string.Empty;
+        ItemInstance latest = GetLatestItem();
+        if (latest == null)
+        {
+            return false;
+        }
+
+        if (!latest.IsDefinitionResolved)
+        {
+            hint = $"Next: saved item '{latest.DefinitionId}' is quarantined; add an item-id migration before using it.";
+            return true;
+        }
+
+        if (!latest.Equipped)
+        {
+            hint = BuildLatestItemActionHint(latest);
+            return true;
+        }
+
+        return false;
     }
 
     private bool TryBuildFirstSessionGuideHint(DefenseRuntimeState runtime, out string hint)

@@ -74,6 +74,8 @@ The first E2-B pass keeps goal comparison inside the existing contract decision 
 
 The 2026-07-04 E2-B latest-item pass keeps reward comparison inside `PlayableLoopHud` and `EquipmentSlots`. `PlayableLoopHud.BuildLatestItemComparisonText()` reads the latest resolved reward item and `EquipmentSlots.GetEquippedItem(...)` for the same slot, then formats the normal Item line and `Next:` hint around empty-slot equip, power upgrade, sidegrade, or salvage-spare decisions.
 
+The 2026-07-05 E2-B priority hardening keeps that latest-item decision ahead of new-contract guidance through `PlayableLoopHud.TryBuildLatestItemDecisionHint(...)`. This matters when `showFirstSessionGuide` is disabled by saved HUD settings: an unequipped or unresolved latest item should still tell the player what to do with the reward before suggesting the next dungeon contract.
+
 Do not solve E2-B with a new settings menu, debug label, separate contract economy, item-drop denominator change, scene-only tutorial object, or new save field. Defense-upgrade comparison is a valid future E2-B pass after the latest reward item comparison is accepted.
 
 ## Defense save/load boundary

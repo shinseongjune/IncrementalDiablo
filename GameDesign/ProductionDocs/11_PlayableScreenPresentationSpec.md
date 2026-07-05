@@ -112,6 +112,13 @@ defense state and resources
 - This changes no drop odds, reward count, reward denominator, salvage yield, save schema, scene object, layout, or settings menu.
 - Remaining evidence: focused `Gameplay` Play Mode validation that a reward item updates the Item `Compare:` text, the `Next:` hint remains compact, and equip/salvage followed by save/load remains coherent.
 
+## 2026-07-05 E2-B latest item action priority status
+
+- `PlayableLoopHud.TryBuildLatestItemDecisionHint(...)` now checks unresolved or unequipped latest reward items before ready-state contract guidance.
+- This keeps the reward equip/salvage decision visible even if the player disabled the first-session guide through the saved HUD setting.
+- It does not change item scoring, item drops, salvage yields, reward denominators, save schema, scene wiring, or HUD layout.
+- Remaining evidence is still the focused reward -> compare -> equip/salvage -> save/load Play Mode path, with the guide-off priority check included if practical.
+
 ## Text policy
 
 - Normal-player text states consequences and actions, not implementation state.

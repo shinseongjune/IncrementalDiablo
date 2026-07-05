@@ -26,6 +26,12 @@
 - This is presentation/decision support for the accepted reward path. It changes no item definition, rarity odds, reward count, reward denominator, salvage yield, affix pool, reroll cost, duplicate-conversion rule, save schema, or D2 pacing assumption.
 - Remaining evidence: focused `Gameplay` Play Mode validation of reward -> Item `Compare:` text -> `Next:` equip/salvage hint -> equip or salvage -> save/load.
 
+## 2026-07-05 E2-B Latest Item Action Priority
+
+- `PlayableLoopHud.TryBuildLatestItemDecisionHint(...)` keeps an unresolved or unequipped latest reward item ahead of ready-state contract guidance in the normal `Next:` line.
+- This is still presentation/decision support over the existing one guaranteed per-clear reward path. It does not change item definitions, rarity odds, reward count, reward denominator, salvage yield, affix pool, reroll cost, duplicate conversion, save schema, or D2 pacing assumptions.
+- Remaining evidence is the same focused `Gameplay` Play Mode path, now with an optional guide-off check so persisted HUD settings cannot hide the reward decision.
+
 ## 2026-06-10 Phase D Duplicate Conversion
 
 - `LootDropper` rolls the candidate item before adding it to inventory. `ItemEconomyModel.TryFindAutoConversionMatch(...)` only matches an already-owned resolved item with the same canonical definition id.
