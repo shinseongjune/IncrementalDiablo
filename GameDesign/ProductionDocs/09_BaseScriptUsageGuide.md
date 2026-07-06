@@ -30,7 +30,7 @@ The deleted ground-presentation stack is not an alternative implementation. It m
 
 | Component | Responsibility |
 | --- | --- |
-| `PlayableLoopHud` | Compact current frontline/dungeon state, meaningful actions, depth selection, first-session guidance, recovery copy, E2-B contract/latest-item comparison, and normal status. |
+| `PlayableLoopHud` | Compact current frontline/dungeon state, meaningful actions, depth selection, first-session guidance, recovery copy, E2-B contract/latest-item/defense-upgrade comparison, and normal status. |
 | `PlayableScreenLayoutController` | Defense/dungeon focus and overlay visibility safety. |
 | `PanelCameraRenderTarget` | Camera-to-`RawImage` viewport bridge. |
 | `DungeonViewportInputRouter` | Converts dungeon viewport clicks to player input. |
@@ -76,7 +76,9 @@ The 2026-07-04 E2-B latest-item pass keeps reward comparison inside `PlayableLoo
 
 The 2026-07-05 E2-B priority hardening keeps that latest-item decision ahead of new-contract guidance through `PlayableLoopHud.TryBuildLatestItemDecisionHint(...)`. This matters when `showFirstSessionGuide` is disabled by saved HUD settings: an unequipped or unresolved latest item should still tell the player what to do with the reward before suggesting the next dungeon contract.
 
-Do not solve E2-B with a new settings menu, debug label, separate contract economy, item-drop denominator change, scene-only tutorial object, or new save field. Defense-upgrade comparison is a valid future E2-B pass after the latest reward item comparison is accepted.
+The 2026-07-06 E2-B defense-upgrade pass keeps upgrade comparison inside `PlayableLoopHud` and `DefenseUpgradeModel`. `PlayableLoopHud.BuildDefenseUpgradeComparisonText()` runs only after unresolved/unequipped latest reward handling; it then recommends an affordable Wall, Tower, or Defenders upgrade from existing costs and effect deltas before falling back to the next contract. `DefenseUpgradeModel` exposes read-only per-upgrade gains for HUD text; it does not change upgrade formulas or costs.
+
+Do not solve E2-B with a new settings menu, debug label, separate contract economy, item-drop denominator change, scene-only tutorial object, new save field, or a second defense-upgrade economy.
 
 ## Defense save/load boundary
 

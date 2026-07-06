@@ -40,6 +40,10 @@ public class DefenseUpgradeModel : MonoBehaviour
     public float DefenderDamagePerSecond => baseDefenderDamagePerSecond + (DefenderLevel - 1) * defenderDamagePerLevel;
     public float TotalDefensePower => TowerDamagePerSecond + DefenderDamagePerSecond;
     public float WallPressureReductionPerSecond => (WallLevel - 1) * wallPressureReductionPerLevel;
+    public float WallHealthGainPerUpgrade => wallHealthPerLevel;
+    public float WallPressureReductionGainPerUpgrade => wallPressureReductionPerLevel;
+    public float TowerDamageGainPerUpgrade => towerDamagePerLevel;
+    public float DefenderDamageGainPerUpgrade => defenderDamagePerLevel;
 
     private void OnValidate()
     {

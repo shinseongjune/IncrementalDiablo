@@ -982,6 +982,11 @@ public class PlayableLoopHud : MonoBehaviour
             return itemDecisionHint;
         }
 
+        if (TryBuildDefenseUpgradeDecisionHint(out string defenseUpgradeHint))
+        {
+            return defenseUpgradeHint;
+        }
+
         if (expedition.State == DungeonRunState.Ready)
         {
             return BuildSelectedContractActionHint();
@@ -1025,6 +1030,81 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         return false;
+    }
+
+    private bool TryBuildDefenseUpgradeDecisionHint(out string hint)
+    {
+        hint = string.Empty;
+        string comparisonText = BuildDefenseUpgradeComparisonText();
+        if (string.IsNullOrWhiteSpace(comparisonText))
+        {
+            return false;
+        }
+
+        hint = $"Next: {comparisonText}";
+        return true;
+    }
+
+    private string BuildDefenseUpgradeComparisonText()
+    {
+        if (!TryGetDefenseUpgradeContext(out DefenseUpgradeModel upgrades, out CurrencyWallet defenseWallet, out _))
+        {
+            return string.Empty;
+        }
+
+        DefenseRuntimeState runtime = defense == null ? null : defense.Runtime;
+        bool wallIsStressed = runtime != null &&
+                              (runtime.WallHealthPercent <= 0.65f || runtime.PressurePercent >= 0.65f);
+        ResourceAmount[] wallCost = upgrades.GetWallUpgradeCost();
+        if (wallIsStressed && defenseWallet.CanSpend(wallCost))
+        {
+            return $"buy Wall ({FormatWallUpgradeGain(upgrades)} for {FormatRewards(wallCost)}), then Hold/Push or run the next contract.";
+        }
+
+        ResourceAmount[] towerCost = upgrades.GetTowerUpgradeCost();
+        ResourceAmount[] defenderCost = upgrades.GetDefenderUpgradeCost();
+        bool canBuyTower = defenseWallet.CanSpend(towerCost);
+        bool canBuyDefenders = defenseWallet.CanSpend(defenderCost);
+
+        if (canBuyTower &&
+            (!canBuyDefenders || upgrades.TowerDamageGainPerUpgrade >= upgrades.DefenderDamageGainPerUpgrade))
+        {
+            string comparison = canBuyDefenders
+                ? $"beats Defenders {FormatDpsGain(upgrades.DefenderDamageGainPerUpgrade)}"
+                : "is the affordable offense upgrade";
+            return $"buy Tower ({FormatDpsGain(upgrades.TowerDamageGainPerUpgrade)}; {comparison}; costs {FormatRewards(towerCost)}), then Push or start the next contract.";
+        }
+
+        if (canBuyDefenders)
+        {
+            string comparison = canBuyTower
+                ? $"beats Tower {FormatDpsGain(upgrades.TowerDamageGainPerUpgrade)}"
+                : "is the affordable offense upgrade";
+            return $"buy Defenders ({FormatDpsGain(upgrades.DefenderDamageGainPerUpgrade)}; {comparison}; costs {FormatRewards(defenderCost)}), then Push or start the next contract.";
+        }
+
+        if (defenseWallet.CanSpend(wallCost))
+        {
+            return $"buy Wall ({FormatWallUpgradeGain(upgrades)} for {FormatRewards(wallCost)}), then Push longer or start the next contract.";
+        }
+
+        return string.Empty;
+    }
+
+    private static string FormatWallUpgradeGain(DefenseUpgradeModel upgrades)
+    {
+        int healthGain = Mathf.RoundToInt(upgrades.WallHealthGainPerUpgrade);
+        if (upgrades.WallPressureReductionGainPerUpgrade <= 0f)
+        {
+            return $"+{healthGain} Wall HP";
+        }
+
+        return $"+{healthGain} Wall HP and +{upgrades.WallPressureReductionGainPerUpgrade:0.##}/s pressure relief";
+    }
+
+    private static string FormatDpsGain(float value)
+    {
+        return $"+{value:0.#}/s DPS";
     }
 
     private bool TryBuildFirstSessionGuideHint(DefenseRuntimeState runtime, out string hint)

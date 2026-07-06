@@ -258,6 +258,7 @@ $requiredPaths = @(
     @{ Name = "Save manager script"; Path = "Assets\02.Scripts\GroundDefense\Runtime\DefenseSaveManager.cs" },
     @{ Name = "Ground defense balance model"; Path = "Assets\02.Scripts\GroundDefense\Runtime\GroundDefenseBalanceModel.cs" },
     @{ Name = "Defense director script"; Path = "Assets\02.Scripts\GroundDefense\Runtime\DefenseDirector.cs" },
+    @{ Name = "Defense upgrade model"; Path = "Assets\02.Scripts\GroundDefense\Runtime\DefenseUpgradeModel.cs" },
     @{ Name = "Ground defense NavMesh battlefield"; Path = "Assets\02.Scripts\GroundDefense\Runtime\GroundDefenseNavMeshBattlefield.cs" },
     @{ Name = "Ground defense NavMesh unit"; Path = "Assets\02.Scripts\GroundDefense\Runtime\GroundDefenseNavMeshUnit.cs" },
     @{ Name = "Ground defense billboard utility"; Path = "Assets\02.Scripts\GroundDefense\UI\GroundDefenseBillboardUtility.cs" },
@@ -306,6 +307,7 @@ $saveDiagnosticsPath = Join-ProjectPath "Assets\02.Scripts\Shared\GameSaveDataDi
 $saveManagerPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\Runtime\DefenseSaveManager.cs"
 $groundBalanceModelPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\Runtime\GroundDefenseBalanceModel.cs"
 $defenseDirectorPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\Runtime\DefenseDirector.cs"
+$defenseUpgradePath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\Runtime\DefenseUpgradeModel.cs"
 $groundNavMeshBattlefieldPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\Runtime\GroundDefenseNavMeshBattlefield.cs"
 $groundNavMeshUnitPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\Runtime\GroundDefenseNavMeshUnit.cs"
 $groundBillboardUtilityPath = Join-ProjectPath "Assets\02.Scripts\GroundDefense\UI\GroundDefenseBillboardUtility.cs"
@@ -463,6 +465,8 @@ if ((Test-Path -LiteralPath $expeditionDirectorPath) -and
     [void](Assert-TextContains "Playable HUD shows latest item comparison" $playableHudText "BuildLatestItemComparisonText")
     [void](Assert-TextContains "Playable HUD routes latest item action hint" $playableHudText "BuildLatestItemActionHint")
     [void](Assert-TextContains "Playable HUD prioritizes latest item decision before next contract" $playableHudText "TryBuildLatestItemDecisionHint")
+    [void](Assert-TextContains "Playable HUD shows defense upgrade comparison" $playableHudText "BuildDefenseUpgradeComparisonText")
+    [void](Assert-TextContains "Playable HUD routes defense upgrade action hint" $playableHudText "TryBuildDefenseUpgradeDecisionHint")
     [void](Assert-TextContains "Playable HUD reads equipped item by slot" $playableHudText "GetEquippedItemForSlot")
     [void](Assert-TextContains "Save diagnostics summarize guide state" $saveDiagnosticsText "guide off")
 }
@@ -572,9 +576,11 @@ if (Test-Path -LiteralPath $dungeonEncounterModelPath) {
 
 if ((Test-Path -LiteralPath $groundBalanceModelPath) -and
     (Test-Path -LiteralPath $defenseDirectorPath) -and
+    (Test-Path -LiteralPath $defenseUpgradePath) -and
     (Test-Path -LiteralPath $playableHudPath)) {
     $groundBalanceModelText = Read-TextFile $groundBalanceModelPath
     $defenseDirectorText = Read-TextFile $defenseDirectorPath
+    $defenseUpgradeText = Read-TextFile $defenseUpgradePath
     $playableHudText = Read-TextFile $playableHudPath
 
     [void](Assert-TextContains "Ground balance uses reusable bands" $groundBalanceModelText "public const int LevelsPerBand = 10;")
@@ -588,6 +594,9 @@ if ((Test-Path -LiteralPath $groundBalanceModelPath) -and
     [void](Assert-TextContains "Defense director accepts visible wall hits" $defenseDirectorText "ApplyBattlefieldWallDamage")
     [void](Assert-TextContains "Defense director exposes save-apply event" $defenseDirectorText "public event Action SaveDataApplied")
     [void](Assert-TextContains "Defense director notifies save-apply event" $defenseDirectorText "SaveDataApplied?.Invoke()")
+    [void](Assert-TextContains "Defense upgrades expose wall comparison gain" $defenseUpgradeText "WallHealthGainPerUpgrade")
+    [void](Assert-TextContains "Defense upgrades expose tower comparison gain" $defenseUpgradeText "TowerDamageGainPerUpgrade")
+    [void](Assert-TextContains "Defense upgrades expose defender comparison gain" $defenseUpgradeText "DefenderDamageGainPerUpgrade")
     [void](Assert-TextContains "Playable HUD exposes ground band" $playableHudText "Next Band Lv.")
 }
 
@@ -657,7 +666,7 @@ if (Test-Path -LiteralPath $planPath) {
         "E1-B | P0 | Authored Rare affix pool | Done / User accepted Play Mode validation",
         "E1-C | P1 | Reusable dungeon encounter variety | Done / User accepted Play Mode validation",
         "E2-A | P1 | Onboarding, settings, recovery | Done / User accepted recovery guidance",
-        "E2-B | P1 | Goal comparison clarity | In progress / Latest item comparison hint priority implemented",
+        "E2-B | P1 | Goal comparison clarity | In progress / Defense upgrade comparison implemented",
         "RTS-readable automatic defense",
         "Actual NavMesh battlefield",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
@@ -695,7 +704,7 @@ if (Test-Path -LiteralPath $releaseReadinessPath) {
         "E1-C | Done / P1",
         "E2-A | Done / P1",
         "E2-B | In progress / P1",
-        "Latest item comparison core is implemented and hardened",
+        "The current slice compares defense upgrades",
         "settings persistence",
         "900+ hour target is a long-horizon design constraint",
         "A green harness means safe structure, not a completed product gate"

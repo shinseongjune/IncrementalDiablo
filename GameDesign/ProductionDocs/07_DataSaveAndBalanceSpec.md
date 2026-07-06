@@ -10,6 +10,7 @@
 - 2026-06-28 update: the first E2-A recovery pass adds no schema field. `PlayableLoopHud` explains the first manual save as a recovery point for existing schema-v5 frontline, dungeon, inventory, and equipment state, and hides the raw missing-save file path from normal HUD copy.
 - 2026-06-29 update: save schema v6 adds `UiSettingsSaveData` for the current HUD text-density and first-session guide settings. `DefenseSaveManager` migrates older saves to compact/default guide settings, snapshots the current `PlayableLoopHud` settings when saving, restores them when loading, and diagnostics warn if diagnostic HUD text is persisted for a normal capture.
 - 2026-07-01 update: no schema field changed. `DefenseSaveManager.NoSaveRecoveryGuidance` now owns the no-save recovery copy, and `PlayableLoopHud` reuses it so pre-save `Load` attempts do not expose the raw persistent-data path through normal recovery messaging. User-confirmed recovery guidance accepts the scoped E2-A recovery path; reopen only for save/recovery regressions.
+- 2026-07-06 update: no schema field or balance value changed. E2-B defense-upgrade comparison exposes existing Wall/Tower/Defenders per-upgrade gains to `PlayableLoopHud` so the normal `Next:` line can explain the currently affordable upgrade choice before the next contract.
 
 ## 2026-06-27 Dungeon Encounter Balance Export
 

@@ -100,7 +100,7 @@ defense state and resources
 
 - `DungeonContractModel.FormatGoalComparisonText(...)` turns the selected contract and the other offered contract into one normal-player `Goal:` line.
 - `PlayableLoopHud` shows that line in the compact contract block, contract select/refresh messages, and first-session `Next:` hint before dungeon entry.
-- The first implemented comparison scope is contract tradeoff only: safer clear/recovery versus higher reward-depth risk. Latest item comparison and defense-upgrade comparison remain later E2-B passes if the contract copy is accepted.
+- The first implemented comparison scope was contract tradeoff only: safer clear/recovery versus higher reward-depth risk. Latest item and defense-upgrade comparison status is tracked in the later E2-B sections below.
 - This does not add a new HUD panel, settings menu, diagnostic text, contract economy denominator, item table, scene object, or layout change.
 - Production evidence accepted 2026-07-03: A/B/refresh changed the `Goal:` text, the compact `Next:` hint stayed readable, and starting the selected run preserved the chosen contract consequence.
 
@@ -110,14 +110,21 @@ defense state and resources
 - The comparison uses existing same-slot equipment state and saved item power: empty slot, equipped item, positive power delta, sidegrade, or equipped item higher.
 - The normal `Next:` hint now names the practical reward choice: equip an upgrade, fill an empty slot, treat a sidegrade as affix/material choice, or keep the stronger equipped item and salvage the spare.
 - This changes no drop odds, reward count, reward denominator, salvage yield, save schema, scene object, layout, or settings menu.
-- Remaining evidence: focused `Gameplay` Play Mode validation that a reward item updates the Item `Compare:` text, the `Next:` hint remains compact, and equip/salvage followed by save/load remains coherent.
+- Production evidence accepted 2026-07-05: latest reward item guidance was user-confirmed after the guide-off priority hardening pass.
 
 ## 2026-07-05 E2-B latest item action priority status
 
 - `PlayableLoopHud.TryBuildLatestItemDecisionHint(...)` now checks unresolved or unequipped latest reward items before ready-state contract guidance.
 - This keeps the reward equip/salvage decision visible even if the player disabled the first-session guide through the saved HUD setting.
 - It does not change item scoring, item drops, salvage yields, reward denominators, save schema, scene wiring, or HUD layout.
-- Remaining evidence is still the focused reward -> compare -> equip/salvage -> save/load Play Mode path, with the guide-off priority check included if practical.
+- Production evidence accepted 2026-07-05: the latest item action guidance was user-confirmed, including the reward decision staying ahead of next-contract guidance.
+
+## 2026-07-06 E2-B defense upgrade comparison status
+
+- `PlayableLoopHud.BuildDefenseUpgradeComparisonText()` now names an affordable Wall, Tower, or Defenders upgrade before ready-state contract guidance once the latest reward no longer needs an equip/salvage decision.
+- The comparison uses existing `DefenseUpgradeModel` costs and effect deltas only: stressed wall/pressure favors Wall, otherwise Tower and Defenders compare their next DPS gain.
+- This changes no upgrade cost, defense formula, save schema, scene wiring, HUD layout, item drop, reward denominator, or salvage value.
+- Remaining evidence: focused `Gameplay` Play Mode validation that enough Gold/Scrap produces a compact defense-upgrade `Next:` recommendation, buying the named upgrade works, and save/load restores the upgraded state.
 
 ## Text policy
 

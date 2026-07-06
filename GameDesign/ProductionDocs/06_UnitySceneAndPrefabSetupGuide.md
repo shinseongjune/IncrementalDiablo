@@ -124,9 +124,9 @@ Use this path only when the accepted contract comparison copy regresses. It was 
 
 This path validates player-facing copy density and choice clarity. It does not require moving HUD objects, adding scene controls, changing item drops, or changing contract economy values.
 
-## E2-B latest item comparison validation path
+## E2-B latest item comparison regression path
 
-Use this path when verifying the current E2-B reward-item comparison slice:
+Use this path only when the accepted E2-B reward-item comparison regresses. It was user-confirmed on 2026-07-05:
 
 1. Open `Gameplay`; reload the scene if Unity reports external file changes.
 2. Enter Play Mode, start the frontline if needed, choose any contract, and clear a dungeon room until a normal reward item reaches the latest Item line.
@@ -136,6 +136,19 @@ Use this path when verifying the current E2-B reward-item comparison slice:
 6. Equip or salvage the latest item, then save and load. Expected: inventory/equipment state and the comparison/action hint remain coherent after load.
 
 This path validates reward decision clarity only. It does not require moving HUD objects, changing item drops, changing salvage yields, adding a settings menu, or changing scene wiring.
+
+## E2-B defense upgrade comparison validation path
+
+Use this path when verifying the current E2-B defense-upgrade comparison slice:
+
+1. Open `Gameplay`; reload the scene if Unity reports external file changes.
+2. Enter Play Mode, start the frontline if needed, and make sure the latest reward item is either equipped, salvaged, or absent so item handling no longer owns the `Next:` line.
+3. Let Gold/Scrap accumulate until at least one Wall, Tower, or Defenders upgrade button is interactable.
+4. Expected `Next:` line: it names one affordable upgrade, states the reason in current terms such as wall/pressure relief or higher DPS gain, and then routes back to Push or the next contract.
+5. Buy the named upgrade. Expected: the compact Frontline upgrade levels update and the `Next:` line returns to the next useful loop step without diagnostic labels.
+6. Save and load. Expected: Wall/Tower/Defenders levels and the upgraded-state HUD copy remain coherent after load.
+
+This path validates goal-comparison copy only. It does not require changing upgrade costs, defense formulas, scene layout, camera composition, item drops, reward denominators, or save schema.
 
 ## Visual-authoring boundary
 

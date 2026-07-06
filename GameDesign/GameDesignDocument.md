@@ -43,13 +43,13 @@ The release-gate source of truth is `ProductionDocs/13_ReleaseReadinessAndProduc
 
 - Ground defense has an accepted actual NavMesh battlefield with readable faction/attack ownership, wall damage, reinforcement, formula-driven density, and accepted camera composition.
 - Dungeon depth progression, depth threat/reward bands, E1-A contract choice, normal-player contract buttons, E1-C encounter core, defense save/load visual rebuild, item registry/migration, duplicate conversion, save/load, no-save recovery guidance, reward overlays, salvage, the accepted authored Rare affix pool, first fresh-save `Next:` guidance, and schema-v6 HUD settings persistence exist.
-- E2-A first-session recovery guidance is accepted. E2-B goal comparison clarity is in progress: contract comparison text is accepted from the 2026-07-03 user-confirmed check, and latest-item comparison now explains whether a new reward is an equip upgrade, empty-slot fill, sidegrade, or salvage spare against the equipped same-slot item. That latest-item `Next:` hint now stays ahead of new-contract guidance even when the first-session guide is disabled. Defense-upgrade comparison remains a future scoped pass. A broader settings menu still needs a scoped UI/product decision.
+- E2-A first-session recovery guidance is accepted. E2-B goal comparison clarity is in progress: contract comparison text is accepted from the 2026-07-03 user-confirmed check, and latest-item comparison is accepted from the 2026-07-05 user-confirmed check. The current E2-B slice recommends an affordable Wall, Tower, or Defenders upgrade after reward handling is resolved, using existing pressure/offense context and upgrade effect deltas before returning to the next contract. A broader settings menu still needs a scoped UI/product decision.
 
 Accepted baselines reopen only for regressions or explicit contract changes. They are not default polishing work.
 
 ## Current production priorities
 
-1. Validate the `E2-B` latest reward item comparison in Play Mode, including the guide-off `Next:` priority check if practical, then decide whether the next small comparison pass should target defense upgrades or close E2-B as sufficient for the current R2 goal-comparison condition.
+1. Validate the `E2-B` defense-upgrade comparison in Play Mode: after reward handling is resolved and enough Gold/Scrap is available, confirm the `Next:` line names the recommended Wall, Tower, or Defenders upgrade, buying it works, and save/load restores the upgraded state.
 2. Future presentation pass: authored boss silhouettes, room geometry, and VFX after the teachable loop can explain its decisions.
 
 ## Design rules

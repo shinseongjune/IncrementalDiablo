@@ -24,13 +24,13 @@
 - `PlayableLoopHud` now compares the latest resolved reward item against the currently equipped same-slot item through `EquipmentSlots.GetEquippedItem(...)` and existing inventory equipped flags.
 - The comparison uses saved `ItemInstance.RolledPower` only for the first normal-player decision line: equip upgrade, fill empty slot, sidegrade, or keep the stronger equipped item and salvage the spare unless its affix matters.
 - This is presentation/decision support for the accepted reward path. It changes no item definition, rarity odds, reward count, reward denominator, salvage yield, affix pool, reroll cost, duplicate-conversion rule, save schema, or D2 pacing assumption.
-- Remaining evidence: focused `Gameplay` Play Mode validation of reward -> Item `Compare:` text -> `Next:` equip/salvage hint -> equip or salvage -> save/load.
+- Production evidence accepted 2026-07-05: latest reward item guidance was user-confirmed after the guide-off priority hardening pass.
 
 ## 2026-07-05 E2-B Latest Item Action Priority
 
 - `PlayableLoopHud.TryBuildLatestItemDecisionHint(...)` keeps an unresolved or unequipped latest reward item ahead of ready-state contract guidance in the normal `Next:` line.
 - This is still presentation/decision support over the existing one guaranteed per-clear reward path. It does not change item definitions, rarity odds, reward count, reward denominator, salvage yield, affix pool, reroll cost, duplicate conversion, save schema, or D2 pacing assumptions.
-- Remaining evidence is the same focused `Gameplay` Play Mode path, now with an optional guide-off check so persisted HUD settings cannot hide the reward decision.
+- Production evidence accepted 2026-07-05: the latest item action guidance was user-confirmed, including the reward decision staying ahead of next-contract guidance. The next E2-B slice moves to defense-upgrade comparison and does not change item/drop/economy denominators.
 
 ## 2026-06-10 Phase D Duplicate Conversion
 
