@@ -467,6 +467,7 @@ if ((Test-Path -LiteralPath $expeditionDirectorPath) -and
     [void](Assert-TextContains "Playable HUD prioritizes latest item decision before next contract" $playableHudText "TryBuildLatestItemDecisionHint")
     [void](Assert-TextContains "Playable HUD shows defense upgrade comparison" $playableHudText "BuildDefenseUpgradeComparisonText")
     [void](Assert-TextContains "Playable HUD routes defense upgrade action hint" $playableHudText "TryBuildDefenseUpgradeDecisionHint")
+    [void](Assert-TextContains "Playable HUD shows defense upgrade shortfall guidance" $playableHudText "FormatMissingRewards")
     [void](Assert-TextContains "Playable HUD reads equipped item by slot" $playableHudText "GetEquippedItemForSlot")
     [void](Assert-TextContains "Save diagnostics summarize guide state" $saveDiagnosticsText "guide off")
 }
@@ -666,7 +667,7 @@ if (Test-Path -LiteralPath $planPath) {
         "E1-B | P0 | Authored Rare affix pool | Done / User accepted Play Mode validation",
         "E1-C | P1 | Reusable dungeon encounter variety | Done / User accepted Play Mode validation",
         "E2-A | P1 | Onboarding, settings, recovery | Done / User accepted recovery guidance",
-        "E2-B | P1 | Goal comparison clarity | In progress / Defense upgrade comparison implemented",
+        "E2-B | P1 | Goal comparison clarity | In progress / Defense upgrade shortfall guidance implemented",
         "RTS-readable automatic defense",
         "Actual NavMesh battlefield",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
@@ -705,6 +706,7 @@ if (Test-Path -LiteralPath $releaseReadinessPath) {
         "E2-A | Done / P1",
         "E2-B | In progress / P1",
         "The current slice compares defense upgrades",
+        "Wall shortfall guidance",
         "settings persistence",
         "900+ hour target is a long-horizon design constraint",
         "A green harness means safe structure, not a completed product gate"

@@ -34,7 +34,7 @@ incoming pressure + automatic defenders
 - A breach must remain visible and must not silently stop recovery income or corrupt save/load state.
 - Save/load must visibly restore Frontline Level, Hold/Push state, wall health, pressure/progress, and upgrade levels; actor positions are presentation-only and may be rebuilt from the restored state.
 - Ground resources and milestones feed hero, equipment, defense, and future dungeon decisions. They may not form a separate reward economy.
-- 2026-07-06 E2-B upgrade comparison is HUD decision support over the existing upgrade model: stressed wall/pressure can recommend Wall, otherwise affordable Tower/Defenders compare DPS gain. It changes no upgrade cost, formula, save field, or scene wiring.
+- 2026-07-06/07 E2-B upgrade comparison is HUD decision support over the existing upgrade model: stressed wall/pressure can recommend Wall, Wall shortfall text names the missing Gold/Scrap when it cannot yet be bought, and otherwise affordable Tower/Defenders compare DPS gain. It changes no upgrade cost, formula, save field, or scene wiring.
 
 ## Scale and balance
 

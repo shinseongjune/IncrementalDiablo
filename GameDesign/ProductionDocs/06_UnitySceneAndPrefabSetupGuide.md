@@ -143,10 +143,11 @@ Use this path when verifying the current E2-B defense-upgrade comparison slice:
 
 1. Open `Gameplay`; reload the scene if Unity reports external file changes.
 2. Enter Play Mode, start the frontline if needed, and make sure the latest reward item is either equipped, salvaged, or absent so item handling no longer owns the `Next:` line.
-3. Let Gold/Scrap accumulate until at least one Wall, Tower, or Defenders upgrade button is interactable.
-4. Expected `Next:` line: it names one affordable upgrade, states the reason in current terms such as wall/pressure relief or higher DPS gain, and then routes back to Push or the next contract.
-5. Buy the named upgrade. Expected: the compact Frontline upgrade levels update and the `Next:` line returns to the next useful loop step without diagnostic labels.
-6. Save and load. Expected: Wall/Tower/Defenders levels and the upgraded-state HUD copy remain coherent after load.
+3. Shortfall check: while wall health or pressure is stressed and Wall is not yet affordable, read the compact `Next:` line. Expected: it says how much Gold/Scrap is still missing for Wall, not a cheaper Tower/Defenders detour.
+4. Let Gold/Scrap accumulate until at least one Wall, Tower, or Defenders upgrade button is interactable.
+5. Expected `Next:` line: it names one affordable upgrade, states the reason in current terms such as wall/pressure relief or higher DPS gain, and then routes back to Push or the next contract.
+6. Buy the named upgrade. Expected: the compact Frontline upgrade levels update and the `Next:` line returns to the next useful loop step without diagnostic labels.
+7. Save and load. Expected: Wall/Tower/Defenders levels and the upgraded-state HUD copy remain coherent after load.
 
 This path validates goal-comparison copy only. It does not require changing upgrade costs, defense formulas, scene layout, camera composition, item drops, reward denominators, or save schema.
 

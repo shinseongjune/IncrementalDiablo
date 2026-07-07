@@ -1056,9 +1056,15 @@ public class PlayableLoopHud : MonoBehaviour
         bool wallIsStressed = runtime != null &&
                               (runtime.WallHealthPercent <= 0.65f || runtime.PressurePercent >= 0.65f);
         ResourceAmount[] wallCost = upgrades.GetWallUpgradeCost();
-        if (wallIsStressed && defenseWallet.CanSpend(wallCost))
+        if (wallIsStressed)
         {
-            return $"buy Wall ({FormatWallUpgradeGain(upgrades)} for {FormatRewards(wallCost)}), then Hold/Push or run the next contract.";
+            if (defenseWallet.CanSpend(wallCost))
+            {
+                return $"buy Wall ({FormatWallUpgradeGain(upgrades)} for {FormatRewards(wallCost)}), then Hold/Push or run the next contract.";
+            }
+
+            return $"save {FormatMissingRewards(wallCost, defenseWallet)} for Wall " +
+                   $"({FormatWallUpgradeGain(upgrades)}; wall/pressure is the blocker), then Hold/Push or run the next contract.";
         }
 
         ResourceAmount[] towerCost = upgrades.GetTowerUpgradeCost();
@@ -1105,6 +1111,27 @@ public class PlayableLoopHud : MonoBehaviour
     private static string FormatDpsGain(float value)
     {
         return $"+{value:0.#}/s DPS";
+    }
+
+    private static string FormatMissingRewards(ResourceAmount[] cost, CurrencyWallet wallet)
+    {
+        if (cost == null || cost.Length == 0 || wallet == null)
+        {
+            return "more resources";
+        }
+
+        List<string> missing = new List<string>();
+        for (int i = 0; i < cost.Length; i++)
+        {
+            ResourceAmount resourceCost = cost[i];
+            int shortfall = Mathf.Max(0, resourceCost.Amount - wallet.GetAmount(resourceCost.Resource));
+            if (shortfall > 0)
+            {
+                missing.Add($"{resourceCost.Resource} +{shortfall}");
+            }
+        }
+
+        return missing.Count == 0 ? "enough resources" : string.Join(", ", missing);
     }
 
     private bool TryBuildFirstSessionGuideHint(DefenseRuntimeState runtime, out string hint)

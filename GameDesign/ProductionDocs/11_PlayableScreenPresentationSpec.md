@@ -126,6 +126,13 @@ defense state and resources
 - This changes no upgrade cost, defense formula, save schema, scene wiring, HUD layout, item drop, reward denominator, or salvage value.
 - Remaining evidence: focused `Gameplay` Play Mode validation that enough Gold/Scrap produces a compact defense-upgrade `Next:` recommendation, buying the named upgrade works, and save/load restores the upgraded state.
 
+## 2026-07-07 E2-B defense upgrade shortfall status
+
+- The defense-upgrade comparison now keeps stressed wall/pressure goals on Wall even when Wall cannot yet be bought.
+- If Wall is the correct next goal but is not affordable, the compact `Next:` line shows the missing Gold/Scrap for Wall instead of recommending a cheaper Tower or Defenders purchase.
+- This still changes no upgrade cost, defense formula, save schema, scene wiring, HUD layout, item drop, reward denominator, or salvage value.
+- Remaining evidence: focused `Gameplay` Play Mode validation that stressed-wall shortfall text is readable, enough Gold/Scrap still names a buyable upgrade, and buying/saving/loading the named upgrade remains coherent.
+
 ## Text policy
 
 - Normal-player text states consequences and actions, not implementation state.
