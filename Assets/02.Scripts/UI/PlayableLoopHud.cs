@@ -1415,13 +1415,20 @@ public class PlayableLoopHud : MonoBehaviour
         ResourceAmount[] cost = costSelector(upgrades);
         if (!defenseWallet.CanSpend(cost))
         {
-            SetMessage($"{label} upgrade needs {FormatRewards(cost)}.");
+            SetMessage($"{label} upgrade needs {FormatMissingRewards(cost, defenseWallet)}.");
             return;
         }
 
         SetMessage(upgradeAction()
-            ? $"{label} upgraded."
+            ? $"{label} upgraded. Next: {BuildPostDefenseUpgradeActionText(label)}"
             : $"{label} upgrade failed.");
+    }
+
+    private static string BuildPostDefenseUpgradeActionText(string label)
+    {
+        return label == "Wall"
+            ? "Hold/Push or run the next contract."
+            : "Push or start the next contract.";
     }
 
     private bool TryGetDefenseUpgradeContext(out DefenseUpgradeModel upgrades, out CurrencyWallet defenseWallet, out string failureReason)

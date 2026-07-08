@@ -124,14 +124,22 @@ defense state and resources
 - `PlayableLoopHud.BuildDefenseUpgradeComparisonText()` now names an affordable Wall, Tower, or Defenders upgrade before ready-state contract guidance once the latest reward no longer needs an equip/salvage decision.
 - The comparison uses existing `DefenseUpgradeModel` costs and effect deltas only: stressed wall/pressure favors Wall, otherwise Tower and Defenders compare their next DPS gain.
 - This changes no upgrade cost, defense formula, save schema, scene wiring, HUD layout, item drop, reward denominator, or salvage value.
-- Remaining evidence: focused `Gameplay` Play Mode validation that enough Gold/Scrap produces a compact defense-upgrade `Next:` recommendation, buying the named upgrade works, and save/load restores the upgraded state.
+- This pass is part of the accepted 2026-07-08 E2-B defense-upgrade comparison path. Reopen only for a regression.
 
 ## 2026-07-07 E2-B defense upgrade shortfall status
 
 - The defense-upgrade comparison now keeps stressed wall/pressure goals on Wall even when Wall cannot yet be bought.
 - If Wall is the correct next goal but is not affordable, the compact `Next:` line shows the missing Gold/Scrap for Wall instead of recommending a cheaper Tower or Defenders purchase.
 - This still changes no upgrade cost, defense formula, save schema, scene wiring, HUD layout, item drop, reward denominator, or salvage value.
-- Remaining evidence: focused `Gameplay` Play Mode validation that stressed-wall shortfall text is readable, enough Gold/Scrap still names a buyable upgrade, and buying/saving/loading the named upgrade remains coherent.
+- This pass is part of the accepted 2026-07-08 E2-B defense-upgrade comparison path. Reopen only for a regression.
+
+## 2026-07-08 E2-B defense upgrade return guidance status
+
+- Defense upgrade button feedback now mirrors the comparison contract instead of ending at `Wall upgraded.`.
+- If an upgrade is unaffordable, the click message reports the missing Gold/Scrap shortfall through the same missing-resource formatter used by the Wall `Next:` hint.
+- If an upgrade succeeds, the click message routes the player back to Hold/Push or the next contract, so the purchase has a visible next step without adding a panel or changing layout.
+- This still changes no upgrade cost, defense formula, save schema, scene wiring, HUD layout, item drop, reward denominator, or salvage value.
+- Production evidence accepted 2026-07-08: the post-purchase message and compact `Next:` line remained readable after buying the named upgrade, and save/load restored the upgraded levels. Reopen only for a comparison-copy, upgrade-button, or save/load regression.
 
 ## Text policy
 

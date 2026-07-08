@@ -43,14 +43,14 @@ The release-gate source of truth is `ProductionDocs/13_ReleaseReadinessAndProduc
 
 - Ground defense has an accepted actual NavMesh battlefield with readable faction/attack ownership, wall damage, reinforcement, formula-driven density, and accepted camera composition.
 - Dungeon depth progression, depth threat/reward bands, E1-A contract choice, normal-player contract buttons, E1-C encounter core, defense save/load visual rebuild, item registry/migration, duplicate conversion, save/load, no-save recovery guidance, reward overlays, salvage, the accepted authored Rare affix pool, first fresh-save `Next:` guidance, and schema-v6 HUD settings persistence exist.
-- E2-A first-session recovery guidance is accepted. E2-B goal comparison clarity is in progress: contract comparison text is accepted from the 2026-07-03 user-confirmed check, and latest-item comparison is accepted from the 2026-07-05 user-confirmed check. The current E2-B slice recommends an affordable Wall, Tower, or Defenders upgrade after reward handling is resolved, and when wall/pressure is the blocker but Wall is not affordable it shows the missing Gold/Scrap for Wall instead of pointing at a weaker goal. This uses existing pressure/offense context and upgrade effect deltas before returning to the next contract. A broader settings menu still needs a scoped UI/product decision.
+- E2-A first-session recovery guidance is accepted. E2-B goal comparison clarity is accepted from user-confirmed checks: contract comparison on 2026-07-03, latest-item comparison on 2026-07-05, and defense-upgrade comparison with Wall shortfall/post-upgrade return guidance on 2026-07-08. A broader settings menu still needs a scoped UI/product decision.
 
 Accepted baselines reopen only for regressions or explicit contract changes. They are not default polishing work.
 
 ## Current production priorities
 
-1. Validate the `E2-B` defense-upgrade comparison in Play Mode: after reward handling is resolved, confirm the `Next:` line names the recommended Wall, Tower, or Defenders upgrade when affordable, shows missing Gold/Scrap for Wall when wall/pressure is the blocker and Wall is not affordable, buying the named upgrade works, and save/load restores the upgraded state.
-2. Future presentation pass: authored boss silhouettes, room geometry, and VFX after the teachable loop can explain its decisions.
+1. Decide `E3-A` scope for R3 readiness. Recommended: expose only the existing persisted HUD text-density/guide toggles in a small player-facing settings menu first, because the save data already exists and the scope is bounded.
+2. Alternatives for E3-A: create a reproducible fresh-save QA/build handoff, or approve a manual visual-authoring pass for authored boss silhouettes, room geometry, and VFX after the teachable loop can explain its decisions.
 
 ## Design rules
 
