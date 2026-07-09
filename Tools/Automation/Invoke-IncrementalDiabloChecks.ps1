@@ -321,6 +321,7 @@ $equipmentSlotsPath = Join-ProjectPath "Assets\02.Scripts\Character\Core\Equipme
 $playableHudPath = Join-ProjectPath "Assets\02.Scripts\UI\PlayableLoopHud.cs"
 $planPath = Join-ProjectPath "GameDesign\ProductionDocs\10_PlayableLoopMvpAutomationPlan.md"
 $releaseReadinessPath = Join-ProjectPath "GameDesign\ProductionDocs\13_ReleaseReadinessAndProductionGates.md"
+$sceneSetupGuidePath = Join-ProjectPath "GameDesign\ProductionDocs\06_UnitySceneAndPrefabSetupGuide.md"
 $debtRegisterPath = Join-ProjectPath "GameDesign\ProductionDocs\12_PrototypeDebtRegister.md"
 
 if (Test-Path -LiteralPath $scenePath) {
@@ -670,6 +671,7 @@ if (Test-Path -LiteralPath $planPath) {
         "E2-A | P1 | Onboarding, settings, recovery | Done / User accepted recovery guidance",
         "E2-B | P1 | Goal comparison clarity | Done / User accepted Play Mode validation",
         "E3-A | P1 | Settings menu scope and first-session QA checklist | Needs product decision",
+        "E3-A first-session QA checklist",
         "RTS-readable automatic defense",
         "Actual NavMesh battlefield",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
@@ -708,7 +710,7 @@ if (Test-Path -LiteralPath $releaseReadinessPath) {
         "E2-A | Done / P1",
         "E2-B | Done / P1",
         "E3-A | Needs decision / P1",
-        "The current slice compares defense upgrades",
+        "R3 first-session QA checklist",
         "post-upgrade return guidance",
         "settings persistence",
         "900+ hour target is a long-horizon design constraint",
@@ -717,6 +719,21 @@ if (Test-Path -LiteralPath $releaseReadinessPath) {
 
     foreach ($token in $requiredReleaseTokens) {
         [void](Assert-TextContains "Release readiness token" $releaseReadinessText $token)
+    }
+}
+
+if (Test-Path -LiteralPath $sceneSetupGuidePath) {
+    $sceneSetupGuideText = Read-TextFile $sceneSetupGuidePath
+    $requiredSceneSetupTokens = @(
+        "E3-A R3 first-session QA checklist",
+        "no-save Load guidance",
+        "contract -> run -> reward",
+        "HUD settings restored",
+        "Until the E3-A settings menu scope is approved"
+    )
+
+    foreach ($token in $requiredSceneSetupTokens) {
+        [void](Assert-TextContains "Scene setup E3-A QA token" $sceneSetupGuideText $token)
     }
 }
 

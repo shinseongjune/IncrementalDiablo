@@ -42,7 +42,7 @@ The release-gate source of truth is `ProductionDocs/13_ReleaseReadinessAndProduc
 ## Current accepted baseline
 
 - Ground defense has an accepted actual NavMesh battlefield with readable faction/attack ownership, wall damage, reinforcement, formula-driven density, and accepted camera composition.
-- Dungeon depth progression, depth threat/reward bands, E1-A contract choice, normal-player contract buttons, E1-C encounter core, defense save/load visual rebuild, item registry/migration, duplicate conversion, save/load, no-save recovery guidance, reward overlays, salvage, the accepted authored Rare affix pool, first fresh-save `Next:` guidance, and schema-v6 HUD settings persistence exist.
+- Dungeon depth progression, depth threat/reward bands, E1-A contract choice, normal-player contract buttons, E1-C encounter core, defense save/load visual rebuild, item registry/migration, duplicate conversion, save/load, no-save recovery guidance, reward overlays, salvage, the accepted authored Rare affix pool, first fresh-save `Next:` guidance, schema-v6 HUD settings persistence, and an R3 first-session QA checklist exist.
 - E2-A first-session recovery guidance is accepted. E2-B goal comparison clarity is accepted from user-confirmed checks: contract comparison on 2026-07-03, latest-item comparison on 2026-07-05, and defense-upgrade comparison with Wall shortfall/post-upgrade return guidance on 2026-07-08. A broader settings menu still needs a scoped UI/product decision.
 
 Accepted baselines reopen only for regressions or explicit contract changes. They are not default polishing work.
@@ -50,7 +50,7 @@ Accepted baselines reopen only for regressions or explicit contract changes. The
 ## Current production priorities
 
 1. Decide `E3-A` scope for R3 readiness. Recommended: expose only the existing persisted HUD text-density/guide toggles in a small player-facing settings menu first, because the save data already exists and the scope is bounded.
-2. Alternatives for E3-A: create a reproducible fresh-save QA/build handoff, or approve a manual visual-authoring pass for authored boss silhouettes, room geometry, and VFX after the teachable loop can explain its decisions.
+2. Alternatives for E3-A: treat the drafted R3 first-session QA checklist as the build handoff first, or approve a manual visual-authoring pass for authored boss silhouettes, room geometry, and VFX after the teachable loop can explain its decisions.
 
 ## Design rules
 

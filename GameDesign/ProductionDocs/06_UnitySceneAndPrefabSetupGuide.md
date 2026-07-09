@@ -151,6 +151,23 @@ Use this path only when the accepted E2-B defense-upgrade comparison regresses. 
 
 This path validates goal-comparison copy only. It does not require changing upgrade costs, defense formulas, scene layout, camera composition, item drops, reward denominators, or save schema.
 
+## E3-A R3 first-session QA checklist
+
+Use this checklist for a reproducible first-session QA/build handoff after E2-B acceptance and before choosing a broader settings menu or manual visual-authoring pass. The route is fresh-save -> no-save Load -> contract -> run -> reward -> equip/salvage -> defense-upgrade -> save/load:
+
+1. Back up or temporarily move the existing local save so the run starts from a true fresh save.
+2. Open `Gameplay`; reload the scene if Unity reports external file changes.
+3. Enter Play Mode and click `Load` before saving. Expected: the button is clickable, and the HUD shows no-save Load guidance for frontline -> contract -> reward -> save instead of a raw file path.
+4. Start the frontline. Expected: the compact Frontline line shows wall/pressure/progress and the `Next:` line points to contract choice or the next useful loop step.
+5. Click `Contract A`, `Contract B`, and `Refresh`. Expected: the selected contract and `Goal:` line change together without diagnostic labels.
+6. Start the selected dungeon and clear or fail the room. Expected: the Dungeon line keeps the active contract/encounter readable; failure explains recovery, while a clear routes to reward claim.
+7. Claim the reward, then equip or salvage the latest item. Expected: the Item `Compare:` line and `Next:` hint resolve before new-contract or defense-upgrade guidance takes over.
+8. Let Gold/Scrap accumulate until a named Wall/Tower/Defenders upgrade is affordable, then buy it. Expected: upgrade levels update, missing-resource copy is short when unaffordable, and successful purchase routes back to Hold/Push or the next contract.
+9. Click `Save`, change `Use Compact Status Text` or `Show First Session Guide` on the `PlayableLoopHud` component during Play Mode, then click `Load`. Expected: the saved HUD setting returns, the load report includes `HUD settings restored`, and frontline/dungeon/inventory/equipment state remains coherent.
+10. Open and close the Inventory, Crafting, and Reward overlays. Expected: focus returns predictably, normal HUD text stays compact, and diagnostic status remains hidden.
+
+This checklist is R3 first-session evidence. It does not approve a visible settings menu, new HUD layout, new scene controls, boss silhouettes, room geometry, camera movement, VFX, reward denominator changes, or save-schema changes. Until the E3-A settings menu scope is approved, change HUD settings only through the Inspector for this validation.
+
 ## Visual-authoring boundary
 
 Do not autonomously change room size, camera framing, HUD placement, object scale, silhouette, or composition based on source text alone. For a necessary manual pass, provide:

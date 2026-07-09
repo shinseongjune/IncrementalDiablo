@@ -141,6 +141,13 @@ defense state and resources
 - This still changes no upgrade cost, defense formula, save schema, scene wiring, HUD layout, item drop, reward denominator, or salvage value.
 - Production evidence accepted 2026-07-08: the post-purchase message and compact `Next:` line remained readable after buying the named upgrade, and save/load restored the upgraded levels. Reopen only for a comparison-copy, upgrade-button, or save/load regression.
 
+## 2026-07-09 E3-A first-session QA and settings scope
+
+- The R3 first-session QA checklist now lives in `06_UnitySceneAndPrefabSetupGuide.md`. It combines the accepted E2-A/E2-B paths into one fresh-save validation route instead of reopening another HUD comparison micro-slice.
+- The recommended future settings menu scope is limited to two normal-player controls first: text density (`compact`/`detailed`) and first-session guide (`on`/`off`), backed by the existing schema-v6 `UiSettingsSaveData`.
+- Detailed balance text and diagnostic status text stay code/QA toggles unless the user explicitly chooses a debug/settings scope. They should not appear in normal player captures by default.
+- No scene controls, HUD placement, camera, room geometry, boss silhouette, or visual composition changed in this pass. Those remain user-approved visual-authoring scope.
+
 ## Text policy
 
 - Normal-player text states consequences and actions, not implementation state.

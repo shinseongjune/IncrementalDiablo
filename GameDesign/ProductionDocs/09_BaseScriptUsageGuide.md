@@ -80,6 +80,12 @@ The 2026-07-06 E2-B defense-upgrade pass keeps upgrade comparison inside `Playab
 
 Do not solve E2-B with a new settings menu, debug label, separate contract economy, item-drop denominator change, scene-only tutorial object, new save field, or a second defense-upgrade economy.
 
+## E3-A settings and QA boundary
+
+The first E3-A sync does not add menu wiring. It treats the existing `UiSettingsSaveData`, `PlayableLoopHud.CreateUiSettingsSaveData()`, `PlayableLoopHud.ApplyUiSettingsSaveData(...)`, `ToggleCompactStatusText()`, and `ToggleFirstSessionGuide()` as the approved backing for a future small player-facing settings menu.
+
+Recommended visible scope, if the user chooses the settings-menu option, is only text density (`compact`/`detailed`) and first-session guide (`on`/`off`). `ToggleDetailedBalanceText()` and `ToggleDiagnosticStatusText()` remain QA/code toggles unless the user approves a debug settings surface. Use the `06_UnitySceneAndPrefabSetupGuide.md` E3-A checklist for the full fresh-save QA/build handoff.
+
 ## Defense save/load boundary
 
 `DefenseRuntimeState` remains the saved authority for frontline level, state, mode, wall health, pressure, progress, and elapsed time. Loading a save applies that state through `DefenseDirector.ApplySaveData(...)`, emits `SaveDataApplied`, and lets `GroundDefenseNavMeshBattlefield` rebuild presentation actors from the restored state. Visual actor positions are not saved; they must never become a second defense simulation or keep damaging the wall when `DefenseRuntimeState.IsRunning` is false.
@@ -90,6 +96,7 @@ Do not solve E2-B with a new settings menu, debug label, separate contract econo
 - Add focused checks for new data/save contracts.
 - For E2-A UI settings, verify schema-v6 save/load structurally through the harness and use the `06_UnitySceneAndPrefabSetupGuide.md` settings persistence path for Play Mode confirmation.
 - For E2-A fresh-save recovery regressions, use the `06_UnitySceneAndPrefabSetupGuide.md` path and include the pre-save `Load` click; the button should show guided no-save copy rather than being disabled.
+- For E3-A readiness, use the `06_UnitySceneAndPrefabSetupGuide.md` R3 first-session QA checklist before claiming a build-handoff or settings-menu decision is complete.
 - Run `Tools/Automation/Export-DungeonContracts.ps1` when contract ids/effects change; the harness checks it in `-CheckOnly` mode.
 - Run `Tools/Automation/Export-DungeonEncounters.ps1` when encounter ids/effects change; the harness checks it in `-CheckOnly` mode.
 - Run `Tools/Automation/Export-RareAffixes.ps1` when Rare affix ids, weights, stat formulas, tags, or slot rules change; the harness checks it in `-CheckOnly` mode.
