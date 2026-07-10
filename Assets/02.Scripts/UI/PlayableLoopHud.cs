@@ -65,6 +65,8 @@ public class PlayableLoopHud : MonoBehaviour
     [SerializeField] private Button salvageLatestButton;
     [SerializeField] private Button saveButton;
     [SerializeField] private Button loadButton;
+    [SerializeField] private Button toggleHudTextDensityButton;
+    [SerializeField] private Button toggleFirstSessionGuideButton;
     [SerializeField] private Button openInventoryOverlayButton;
     [SerializeField] private Button openCraftingOverlayButton;
     [SerializeField] private Button openRewardOverlayButton;
@@ -481,6 +483,7 @@ public class PlayableLoopHud : MonoBehaviour
         SetText(messageText, actionHintText == null ? BuildMessageText(actionHint) : lastMessage);
         SetText(actionHintText, actionHint);
         RefreshButtons();
+        RefreshSettingsControlLabels();
     }
 
     private string BuildSummaryText()
@@ -1308,9 +1311,10 @@ public class PlayableLoopHud : MonoBehaviour
     private string FormatUiSettingsSummary()
     {
         string density = useCompactStatusText ? "compact HUD text" : "detailed HUD text";
-        string balance = showDetailedBalanceText ? "balance details on" : "balance details off";
         string guide = showFirstSessionGuide ? "first-session guide on" : "first-session guide off";
-        return $"{density}, {balance}, {guide}. Save to keep this setup.";
+        string balance = showDetailedBalanceText ? ", balance details on" : string.Empty;
+        string diagnostics = showDiagnosticStatusText ? ", diagnostics on" : string.Empty;
+        return $"{density}, {guide}{balance}{diagnostics}. Save to keep this setup.";
     }
 
     private void RefreshButtons()
@@ -1339,10 +1343,18 @@ public class PlayableLoopHud : MonoBehaviour
         SetInteractable(salvageLatestButton, latest != null && latest.IsDefinitionResolved && salvageService != null);
         SetInteractable(saveButton, saveManager != null);
         SetInteractable(loadButton, saveManager != null);
+        SetInteractable(toggleHudTextDensityButton, true);
+        SetInteractable(toggleFirstSessionGuideButton, true);
         SetInteractable(openInventoryOverlayButton, screenLayout != null && screenLayout.CanOpenInventoryOverlay);
         SetInteractable(openCraftingOverlayButton, screenLayout != null && screenLayout.CanOpenCraftingOverlay);
         SetInteractable(openRewardOverlayButton, screenLayout != null && screenLayout.CanOpenRewardOverlay);
         SetInteractable(closeOverlayButton, screenLayout != null && screenLayout.IsOverlayOpen);
+    }
+
+    private void RefreshSettingsControlLabels()
+    {
+        SetButtonLabel(toggleHudTextDensityButton, useCompactStatusText ? "Text: Compact" : "Text: Detailed");
+        SetButtonLabel(toggleFirstSessionGuideButton, showFirstSessionGuide ? "Guide: On" : "Guide: Off");
     }
 
     private void TryOpenScreenOverlay(PlayableScreenFocus overlayFocus)
@@ -1617,6 +1629,8 @@ public class PlayableLoopHud : MonoBehaviour
         AddListener(salvageLatestButton, SalvageLatest);
         AddListener(saveButton, SaveGame);
         AddListener(loadButton, LoadGame);
+        AddListener(toggleHudTextDensityButton, ToggleCompactStatusText);
+        AddListener(toggleFirstSessionGuideButton, ToggleFirstSessionGuide);
         AddListener(openInventoryOverlayButton, OpenInventoryOverlay);
         AddListener(openCraftingOverlayButton, OpenCraftingOverlay);
         AddListener(openRewardOverlayButton, OpenRewardOverlay);
@@ -1648,6 +1662,8 @@ public class PlayableLoopHud : MonoBehaviour
         RemoveListener(salvageLatestButton, SalvageLatest);
         RemoveListener(saveButton, SaveGame);
         RemoveListener(loadButton, LoadGame);
+        RemoveListener(toggleHudTextDensityButton, ToggleCompactStatusText);
+        RemoveListener(toggleFirstSessionGuideButton, ToggleFirstSessionGuide);
         RemoveListener(openInventoryOverlayButton, OpenInventoryOverlay);
         RemoveListener(openCraftingOverlayButton, OpenCraftingOverlay);
         RemoveListener(openRewardOverlayButton, OpenRewardOverlay);
@@ -1880,6 +1896,20 @@ public class PlayableLoopHud : MonoBehaviour
         if (button != null)
         {
             button.interactable = interactable;
+        }
+    }
+
+    private static void SetButtonLabel(Button button, string label)
+    {
+        if (button == null)
+        {
+            return;
+        }
+
+        TMP_Text text = button.GetComponentInChildren<TMP_Text>(includeInactive: true);
+        if (text != null)
+        {
+            text.text = label;
         }
     }
 

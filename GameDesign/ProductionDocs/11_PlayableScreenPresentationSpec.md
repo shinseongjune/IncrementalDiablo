@@ -148,6 +148,13 @@ defense state and resources
 - Detailed balance text and diagnostic status text stay code/QA toggles unless the user explicitly chooses a debug/settings scope. They should not appear in normal player captures by default.
 - No scene controls, HUD placement, camera, room geometry, boss silhouette, or visual composition changed in this pass. Those remain user-approved visual-authoring scope.
 
+## 2026-07-10 E3-A HUD settings quick toggles
+
+- `Gameplay` now exposes the scoped settings choice as two bottom-row HUD buttons: `Text: Compact/Detailed` and `Guide: On/Off`.
+- The labels update from the saved runtime values through `PlayableLoopHud.RefreshSettingsControlLabels()`, and the click feedback tells the player to save to keep the setup.
+- This is the approved small settings surface for R3 readiness. It does not expose detailed balance text, diagnostic status text, a full settings menu, camera/layout options, or visual-authoring controls.
+- Remaining presentation evidence is focused Play Mode readability: click both buttons, confirm the bottom row does not crowd Save/Load/Inventory, save, change a setting, load, and confirm the restored labels/messages match the saved HUD settings.
+
 ## Text policy
 
 - Normal-player text states consequences and actions, not implementation state.

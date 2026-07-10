@@ -355,6 +355,8 @@ if (Test-Path -LiteralPath $scenePath) {
         @{ Name = "Scene has dungeon contract A button"; Token = "m_Name: Button_DungeonContractA" },
         @{ Name = "Scene has dungeon contract B button"; Token = "m_Name: Button_DungeonContractB" },
         @{ Name = "Scene has dungeon contract refresh button"; Token = "m_Name: Button_DungeonContractRefresh" },
+        @{ Name = "Scene has HUD text-density button"; Token = "m_Name: Button_HudTextDensity" },
+        @{ Name = "Scene has first-session guide button"; Token = "m_Name: Button_FirstSessionGuide" },
         @{ Name = "Scene initializes selected dungeon depth"; Token = "selectedDepth: 1" },
         @{ Name = "Scene initializes highest unlocked dungeon depth"; Token = "highestUnlockedDepth: 1" }
     )
@@ -387,6 +389,8 @@ if (Test-Path -LiteralPath $scenePath) {
     [void](Assert-SceneBehaviourReference "Playable HUD contract A button" $sceneText "PlayableLoopHud" "selectContractAButton")
     [void](Assert-SceneBehaviourReference "Playable HUD contract B button" $sceneText "PlayableLoopHud" "selectContractBButton")
     [void](Assert-SceneBehaviourReference "Playable HUD contract refresh button" $sceneText "PlayableLoopHud" "refreshDungeonContractButton")
+    [void](Assert-SceneBehaviourReference "Playable HUD text-density button" $sceneText "PlayableLoopHud" "toggleHudTextDensityButton")
+    [void](Assert-SceneBehaviourReference "Playable HUD first-session guide button" $sceneText "PlayableLoopHud" "toggleFirstSessionGuideButton")
     [void](Assert-SceneBehaviourReference "Simple inventory item registry" $sceneText "SimpleInventory" "definitionRegistry")
     [void](Assert-SceneBehaviourReference "Loot dropper salvage service" $sceneText "LootDropper" "salvageService")
 
@@ -458,6 +462,9 @@ if ((Test-Path -LiteralPath $expeditionDirectorPath) -and
     [void](Assert-TextContains "Playable HUD exposes first-session guide" $playableHudText "showFirstSessionGuide")
     [void](Assert-TextContains "Playable HUD snapshots UI settings" $playableHudText "CreateUiSettingsSaveData")
     [void](Assert-TextContains "Playable HUD applies UI settings" $playableHudText "ApplyUiSettingsSaveData")
+    [void](Assert-TextContains "Playable HUD labels HUD settings controls" $playableHudText "RefreshSettingsControlLabels")
+    [void](Assert-TextContains "Playable HUD wires text-density toggle" $playableHudText "AddListener(toggleHudTextDensityButton, ToggleCompactStatusText)")
+    [void](Assert-TextContains "Playable HUD wires first-session guide toggle" $playableHudText "AddListener(toggleFirstSessionGuideButton, ToggleFirstSessionGuide)")
     [void](Assert-TextContains "Playable HUD guides first recovery save" $playableHudText "keep frontline, dungeon, inventory, equipment, and HUD settings")
     [void](Assert-TextContains "Playable HUD reuses no-save recovery guidance" $playableHudText "DefenseSaveManager.NoSaveRecoveryGuidance")
     [void](Assert-TextContains "Playable HUD allows no-save load guidance" $playableHudText "SetInteractable(loadButton, saveManager != null);")
@@ -670,8 +677,9 @@ if (Test-Path -LiteralPath $planPath) {
         "E1-C | P1 | Reusable dungeon encounter variety | Done / User accepted Play Mode validation",
         "E2-A | P1 | Onboarding, settings, recovery | Done / User accepted recovery guidance",
         "E2-B | P1 | Goal comparison clarity | Done / User accepted Play Mode validation",
-        "E3-A | P1 | Settings menu scope and first-session QA checklist | Needs product decision",
+        "E3-A | P1 | HUD settings quick toggles and first-session QA checklist | In progress / HUD quick toggles implemented",
         "E3-A first-session QA checklist",
+        "E3-A HUD settings quick toggles",
         "RTS-readable automatic defense",
         "Actual NavMesh battlefield",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
@@ -709,8 +717,9 @@ if (Test-Path -LiteralPath $releaseReadinessPath) {
         "E1-C | Done / P1",
         "E2-A | Done / P1",
         "E2-B | Done / P1",
-        "E3-A | Needs decision / P1",
+        "E3-A | In progress / P1",
         "R3 first-session QA checklist",
+        "HUD settings quick toggles",
         "post-upgrade return guidance",
         "settings persistence",
         "900+ hour target is a long-horizon design constraint",
@@ -729,7 +738,7 @@ if (Test-Path -LiteralPath $sceneSetupGuidePath) {
         "no-save Load guidance",
         "contract -> run -> reward",
         "HUD settings restored",
-        "Until the E3-A settings menu scope is approved"
+        "HUD settings quick toggles"
     )
 
     foreach ($token in $requiredSceneSetupTokens) {

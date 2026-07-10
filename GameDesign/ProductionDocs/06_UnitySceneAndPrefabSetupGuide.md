@@ -99,18 +99,18 @@ E2-A was accepted from the 2026-07-01 user-confirmed recovery guidance check. Us
 
 This path validates the accepted first-session copy and recovery flow. It does not require a new scene object or layout change.
 
-## E2-A settings persistence validation path
+## E2-A/E3-A HUD settings persistence validation path
 
-Use this path when verifying the schema-v6 settings persistence slice:
+Use this path when verifying the schema-v6 settings persistence slice or the E3-A HUD settings quick toggles:
 
 1. Open `Gameplay`; reload the scene if Unity reports external file changes.
-2. Enter Play Mode and select the object with `PlayableLoopHud` on the Gameplay Canvas.
-3. Change one runtime HUD setting in the Inspector, such as `Use Compact Status Text` off or `Show First Session Guide` off. Do not move HUD objects or create new controls for this check.
-4. Click `Save`. Expected: the message says the recovery point covers HUD settings.
-5. Change the same runtime setting back to a different value.
-6. Click `Load`. Expected: the saved HUD text-density/guide state returns, and the load message includes `HUD settings restored`.
+2. Enter Play Mode and find the two bottom-row HUD settings quick toggles: `Text: Compact/Detailed` and `Guide: On/Off`.
+3. Click `Text: Compact/Detailed`. Expected: the button label flips between compact and detailed, and the message says to save to keep the setup.
+4. Click `Guide: On/Off`. Expected: the button label flips between guide on and off, and the normal `Next:` line respects the selected guide state.
+5. Click `Save`. Expected: the message says the recovery point covers HUD settings.
+6. Change either setting again, then click `Load`. Expected: the saved HUD text-density/guide state returns, and the load message includes `HUD settings restored`.
 
-The production scene still has no full settings menu. Adding visible controls for these toggles is a later UI/product decision.
+These are the only approved E3-A HUD settings quick toggles. `ToggleDetailedBalanceText()` and `ToggleDiagnosticStatusText()` remain QA/code toggles unless a separate debug settings surface is approved.
 
 ## E2-B contract comparison regression path
 
@@ -153,7 +153,7 @@ This path validates goal-comparison copy only. It does not require changing upgr
 
 ## E3-A R3 first-session QA checklist
 
-Use this checklist for a reproducible first-session QA/build handoff after E2-B acceptance and before choosing a broader settings menu or manual visual-authoring pass. The route is fresh-save -> no-save Load -> contract -> run -> reward -> equip/salvage -> defense-upgrade -> save/load:
+Use this checklist for a reproducible first-session QA/build handoff after E2-B acceptance and after the E3-A HUD settings quick toggles are in the scene. The route is fresh-save -> no-save Load -> contract -> run -> reward -> equip/salvage -> defense-upgrade -> HUD settings -> save/load:
 
 1. Back up or temporarily move the existing local save so the run starts from a true fresh save.
 2. Open `Gameplay`; reload the scene if Unity reports external file changes.
@@ -163,10 +163,10 @@ Use this checklist for a reproducible first-session QA/build handoff after E2-B 
 6. Start the selected dungeon and clear or fail the room. Expected: the Dungeon line keeps the active contract/encounter readable; failure explains recovery, while a clear routes to reward claim.
 7. Claim the reward, then equip or salvage the latest item. Expected: the Item `Compare:` line and `Next:` hint resolve before new-contract or defense-upgrade guidance takes over.
 8. Let Gold/Scrap accumulate until a named Wall/Tower/Defenders upgrade is affordable, then buy it. Expected: upgrade levels update, missing-resource copy is short when unaffordable, and successful purchase routes back to Hold/Push or the next contract.
-9. Click `Save`, change `Use Compact Status Text` or `Show First Session Guide` on the `PlayableLoopHud` component during Play Mode, then click `Load`. Expected: the saved HUD setting returns, the load report includes `HUD settings restored`, and frontline/dungeon/inventory/equipment state remains coherent.
+9. Click `Text: Compact/Detailed` and `Guide: On/Off`, then click `Save`. Change either setting again and click `Load`. Expected: the saved HUD setting returns, the load report includes `HUD settings restored`, and frontline/dungeon/inventory/equipment state remains coherent.
 10. Open and close the Inventory, Crafting, and Reward overlays. Expected: focus returns predictably, normal HUD text stays compact, and diagnostic status remains hidden.
 
-This checklist is R3 first-session evidence. It does not approve a visible settings menu, new HUD layout, new scene controls, boss silhouettes, room geometry, camera movement, VFX, reward denominator changes, or save-schema changes. Until the E3-A settings menu scope is approved, change HUD settings only through the Inspector for this validation.
+This checklist is R3 first-session evidence. The approved visible settings scope is only the two HUD settings quick toggles for text density and first-session guide. It does not approve a full settings menu, debug settings surface, boss silhouettes, room geometry, camera movement, VFX, reward denominator changes, or save-schema changes.
 
 ## Visual-authoring boundary
 
