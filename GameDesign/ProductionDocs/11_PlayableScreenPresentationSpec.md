@@ -143,7 +143,7 @@ defense state and resources
 
 ## 2026-07-09 E3-A first-session QA and settings scope
 
-- The R3 first-session QA checklist now lives in `06_UnitySceneAndPrefabSetupGuide.md`. It combines the accepted E2-A/E2-B paths into one fresh-save validation route instead of reopening another HUD comparison micro-slice.
+- The accepted E3-A first-session QA regression checklist lives in `06_UnitySceneAndPrefabSetupGuide.md`. It combines the accepted E2-A/E2-B paths into one fresh-save validation route and must not reopen another HUD comparison micro-slice or displace E3-B-to-E3-E production.
 - The recommended future settings menu scope is limited to two normal-player controls first: text density (`compact`/`detailed`) and first-session guide (`on`/`off`), backed by the existing schema-v6 `UiSettingsSaveData`.
 - Detailed balance text and diagnostic status text stay code/QA toggles unless the user explicitly chooses a debug/settings scope. They should not appear in normal player captures by default.
 - No scene controls, HUD placement, camera, room geometry, boss silhouette, or visual composition changed in this pass. Those remain user-approved visual-authoring scope.

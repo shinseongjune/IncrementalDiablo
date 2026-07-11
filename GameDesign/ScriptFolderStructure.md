@@ -11,7 +11,7 @@
 | UI | `Assets/02.Scripts/UI/PlayableLoopHud.cs`, `PlayableScreenLayoutController.cs`, `PanelCameraRenderTarget.cs`, `DungeonViewportInputRouter.cs` | Normal player HUD, accepted first-session guidance/recovery copy including no-save `Load` guidance, HUD settings snapshot/apply, E3-A HUD settings quick toggles for text density and first-session guide, accepted E2-B contract `Goal:` text plus latest-item equip/salvage comparison, defense-upgrade comparison, Wall shortfall guidance, post-upgrade return guidance, guide-off action-priority text, focus/overlays, viewport render bridge, and dungeon viewport input. |
 | Overlay UI | `Assets/02.Scripts/UI/*OverlayPresenter.cs` | Inventory, reward, and crafting actions/content. |
 | Shared | `Assets/02.Scripts/Shared/GameSaveData.cs`, `GameSaveDataDiagnostics.cs` | Save schema and explicit migration/diagnostics, including dungeon contract ids, encounter ids, and UI settings. |
-| Automation | `Tools/Automation/Invoke-IncrementalDiabloChecks.ps1`, balance/contract/encounter/affix exports, prototype inventory | Structural verification, deterministic balance checks, debt visibility, E3-A HUD settings quick-toggle scene wiring, and production-document freshness including the E3-A R3 first-session QA checklist. |
+| Automation | `Tools/Automation/Invoke-IncrementalDiabloChecks.ps1`, balance/contract/encounter/affix exports, prototype inventory | Structural verification, deterministic balance checks, debt visibility, accepted E3-A regression wiring, and production-document freshness for the complete-game P0 queue in `14_CompleteGameProductionBacklog.md`. |
 
 ## Retired ground-defense path
 
@@ -30,4 +30,4 @@ The superseded presentation stack, its prefab/assets, review-only level control,
 
 ## Automation notes
 
-`Invoke-IncrementalDiabloChecks.ps1` verifies the active NavMesh defense battle and requires the removed legacy components to be absent from `Gameplay.unity`. It also checks named dungeon/defense viewport render bridges, the `PlayableLoopHud` depth/contract/settings button references, save/item/contract/encounter/affix/UI-settings contracts, balance exports, prototype inventory, E3-A checklist freshness, and production-document freshness. A passing run is structural verification, not gameplay acceptance.
+`Invoke-IncrementalDiabloChecks.ps1` verifies the active NavMesh defense battle and requires the removed legacy components to be absent from `Gameplay.unity`. It also checks named dungeon/defense viewport render bridges, the `PlayableLoopHud` depth/contract/settings button references, save/item/contract/encounter/affix/UI-settings contracts, balance exports, prototype inventory, accepted E3-A checklist freshness, and the active E3-B-to-H complete-game queue. A passing run is structural verification, not gameplay acceptance.

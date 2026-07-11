@@ -11,11 +11,18 @@
 
 `GameDesignDocument.md` is the concise product overview. `ScriptFolderStructure.md` maps live code ownership. Neither is a historical task queue.
 
+## Complete-game routing
+
+`14_CompleteGameProductionBacklog.md` is the Korean, completion-oriented backlog for the current product. Read it after `13` and before selecting the daily line in `10` whenever the work involves combat presentation, models, animation, maps, content production, economy, progression, or release readiness.
+
+`10` must mirror the first open P0 from `14`. A closed HUD/settings/QA item may not displace that P0 unless it is a direct regression or build blocker.
+
 ## Source-of-truth rules
 
 | Need | Source |
 | --- | --- |
 | What is being sold and which gate is next | `13_ReleaseReadinessAndProductionGates.md` |
+| Complete-game production order | `14_CompleteGameProductionBacklog.md` |
 | What an automation should do today | `10_PlayableLoopMvpAutomationPlan.md` |
 | Ground-defense rules | `03_GroundDefenseSystemSpec.md` |
 | Dungeon contracts, combat, failure, and reward rules | `04_DungeonExpeditionSystemSpec.md` |

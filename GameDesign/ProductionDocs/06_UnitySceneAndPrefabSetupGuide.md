@@ -151,9 +151,9 @@ Use this path only when the accepted E2-B defense-upgrade comparison regresses. 
 
 This path validates goal-comparison copy only. It does not require changing upgrade costs, defense formulas, scene layout, camera composition, item drops, reward denominators, or save schema.
 
-## E3-A R3 first-session QA checklist
+## E3-A first-session QA regression checklist
 
-Use this checklist for a reproducible first-session QA/build handoff after E2-B acceptance and after the E3-A HUD settings quick toggles are in the scene. The route is fresh-save -> no-save Load -> contract -> run -> reward -> equip/salvage -> defense-upgrade -> HUD settings -> save/load:
+Use this checklist only for a reproducible E3-A regression check after E2-B acceptance and after the HUD settings quick toggles are in the scene. It does not block E3-B combat model/animation, E3-C combat behavior, E3-D authored map, or E3-E complete-session production. The route is fresh-save -> no-save Load -> contract -> run -> reward -> equip/salvage -> defense-upgrade -> HUD settings -> save/load:
 
 1. Back up or temporarily move the existing local save so the run starts from a true fresh save.
 2. Open `Gameplay`; reload the scene if Unity reports external file changes.
@@ -166,7 +166,7 @@ Use this checklist for a reproducible first-session QA/build handoff after E2-B 
 9. Click `Text: Compact/Detailed` and `Guide: On/Off`, then click `Save`. Change either setting again and click `Load`. Expected: the saved HUD setting returns, the load report includes `HUD settings restored`, and frontline/dungeon/inventory/equipment state remains coherent.
 10. Open and close the Inventory, Crafting, and Reward overlays. Expected: focus returns predictably, normal HUD text stays compact, and diagnostic status remains hidden.
 
-This checklist is R3 first-session evidence. The approved visible settings scope is only the two HUD settings quick toggles for text density and first-session guide. It does not approve a full settings menu, debug settings surface, boss silhouettes, room geometry, camera movement, VFX, reward denominator changes, or save-schema changes.
+This checklist is accepted E3-A regression evidence. The approved visible settings scope is only the two HUD settings quick toggles for text density and first-session guide. It does not approve a full settings menu, debug settings surface, boss silhouettes, room geometry, camera movement, VFX, reward denominator changes, or save-schema changes.
 
 ## Visual-authoring boundary
 

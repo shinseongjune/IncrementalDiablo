@@ -14,7 +14,7 @@ automatic defense income
 
 The target is a sellable loop, not a technology demo. The immediate target is a two-hour repeatable slice; the 900+ hour ambition is a long-horizon constraint after the short loop proves its decisions and sinks.
 
-The release-gate source of truth is `ProductionDocs/13_ReleaseReadinessAndProductionGates.md`. The daily implementation queue is `ProductionDocs/10_PlayableLoopMvpAutomationPlan.md`.
+The release-gate source of truth is `ProductionDocs/13_ReleaseReadinessAndProductionGates.md`. `ProductionDocs/14_CompleteGameProductionBacklog.md` defines the complete-game sequence, and `ProductionDocs/10_PlayableLoopMvpAutomationPlan.md` mirrors its first active P0 task for daily implementation.
 
 ## Player fantasy and boundaries
 
@@ -42,15 +42,16 @@ The release-gate source of truth is `ProductionDocs/13_ReleaseReadinessAndProduc
 ## Current accepted baseline
 
 - Ground defense has an accepted actual NavMesh battlefield with readable faction/attack ownership, wall damage, reinforcement, formula-driven density, and accepted camera composition.
-- Dungeon depth progression, depth threat/reward bands, E1-A contract choice, normal-player contract buttons, E1-C encounter core, defense save/load visual rebuild, item registry/migration, duplicate conversion, save/load, no-save recovery guidance, reward overlays, salvage, the accepted authored Rare affix pool, first fresh-save `Next:` guidance, schema-v6 HUD settings persistence, an R3 first-session QA checklist, and E3-A HUD settings quick toggles exist.
-- E2-A first-session recovery guidance is accepted. E2-B goal comparison clarity is accepted from user-confirmed checks: contract comparison on 2026-07-03, latest-item comparison on 2026-07-05, and defense-upgrade comparison with Wall shortfall/post-upgrade return guidance on 2026-07-08. E3-A is now in progress with two visible persisted HUD settings toggles; a broader settings menu or visual-authoring pass still needs separate scope.
+- Dungeon depth progression, depth threat/reward bands, E1-A contract choice, normal-player contract buttons, E1-C encounter core, defense save/load visual rebuild, item registry/migration, duplicate conversion, save/load, no-save recovery guidance, reward overlays, salvage, the accepted authored Rare affix pool, first fresh-save `Next:` guidance, schema-v6 HUD settings persistence, an accepted first-session QA checklist, and E3-A HUD settings quick toggles exist.
+- E2-A first-session recovery guidance and E2-B goal comparison clarity are accepted. E3-A was user-confirmed on 2026-07-10 and is regression-only; it is not a substitute for combat presentation, map, content, economy, or release work.
 
 Accepted baselines reopen only for regressions or explicit contract changes. They are not default polishing work.
 
 ## Current production priorities
 
-1. Validate `E3-A` HUD settings quick toggles in Play Mode: click text density and first-session guide, save, change the settings, load, and confirm labels/messages plus bottom-row readability.
-2. After that evidence, decide whether E3-A is accepted as the R3 build-handoff path or whether to approve a manual visual-authoring pass for authored boss silhouettes, room geometry, and VFX after the teachable loop can explain its decisions.
+1. Execute `E3-B`: connect actual Hero and first-enemy models, rigs, clips, and Animator states to the live direct-combat path. The player must see Idle, Move, Attack, Hit, and Death on the actual combat actor, not a detached presentation object.
+2. Follow `E3-C` readable elite/boss actions, `E3-D` authored dungeon map assembly, and `E3-E` complete-session evidence. The full Phase E through H order, including reusable content, item/economy sinks, long-term progression, and release build work, is in `ProductionDocs/14_CompleteGameProductionBacklog.md`.
+3. E3-A settings/QA may be run only for a reported regression. Do not add more HUD copy or settings controls while an E3-B through E3-E P0 task is open.
 
 ## Design rules
 

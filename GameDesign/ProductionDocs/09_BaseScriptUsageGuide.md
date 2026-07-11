@@ -80,11 +80,11 @@ The 2026-07-06 E2-B defense-upgrade pass keeps upgrade comparison inside `Playab
 
 Do not solve E2-B with a new settings menu, debug label, separate contract economy, item-drop denominator change, scene-only tutorial object, new save field, or a second defense-upgrade economy.
 
-## E3-A settings and QA boundary
+## E3-A settings and QA regression boundary
 
 E3-A adds two normal HUD settings quick toggles in `Gameplay`: `Text: Compact/Detailed` calls `PlayableLoopHud.ToggleCompactStatusText()`, and `Guide: On/Off` calls `PlayableLoopHud.ToggleFirstSessionGuide()`. These reuse the existing `UiSettingsSaveData`, `PlayableLoopHud.CreateUiSettingsSaveData()`, and `PlayableLoopHud.ApplyUiSettingsSaveData(...)` save/load path instead of adding a second settings save file.
 
-The approved visible scope is only text density (`compact`/`detailed`) and first-session guide (`on`/`off`). `ToggleDetailedBalanceText()` and `ToggleDiagnosticStatusText()` remain QA/code toggles unless the user approves a debug settings surface. Use the `06_UnitySceneAndPrefabSetupGuide.md` E3-A HUD settings quick toggles path and R3 checklist for focused Play Mode confirmation.
+The approved visible scope is only text density (`compact`/`detailed`) and first-session guide (`on`/`off`). `ToggleDetailedBalanceText()` and `ToggleDiagnosticStatusText()` remain QA/code toggles unless the user approves a debug settings surface. E3-A was user-accepted on 2026-07-10; use the `06_UnitySceneAndPrefabSetupGuide.md` E3-A path only for a reported regression. It must not displace the active E3-B-to-E3-E combat/map production sequence.
 
 ## Defense save/load boundary
 
@@ -96,7 +96,7 @@ The approved visible scope is only text density (`compact`/`detailed`) and first
 - Add focused checks for new data/save contracts.
 - For E2-A UI settings, verify schema-v6 save/load structurally through the harness and use the `06_UnitySceneAndPrefabSetupGuide.md` settings persistence path for Play Mode confirmation.
 - For E2-A fresh-save recovery regressions, use the `06_UnitySceneAndPrefabSetupGuide.md` path and include the pre-save `Load` click; the button should show guided no-save copy rather than being disabled.
-- For E3-A readiness, use the `06_UnitySceneAndPrefabSetupGuide.md` HUD settings quick toggles path and R3 first-session QA checklist before claiming the build-handoff path is accepted.
+- For E3-A regressions, use the `06_UnitySceneAndPrefabSetupGuide.md` HUD settings quick toggles path and first-session QA regression checklist. For current production order, use `14_CompleteGameProductionBacklog.md` and the E3-B-to-E3-E P0 sequence.
 - Run `Tools/Automation/Export-DungeonContracts.ps1` when contract ids/effects change; the harness checks it in `-CheckOnly` mode.
 - Run `Tools/Automation/Export-DungeonEncounters.ps1` when encounter ids/effects change; the harness checks it in `-CheckOnly` mode.
 - Run `Tools/Automation/Export-RareAffixes.ps1` when Rare affix ids, weights, stat formulas, tags, or slot rules change; the harness checks it in `-CheckOnly` mode.

@@ -274,6 +274,7 @@ $requiredPaths = @(
     @{ Name = "Screen layout controller script"; Path = "Assets\02.Scripts\UI\PlayableScreenLayoutController.cs" },
     @{ Name = "Automation plan"; Path = "GameDesign\ProductionDocs\10_PlayableLoopMvpAutomationPlan.md" },
     @{ Name = "Release readiness plan"; Path = "GameDesign\ProductionDocs\13_ReleaseReadinessAndProductionGates.md" },
+    @{ Name = "Complete game production backlog"; Path = "GameDesign\ProductionDocs\14_CompleteGameProductionBacklog.md" },
     @{ Name = "Prototype debt register"; Path = "GameDesign\ProductionDocs\12_PrototypeDebtRegister.md" },
     @{ Name = "Scene setup guide"; Path = "GameDesign\ProductionDocs\06_UnitySceneAndPrefabSetupGuide.md" },
     @{ Name = "Script usage guide"; Path = "GameDesign\ProductionDocs\09_BaseScriptUsageGuide.md" },
@@ -321,6 +322,7 @@ $equipmentSlotsPath = Join-ProjectPath "Assets\02.Scripts\Character\Core\Equipme
 $playableHudPath = Join-ProjectPath "Assets\02.Scripts\UI\PlayableLoopHud.cs"
 $planPath = Join-ProjectPath "GameDesign\ProductionDocs\10_PlayableLoopMvpAutomationPlan.md"
 $releaseReadinessPath = Join-ProjectPath "GameDesign\ProductionDocs\13_ReleaseReadinessAndProductionGates.md"
+$completeGameBacklogPath = Join-ProjectPath "GameDesign\ProductionDocs\14_CompleteGameProductionBacklog.md"
 $sceneSetupGuidePath = Join-ProjectPath "GameDesign\ProductionDocs\06_UnitySceneAndPrefabSetupGuide.md"
 $debtRegisterPath = Join-ProjectPath "GameDesign\ProductionDocs\12_PrototypeDebtRegister.md"
 
@@ -662,7 +664,7 @@ if (Test-Path -LiteralPath $planPath) {
         "Prototype Debt Sweep Rule",
         "No-Stagnation Rules",
         "Progress Tracker",
-        "Current phase | Phase E - Early Access Readiness Slice",
+        "Current phase | Phase E - Presentable Combat Vertical Slice",
         "Next unlock",
         "D0-A | P0 | Save-backed dungeon depth progression | Done",
         "D0-B | P0 | Formula-driven depth threat and reward bands | Done",
@@ -677,9 +679,11 @@ if (Test-Path -LiteralPath $planPath) {
         "E1-C | P1 | Reusable dungeon encounter variety | Done / User accepted Play Mode validation",
         "E2-A | P1 | Onboarding, settings, recovery | Done / User accepted recovery guidance",
         "E2-B | P1 | Goal comparison clarity | Done / User accepted Play Mode validation",
-        "E3-A | P1 | HUD settings quick toggles and first-session QA checklist | In progress / HUD quick toggles implemented",
-        "E3-A first-session QA checklist",
-        "E3-A HUD settings quick toggles",
+        "E3-A | P2 | HUD settings quick toggles and first-session QA checklist | Done / User accepted Play Mode validation",
+        "E3-B | P0 | Combat model and animation binding | Next / Product work",
+        "E3-C | P0 | Direct-combat behavior and attack telegraphs | Pending / After E3-B",
+        "E3-D | P0 | Authored dungeon map vertical slice | Pending / After E3-C",
+        "E3-E | P0 | First complete playable session | Pending / After E3-D",
         "RTS-readable automatic defense",
         "Actual NavMesh battlefield",
         "Tools/Automation/Invoke-IncrementalDiabloChecks.ps1",
@@ -703,6 +707,12 @@ if (Test-Path -LiteralPath $planPath) {
     } else {
         Add-Result "Automation closed-gate freshness" "PASS" "No completed E0-B composition task is routed as current work."
     }
+
+    if ($planText.Contains("**Next unlock:** `E3-A")) {
+        Add-Result "Automation active-P0 freshness" "FAIL" "Plan still routes accepted E3-A HUD QA as current work."
+    } else {
+        Add-Result "Automation active-P0 freshness" "PASS" "Accepted E3-A HUD QA is not routed ahead of E3-B product work."
+    }
 }
 
 if (Test-Path -LiteralPath $releaseReadinessPath) {
@@ -717,8 +727,13 @@ if (Test-Path -LiteralPath $releaseReadinessPath) {
         "E1-C | Done / P1",
         "E2-A | Done / P1",
         "E2-B | Done / P1",
-        "E3-A | In progress / P1",
-        "R3 first-session QA checklist",
+        "Presentable Combat Vertical Slice",
+        "Gate R4",
+        "E3-A | Done / P2",
+        "E3-B | Next / P0",
+        "E3-C | Pending / P0",
+        "E3-D | Pending / P0",
+        "E3-E | Pending / P0",
         "HUD settings quick toggles",
         "post-upgrade return guidance",
         "settings persistence",
@@ -731,10 +746,28 @@ if (Test-Path -LiteralPath $releaseReadinessPath) {
     }
 }
 
+if (Test-Path -LiteralPath $completeGameBacklogPath) {
+    $completeGameBacklogText = Read-TextFile $completeGameBacklogPath
+    $requiredCompleteGameBacklogTokens = @(
+        "# Complete Game Production Backlog",
+        "E3-B | P0 /",
+        "E3-C | P0 |",
+        "E3-D | P0 |",
+        "E3-E | P0 |",
+        "## Phase F",
+        "## Phase G",
+        "## Phase H",
+        "HUD"
+    )
+    foreach ($token in $requiredCompleteGameBacklogTokens) {
+        [void](Assert-TextContains "Complete-game backlog token" $completeGameBacklogText $token)
+    }
+}
+
 if (Test-Path -LiteralPath $sceneSetupGuidePath) {
     $sceneSetupGuideText = Read-TextFile $sceneSetupGuidePath
     $requiredSceneSetupTokens = @(
-        "E3-A R3 first-session QA checklist",
+        "E3-A first-session QA regression checklist",
         "no-save Load guidance",
         "contract -> run -> reward",
         "HUD settings restored",

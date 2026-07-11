@@ -20,10 +20,11 @@ The 900+ hour target is a long-horizon design constraint. It is not an Early Acc
 
 | Area | Verified foundation | Missing for a sellable slice | Production implication |
 | --- | --- | --- | --- |
-| Ground defense | Automatic frontline, visible autonomous battle, formula bands, save/offline loop | A player-facing long-session reason to return to the defense beyond numeric level growth | Do not add camera or actor polish by default; connect future rewards and contracts to meaningful strategy only. |
-| Dungeon | Direct-control one-room combat, depth unlocks, depth threat/reward bands, authored reward path | Encounter variety, a pre-run decision, a boss/elite identity, and repeatable objectives | Prioritize reusable encounter and contract rules over hand-authored room lists. |
-| Items and crafting | Registry/migration, basic rarity, duplicate conversion, salvage, first reroll sink | Authored affix pool, build identities, clear upgrade comparison, scalable drop export | Treat the prototype reroll as an alpha blocker, not as a content-complete item system. |
-| UX and onboarding | Playable focus states, overlays, save recovery, alert bridge | First-session teaching, settings, release-grade text/art pass | Add after the repeatable slice proves its decisions; do not use layout polish to substitute for content. |
+| Ground defense | Automatic frontline, visible autonomous battle, formula bands, save/offline loop | A player-facing long-session reason to return to the defense beyond numeric level growth | Connect future rewards and contracts to meaningful strategy; do not default to camera or actor polish. |
+| Direct combat presentation | Direct-control one-room combat, depth unlocks, contracts, encounter rules, authored reward path | Real Hero/enemy models, animation-state feedback, avoidable enemy actions, and a playable dungeon map | Complete E3-B through E3-D before treating more HUD work as release movement. |
+| Items and crafting | Registry/migration, rarity, duplicate conversion, salvage, authored Rare affix reroll | Build identities, defender use, scalable drops, filtering, and long-term sinks | Treat the accepted reroll as a foundation; use F4 to build an economy rather than more comparison copy. |
+| Maps and content | A live `Gameplay` combat room and reusable encounter rules | Authored vertical map, reusable map modules, enemy/boss behavior roster, and theme pipeline | Build one intentional map first, then expand through modular content and data rather than hand-authored ladders. |
+| UX and onboarding | Playable focus states, overlays, save recovery, accepted first-session guide/settings QA | Accessibility, input, audio/graphics settings, and release-grade communication | Keep E3-A regression-only until H1; do not use settings work to displace active gameplay production. |
 | Verification | Build, scene contracts, balance exports, debt scan, freshness checks | Explicit product-gate checks and honest compiler-warning visibility | A green harness means safe structure, not a completed product gate. |
 
 ## 3. What Counts As Production Movement
@@ -65,19 +66,27 @@ The player can complete several runs without repeating the exact same decision p
 - the first-session path teaches Hold/Push, contract choice, direct combat, reward handling, and recovery;
 - save migration and negative-path recovery are verified against the production item/contract data.
 
-### Gate R3 — Early Access Candidate
+### Gate R3 — Presentable Combat Vertical Slice (active)
 
-- R1 and R2 pass without debug HUDs, prototype fallbacks, or review-only controls on the normal path;
-- alpha-blocker debt is closed or explicitly replaced with a tested production path;
-- settings, first-session onboarding, basic accessibility/readability, and a reproducible QA checklist exist;
-- a fresh save can play the intended first session without developer explanation;
+- live Hero and first-enemy models/rigs/animation states are connected to actual combat ownership, not placed as detached decoration;
+- an elite or boss has a readable wind-up and avoidable action with real timing, damage, failure, reward, and save/recovery behavior;
+- one authored dungeon map has a deliberate entrance, route, arena, and reward/exit flow with collision, NavMesh, spawn, input, camera, and failure return;
+- a fresh save can complete frontline -> contract -> direct combat -> reward -> item/crafting -> defense investment -> save/load in one self-explanatory session;
+- accepted E3-A first-session/settings QA remains available as a regression path but is not the R3 product gate by itself.
+
+2026-07-11 status: E3-A is accepted from the 2026-07-10 user confirmation. R3 now starts with E3-B combat model and animation binding, then E3-C direct-combat telegraphs, E3-D authored map assembly, and E3-E complete-session evidence. The authoritative sequence is `14_CompleteGameProductionBacklog.md`.
+
+### Gate R4 — Early Access Candidate
+
+- R3 passes without debug HUDs, prototype fallbacks, or review-only controls on the normal path;
+- multiple reusable map, enemy, elite/boss, model/animation, VFX/SFX, and reward-content rules prove a content production pipeline;
+- item builds, crafting sinks, duplicate handling, filtering/auto-salvage, and defender loadouts prevent obvious dead progression after one hero is equipped;
+- accessibility/input/settings, save migration, performance, build QA, and a reproducible first-session checklist are ready for the supported PC build;
 - builds report no untriaged compiler warnings and no known progression dead end.
-
-2026-07-10 status: the reproducible first-session QA checklist exists in `06_UnitySceneAndPrefabSetupGuide.md`, and the first small settings step is implemented as HUD settings quick toggles for the existing persisted text-density and first-session guide settings. R3 still needs focused Play Mode evidence that the buttons update labels/messages, save/load restores the selected setting, and the bottom HUD row remains readable. After that evidence, decide whether E3-A is accepted as the build-handoff path or whether to start a manual boss/room visual-authoring pass.
 
 ### Post-Early-Access Long Horizon
 
-Only after R3 should the project expand toward multi-theme depth, broader item bases, unique effects, automation layers, and the 900+ hour horizon. Each expansion must add a reusable rule, a sink, and a verification/export path before increasing content counts.
+Only after R4 should the project expand toward multi-theme depth, broader item bases, unique effects, automation layers, and the 900+ hour horizon. Each expansion must add a reusable rule, a sink, and a verification/export path before increasing content counts.
 
 ## 5. Current Ordered Work
 
@@ -88,7 +97,13 @@ Only after R3 should the project expand toward multi-theme depth, broader item b
 | E1-C | Done / P1 | Add reusable dungeon encounter variety: one elite rule and one boss/encounter rule that preserves direct-control value. | Accepted 2026-06-27 through focused Play Mode next encounter -> start -> elite/boss active text -> clear/fail -> reward -> save/load evidence. `DungeonEncounterModel`, schema-v5 selected/active encounter save fields, encounter HP/damage/reward-depth modifiers, HUD text, and `DungeonEncounterBalance.csv` are complete. |
 | E2-A | Done / P1 | First-session onboarding, settings, and recovery handoff after R1 decisions are real. | User accepted the recovery guidance check on 2026-07-01. Fresh-save HUD guidance, first recovery-save copy, settings persistence for the existing HUD text-density/guide toggles, and the no-save `Load` guidance path are implemented. The no-save recovery copy is centralized in `DefenseSaveManager.NoSaveRecoveryGuidance` and reused by the normal HUD. |
 | E2-B | Done / P1 | Goal comparison clarity after the first-session path is recoverable. | Contract comparison is accepted from the 2026-07-03 user-confirmed check. Latest item comparison is accepted from the 2026-07-05 user-confirmed check: the normal HUD compares the newest resolved reward item against the equipped same-slot item and keeps unresolved or unequipped latest rewards ahead of next-contract guidance. Defense-upgrade comparison is accepted from the 2026-07-08 user-confirmed check: stressed wall/pressure recommends Wall, unaffordable Wall shows exact missing Gold/Scrap, affordable Tower/Defenders compare DPS gain, upgrade click feedback uses shortfall wording when resources are missing, and successful purchases route back to Hold/Push or the next contract. Reopen only for comparison-copy, reward-decision, defense-upgrade, or save/load regressions. |
-| E3-A | In progress / P1 | HUD settings quick toggles and first-session QA checklist for R3 readiness. | 2026-07-09: the R3 first-session QA checklist was drafted. 2026-07-10: the existing persisted HUD text-density/guide toggles are exposed as two normal HUD buttons in `Gameplay`. Remaining evidence is focused Play Mode validation of click -> label/message update -> save/load restore -> bottom-row readability. This is not a full settings menu, debug settings surface, or visual-authoring pass. |
+| E3-A | Done / P2 | HUD settings quick toggles and first-session QA checklist. | User accepted the focused path on 2026-07-10 before `1163416` was published. It is a regression-only quality surface, not active production work. |
+| E3-B | Next / P0 | Connect real Hero and first-enemy models, rigs, clips, and Animator states to the existing movement/attack/hit/death combat path. | The live actor prefabs visibly perform Idle, Move, Attack, Hit, and Death in `Gameplay`; asset licensing/source, manual setup, and save implications are documented. |
+| E3-C | Pending / P0 | Give an elite or boss a reusable readable wind-up, avoidable attack, actual hit timing, failure, reward, and recovery. | Play Mode proves a player response beyond reading a label; the action is data/state driven rather than a tint or stat multiplier. |
+| E3-D | Pending / P0 | Assemble one authored entrance -> route -> arena -> reward/exit dungeon map. | The map connects collision, NavMesh, camera, input, spawning, reward, and failure return in an intended playable route. |
+| E3-E | Pending / P0 | Prove one complete 20-30 minute fresh-save session. | Frontline -> contract -> combat/boss -> reward -> item/crafting -> defense investment -> save/load works without developer explanation and leaves a next goal. |
+| F1-F5 | Pending / P0 | Build reusable art/prefab, map, encounter, item/economy, and defense-loadout production pipelines. | See the ordered, completion-oriented definitions in `14_CompleteGameProductionBacklog.md`; F4 must consult the local D2 reference before economy changes. |
+| G1-G3, H1-H3 | Pending / P0/P1 | Build long-term progression, economic stability, content balance, accessibility/input/settings, build QA, and release operations. | These phases cannot be replaced by an isolated UI or documentation slice. |
 
 ## 6. Economy and Balance Guardrails
 
@@ -101,8 +116,8 @@ Only after R3 should the project expand toward multi-theme depth, broader item b
 ## 7. Automation Rules Derived From This Plan
 
 1. Read this document and `10_PlayableLoopMvpAutomationPlan.md` before selecting work.
-2. Work only on the first `Next` product task unless a build/regression blocker prevents it.
+2. Work only on the first `Next / P0` product task in `14_CompleteGameProductionBacklog.md`, mirrored in `10`, unless a build/regression blocker prevents it.
 3. Closed gates are regression-only. A prior user acceptance is sufficient evidence unless a changed contract invalidates it.
 4. Do not spend two consecutive automation runs on documentation, static checks, camera values, debug UI, or validation helpers.
 5. A green harness must be reported as structural verification, never as player-value progress by itself.
-6. Each report must name the release gate moved, the player-visible delta, and the next evidence needed.
+6. Each report must name the release gate moved, the player-visible delta, and the next evidence needed. It must not call text, documentation, or a green harness alone product movement.
