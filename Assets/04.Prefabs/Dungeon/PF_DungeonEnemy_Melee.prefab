@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 3575567408639426890}
   - component: {fileID: 2281008698500294892}
   - component: {fileID: 3876362445854567545}
+  - component: {fileID: 3254252056162206123}
   m_Layer: 7
   m_Name: PF_DungeonEnemy_Melee
   m_TagString: Untagged
@@ -160,6 +161,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CharacterActor
   team: 2
+--- !u!114 &3254252056162206123
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 484105498317282540}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ec64c6b0b4d4d3d9c4412aac3142e5a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::CombatAnimationDriver
+  animator: {fileID: 0}
+  autoFindAnimator: 1
+  moveSpeedParameter: MoveSpeed
+  attackTrigger: Attack
+  hitTrigger: Hit
+  deathTrigger: Death
 --- !u!1 &7818167371865626726
 GameObject:
   m_ObjectHideFlags: 0

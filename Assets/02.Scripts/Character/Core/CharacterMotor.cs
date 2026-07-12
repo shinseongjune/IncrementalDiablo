@@ -12,6 +12,7 @@ public class CharacterMotor : MonoBehaviour
     public bool IsOnNavMesh => agent != null && agent.isOnNavMesh;
     public bool HasPath => agent != null && agent.hasPath;
     public float RemainingDistance => agent == null ? 0f : agent.remainingDistance;
+    public float CurrentSpeed => IsOnNavMesh ? agent.velocity.magnitude : 0f;
 
     private void Awake()
     {

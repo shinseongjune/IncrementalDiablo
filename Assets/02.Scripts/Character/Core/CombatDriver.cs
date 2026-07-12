@@ -6,6 +6,8 @@ public class CombatDriver : MonoBehaviour
     private CharacterStats stats;
     private float nextAttackTime;
 
+    public event System.Action BasicAttackPerformed;
+
     public bool IsCoolingDown => Time.time < nextAttackTime;
 
     private void Awake()
@@ -22,6 +24,7 @@ public class CombatDriver : MonoBehaviour
 
         target.TakeDamage(stats.GetValue(StatId.AttackDamage));
         nextAttackTime = Time.time + stats.GetValue(StatId.AttackCooldown);
+        BasicAttackPerformed?.Invoke();
         return true;
     }
 
@@ -33,6 +36,7 @@ public class CombatDriver : MonoBehaviour
         }
 
         nextAttackTime = Time.time + stats.GetValue(StatId.AttackCooldown);
+        BasicAttackPerformed?.Invoke();
         return true;
     }
 

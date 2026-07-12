@@ -1,33 +1,12 @@
-# Script Folder Structure
+# Live Code Ownership
 
-## Live ownership map
-
-| Area | Folder / primary scripts | Responsibility |
+| 영역 | 주요 소유자 | 책임 |
 | --- | --- | --- |
-| Ground-defense authority | `Assets/02.Scripts/GroundDefense/Runtime/DefenseRuntimeState.cs`, `DefenseDirector.cs`, `DefenseSaveManager.cs`, `GroundDefenseBalanceModel.cs`, `DefenseUpgradeModel.cs` | Continuous frontline, wall/resources/progression, save/load/offline state, formula balance, upgrade costs/effect deltas, save-apply notification. |
-| Ground-defense live battle | `Assets/02.Scripts/GroundDefense/Runtime/GroundDefenseNavMeshBattlefield.cs`, `GroundDefenseNavMeshUnit.cs`, `Assets/02.Scripts/GroundDefense/UI/GroundDefenseBillboardUtility.cs` | Autonomous NavMesh actors, visual faction/role readability, target ownership, death/reinforcement, authoritative wall damage, save-load visual rebuild. |
-| Dungeon | `Assets/02.Scripts/Dungeon/ExpeditionDirector.cs`, `EnemySpawner.cs`, `DungeonDepthBalanceModel.cs`, `DungeonContractModel.cs`, `DungeonEncounterModel.cs` | Direct-control expedition state, enemy spawning, formula depth bands, generated contract choices, E2-B contract goal comparison text, reusable elite/boss encounter rules, failure/reward handoff. |
-| Items | `Assets/02.Scripts/Items/ItemDefinitionRegistry.cs`, `LootDropper.cs`, `SimpleInventory.cs`, `ItemEconomyModel.cs`, `ItemSalvageService.cs`, `Assets/02.Scripts/Character/Core/EquipmentSlots.cs` | Authored item identity, rewards, duplicate conversion, inventory, equipment-slot state, salvage, authored Rare affix pool, material sinks. |
-| UI | `Assets/02.Scripts/UI/PlayableLoopHud.cs`, `PlayableScreenLayoutController.cs`, `PanelCameraRenderTarget.cs`, `DungeonViewportInputRouter.cs` | Normal player HUD, accepted first-session guidance/recovery copy including no-save `Load` guidance, HUD settings snapshot/apply, E3-A HUD settings quick toggles for text density and first-session guide, accepted E2-B contract `Goal:` text plus latest-item equip/salvage comparison, defense-upgrade comparison, Wall shortfall guidance, post-upgrade return guidance, guide-off action-priority text, focus/overlays, viewport render bridge, and dungeon viewport input. |
-| Overlay UI | `Assets/02.Scripts/UI/*OverlayPresenter.cs` | Inventory, reward, and crafting actions/content. |
-| Shared | `Assets/02.Scripts/Shared/GameSaveData.cs`, `GameSaveDataDiagnostics.cs` | Save schema and explicit migration/diagnostics, including dungeon contract ids, encounter ids, and UI settings. |
-| Automation | `Tools/Automation/Invoke-IncrementalDiabloChecks.ps1`, balance/contract/encounter/affix exports, prototype inventory | Structural verification, deterministic balance checks, debt visibility, accepted E3-A regression wiring, and production-document freshness for the complete-game P0 queue in `14_CompleteGameProductionBacklog.md`. |
+| 전선 권한 | `GroundDefense/Runtime/DefenseRuntimeState`, `DefenseDirector`, `DefenseSaveManager` | 전선 진행, 벽, 자원, 저장/불러오기 |
+| 전선 전투 | `GroundDefenseNavMeshBattlefield`, `GroundDefenseNavMeshUnit` | 자동 전투 시각화와 벽 피해 전달 |
+| 던전 | `Dungeon/ExpeditionDirector`, `CombatRoom`, `EnemySpawner`, `DungeonContractModel`, `DungeonEncounterModel` | 직접 전투 실행, 계약, 조우, 보상 |
+| 아이템 | `Items/ItemDefinitionRegistry`, `LootDropper`, `SimpleInventory`, `ItemEconomyModel`, `ItemSalvageService`, `EquipmentSlots` | 전리품, 장비, 분해, 제작 재료 |
+| Hero 전투 | `Character/Core`, `CombatDriver`, `Health`, `CombatAnimationDriver`, 이동 컴포넌트 | 이동, 공격, 피해, 사망. `CombatAnimationDriver`는 이를 `MoveSpeed`/`Attack`/`Hit`/`Death` Animator 계약으로 표현할 뿐 권한을 갖지 않는다. |
+| UI | `UI/PlayableLoopHud`, `PlayableScreenLayoutController`, Overlay Presenter | 플레이어 행동과 결과 표시 |
 
-## Retired ground-defense path
-
-The superseded presentation stack, its prefab/assets, review-only level control, and normal-player diagnostics were deleted after the actual NavMesh battlefield was accepted. Do not recreate compatibility fallbacks. If a future feature needs role data or pooling, design it against the live NavMesh contract.
-
-## Ownership boundaries
-
-- Ground battle visuals never own rewards, frontline progression, wall authority, or save data.
-- Ground battle visuals rebuild from `DefenseDirector.SaveDataApplied` and must stop attacks whenever the restored defense state is not running.
-- Dungeon contracts must extend `ExpeditionDirector`, `DungeonContractModel`, and save data; they must not create a second depth/reward system. Contract comparison copy belongs in `DungeonContractModel` and `PlayableLoopHud`, not scene-only text.
-- Dungeon encounters must extend `ExpeditionDirector`, `DungeonEncounterModel`, and save data; they must not create a hand-authored room ladder or second reward path.
-- Rare affixes must extend `ItemEconomyModel.AuthoredRareAffixes`, `ItemAffixRoll`, and the existing crafting cost path; they must not create a second item mutation or save model.
-- Player-facing UI shows actions, consequences, first-session next steps, recovery meaning, accepted compact reward comparison, accepted compact defense-upgrade comparison, missing Wall resources when wall/pressure is the current blocker, and the next loop step after a successful defense upgrade; unresolved or unequipped latest rewards should keep their `Next:` decision before upgrade or next-contract guidance. Do not show review/debug/render wiring status.
-- HUD settings persistence is limited to `UiSettingsSaveData` and `PlayableLoopHud` settings snapshot/apply. E3-A exposes only text density and first-session guide through normal HUD quick toggles using the existing `PlayableLoopHud` toggle methods. `DefenseSaveManager.NoSaveRecoveryGuidance` owns the pre-save `Load` recovery copy and the normal HUD reuses it. Do not create a second settings save file unless a full settings menu decision requires it.
-- New systems need a primary owner, data location, persistence statement, balance knobs, and a harness or Play Mode verification path.
-
-## Automation notes
-
-`Invoke-IncrementalDiabloChecks.ps1` verifies the active NavMesh defense battle and requires the removed legacy components to be absent from `Gameplay.unity`. It also checks named dungeon/defense viewport render bridges, the `PlayableLoopHud` depth/contract/settings button references, save/item/contract/encounter/affix/UI-settings contracts, balance exports, prototype inventory, accepted E3-A checklist freshness, and the active E3-B-to-H complete-game queue. A passing run is structural verification, not gameplay acceptance.
+새 기능은 기존 권한 경로를 확장한다. 화면 전용 상태, 두 번째 저장 모델, 두 번째 보상 경제를 만들지 않는다.

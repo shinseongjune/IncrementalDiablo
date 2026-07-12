@@ -7,6 +7,10 @@ public class Health : MonoBehaviour
     private float current;
     private bool initialized;
 
+    public event System.Action<float, float> Damaged;
+    public event System.Action Died;
+    public event System.Action Refilled;
+
     public float Current
     {
         get
@@ -67,7 +71,20 @@ public class Health : MonoBehaviour
             return;
         }
 
+        float previous = current;
         current = Mathf.Max(0f, current - amount);
+
+        if (Mathf.Approximately(previous, current))
+        {
+            return;
+        }
+
+        Damaged?.Invoke(previous - current, current);
+
+        if (current <= 0f)
+        {
+            Died?.Invoke();
+        }
     }
 
     public void Heal(float amount)
@@ -85,7 +102,13 @@ public class Health : MonoBehaviour
     public void Refill()
     {
         EnsureInitialized();
+        float previous = current;
         current = Max;
+
+        if (!Mathf.Approximately(previous, current))
+        {
+            Refilled?.Invoke();
+        }
     }
 
     private void HandleStatsChanged()

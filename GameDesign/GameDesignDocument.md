@@ -1,68 +1,22 @@
-# Incremental Diablo — Game Design Document
+# IncrementalDiablo
 
-## Product promise
+## 제품 약속
 
-IncrementalDiablo is a low-cost, offline-first PC incremental action RPG. The player runs an automatic dark-fantasy frontline, then personally enters compact dungeons to take risks, fight directly, collect equipment, and improve both the hero and the defense.
+오프라인 PC 인크리멘탈 액션 RPG다. 플레이어는 자동 전선으로 기본 자원을 얻고, 직접 조작하는 던전에서 위험을 감수해 장비와 재료를 얻으며, 영웅과 방어를 함께 성장시킨다.
 
 ```text
-automatic defense income
--> pre-run dungeon risk/reward choice
--> direct-control combat
--> loot, equipment, salvage, crafting
--> a clearer and stronger next objective
+자동 전선 -> 던전 계약 선택 -> 직접 전투 -> 전리품/제작 -> 영웅과 방어 성장 -> 다음 목표
 ```
 
-The target is a sellable loop, not a technology demo. The immediate target is a two-hour repeatable slice; the 900+ hour ambition is a long-horizon constraint after the short loop proves its decisions and sinks.
+## 고정 원칙
 
-The release-gate source of truth is `ProductionDocs/13_ReleaseReadinessAndProductionGates.md`. `ProductionDocs/14_CompleteGameProductionBacklog.md` defines the complete-game sequence, and `ProductionDocs/10_PlayableLoopMvpAutomationPlan.md` mirrors its first active P0 task for daily implementation.
+- 전선은 자동 방어다. 개별 유닛 명령, 생산 큐, 자유 타워 배치, 수동 웨이브, RTS 경제는 만들지 않는다.
+- 던전은 직접 조작의 위험과 대응이 있어야 한다. 색상·수치·HUD 문구만 다른 적은 콘텐츠가 아니다.
+- 장비와 제작은 중복, 분해, 재료, 로드아웃, 방어 연계를 통해 장기 선택을 만든다.
+- 모든 큰 시스템은 보상 또는 실패, 저장 의도, 재사용 규칙, 검증 경로를 가진다.
 
-## Player fantasy and boundaries
+## 현재 제작 기준
 
-### Automatic ground defense
+현재 P0는 `ProductionDocs/08_ProductionRoadmap.md`의 E3-B다. 실제 Hero와 첫 적의 모델·리그·애니메이션을 현재 전투 상태에 연결한 뒤, 적 행동, 첫 던전 맵, 완성 세션으로 진행한다.
 
-- The ground layer is a continuous frontline with Frontline Level and Hold/Push direction.
-- It should read as a dark-fantasy battlefield: defenders, enemies, attacks, reinforcements, wall damage, and a protected side are visible.
-- It remains automatic. The player does not select units, issue movement or focus-fire commands, manage workers/production queues, place towers freely, or author manual waves.
-- `DefenseRuntimeState` remains authoritative for pressure, wall state, resources, progression, save/load, and offline behavior.
-- Loading defense state rebuilds visual actors from the restored authoritative state; visual actors must not keep damaging the wall while defense is not running.
-
-### Direct-control dungeon action
-
-- Dungeons provide the active RPG contrast: player-controlled movement, attacks, danger, failure, and reward handling.
-- A run must make its threat/reward contract visible before entry, then resolve that choice visibly at completion or failure.
-- Dungeon growth should come from reusable contract/encounter rules and data, not short hand-authored ladders.
-
-### Item and economy direction
-
-- Equipment must produce understandable build choices for the hero and eventually the defense.
-- Salvage, duplicate conversion, crafting materials, rerolls, loadouts, and filtering are preferred answers to inventory bloat.
-- Drops need clear denominators, reusable tables, sinks, save behavior, and balance exports.
-- The D2 reference pack can inform pacing and sink structure, but this project must not copy trading, ladder, multiplayer, or alt-character assumptions.
-
-## Current accepted baseline
-
-- Ground defense has an accepted actual NavMesh battlefield with readable faction/attack ownership, wall damage, reinforcement, formula-driven density, and accepted camera composition.
-- Dungeon depth progression, depth threat/reward bands, E1-A contract choice, normal-player contract buttons, E1-C encounter core, defense save/load visual rebuild, item registry/migration, duplicate conversion, save/load, no-save recovery guidance, reward overlays, salvage, the accepted authored Rare affix pool, first fresh-save `Next:` guidance, schema-v6 HUD settings persistence, an accepted first-session QA checklist, and E3-A HUD settings quick toggles exist.
-- E2-A first-session recovery guidance and E2-B goal comparison clarity are accepted. E3-A was user-confirmed on 2026-07-10 and is regression-only; it is not a substitute for combat presentation, map, content, economy, or release work.
-
-Accepted baselines reopen only for regressions or explicit contract changes. They are not default polishing work.
-
-## Current production priorities
-
-1. Execute `E3-B`: connect actual Hero and first-enemy models, rigs, clips, and Animator states to the live direct-combat path. The player must see Idle, Move, Attack, Hit, and Death on the actual combat actor, not a detached presentation object.
-2. Follow `E3-C` readable elite/boss actions, `E3-D` authored dungeon map assembly, and `E3-E` complete-session evidence. The full Phase E through H order, including reusable content, item/economy sinks, long-term progression, and release build work, is in `ProductionDocs/14_CompleteGameProductionBacklog.md`.
-3. E3-A settings/QA may be run only for a reported regression. Do not add more HUD copy or settings controls while an E3-B through E3-E P0 task is open.
-
-## Design rules
-
-- Prefer player-visible decisions, rewards, sinks, failure/recovery, and reusable scaling rules.
-- Do not spend consecutive production runs on debug UI, camera values, smoke tests, or documentation without an active blocker.
-- Do not introduce a second simulation, reward economy, or save model for visual presentation.
-- Keep normal-player text concise. Remove diagnostics and review-only labels after their validation purpose ends.
-- Every major system needs purpose, feedback, failure state, reward/sink link, save/load intent, scalable rule, balance knobs, verification, and a current owner document.
-
-## Verification standard
-
-`Tools/Automation/Invoke-IncrementalDiabloChecks.ps1` verifies build, structural scene contracts, missing scripts, balance exports, prototype inventory, documentation freshness, and local automation health. A passing harness means structural safety; it does not prove gameplay feel or product completion.
-
-Use a focused Play Mode path whenever a task changes combat readability, player input, screen composition, camera behavior, or UI interaction.
+이 문서와 `03`~`08`만 현재 제작 기준이다. 과거 MVP, HUD QA, 카메라 검토, 이력 문서는 현재 작업 근거가 아니다.
