@@ -4,18 +4,18 @@
 
 매일 가장 앞선 `P0`만 진행한다. 문서, HUD 문구, 하네스, 회귀 체크는 그 P0를 직접 막거나 깨진 경우에만 다룬다. 완료된 작업을 다시 열어 작은 개선을 만들지 않는다.
 
-## 현재 P0 — E3-B 모델과 애니메이션 연결
+## 현재 P0 — E3-C 적 행동과 텔레그래프
 
-실제 Hero와 첫 적의 모델, 리그, Animator를 현재 이동·공격·피격·사망 상태에 연결한다. 완료 기준은 `Gameplay`에서 두 전투 주체가 Idle, Move, Attack, Hit, Death를 실제 전투 중에 보여 주는 것이다. 에셋이 없으면 정확한 에셋 요구만 보고하고 HUD/문서 작업으로 우회하지 않는다.
+첫 근접 적의 기본 공격에 선행 동작과 읽을 수 있는 위험 표시를 추가한다. 플레이어가 위험 구역을 벗어나면 피해를 피하고, 남아 있으면 현재 `CombatDriver`/`Health` 경로로 한 번만 피해를 받는다. 보상·저장·전투 수치를 바꾸지 않는다.
 
-진행 상태: `CombatAnimationDriver`가 Hero `Player`와 첫 적 `PF_DungeonEnemy_Melee`의 기존 전투 이벤트를 `MoveSpeed`(float), `Attack`·`Hit`·`Death`(trigger) Animator 계약으로 연결했다. 실제 모델·리그·Animator Controller 자산은 아직 없으므로, 다음 차단 요인은 승인된 Hero/적 리그와 다섯 상태 Controller를 두 루트에 수동으로 연결하는 일이다.
+E3-B 완료: `HeroDefault`와 `OrcPADefault` 시각 Prefab을 기존 `Player`/`PF_DungeonEnemy_Melee` 루트의 `Model` 자식으로 연결했고, 공통 `Combat` 상태기와 Hero/Orc Override Controller를 적용했다. 사용자 Play Mode에서 두 전투 주체의 Idle, Move, Attack, Hit, Death를 확인했다. 이후 모델·Animator 연결은 회귀 전용이다.
 
 ## 첫 버티컬 슬라이스
 
 | 순서 | 작업 | 완료 기준 |
 | --- | --- | --- |
-| E3-B | 모델·애니메이션 연결 | 실제 전투 주체의 다섯 상태가 보인다. |
-| E3-C | 적 행동·텔레그래프 | 피할 수 있는 공격과 실제 실패/보상이 있다. |
+| E3-B | 완료 — 모델·애니메이션 연결 | 실제 전투 주체의 다섯 상태가 보인다. |
+| E3-C | 현재 P0 — 적 행동·텔레그래프 | 피할 수 있는 공격과 실제 실패/보상이 있다. |
 | E3-D | 첫 던전 맵 | 입구, 경로, 전투장, 보상/퇴장이 연결된다. |
 | E3-E | 완성 세션 | 전선 → 계약 → 전투 → 보상/제작 → 방어 투자 → 저장/불러오기가 한 세션에서 이어진다. |
 
