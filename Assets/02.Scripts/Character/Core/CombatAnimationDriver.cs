@@ -50,9 +50,18 @@ public sealed class CombatAnimationDriver : MonoBehaviour
         CacheParameterContract();
         Subscribe();
 
-        if (health != null && !health.IsAlive)
+        if (health != null)
         {
-            HandleDeath();
+            if (!health.IsAlive)
+            {
+                HandleDeath();
+            }
+            // CombatRoom can refill a tracked enemy while it is inactive between rooms.
+            // Reconcile the cached state on reactivation so its Animator leaves Death.
+            else if (isDead)
+            {
+                HandleRefilled();
+            }
         }
     }
 
