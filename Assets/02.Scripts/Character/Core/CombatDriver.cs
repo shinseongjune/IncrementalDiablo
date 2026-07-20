@@ -9,6 +9,7 @@ public class CombatDriver : MonoBehaviour
     public event System.Action BasicAttackPerformed;
 
     public bool IsCoolingDown => Time.time < nextAttackTime;
+    public float AttackRange => stats == null ? 0f : stats.GetValue(StatId.AttackRange);
 
     private void Awake()
     {
@@ -57,7 +58,6 @@ public class CombatDriver : MonoBehaviour
             return false;
         }
 
-        float range = stats.GetValue(StatId.AttackRange);
-        return Vector3.Distance(transform.position, target.position) <= range;
+        return Vector3.Distance(transform.position, target.position) <= AttackRange;
     }
 }

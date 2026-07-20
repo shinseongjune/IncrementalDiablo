@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 7254109949802091093}
   - component: {fileID: 2278829351613107656}
   - component: {fileID: 866875628666416933}
+  - component: {fileID: 5027829065316194287}
   - component: {fileID: 620550314666636207}
   - component: {fileID: 2041737197479395905}
   - component: {fileID: 3575567408639426890}
@@ -51,7 +52,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 79696920891a4fcf918c563859d6f2d2, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterStats
   maxHealth: 100
   moveSpeed: 4
@@ -86,6 +87,28 @@ MonoBehaviour:
   autoFindPlayer: 1
   chaseRefreshInterval: 0.15
   retargetInterval: 0.5
+  attackWindupDuration: 0.65
+--- !u!114 &5027829065316194287
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 484105498317282540}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c7f2d14ae04d4d4cabcc4a7358821e3f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyAttackTelegraph
+  ring: {fileID: 0}
+  createRuntimeRingIfMissing: 1
+  radiusPadding: 0.08
+  ringHeight: 0.04
+  ringWidth: 0.08
+  segmentCount: 40
+  ringColor: {r: 1, g: 0.2, b: 0.05, a: 0.9}
+  pulseSpeed: 5
+  pulseAlphaFloor: 0.45
 --- !u!195 &620550314666636207
 NavMeshAgent:
   m_ObjectHideFlags: 0

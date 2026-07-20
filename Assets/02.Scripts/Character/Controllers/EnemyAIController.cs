@@ -7,10 +7,19 @@ public class EnemyAIController : MonoBehaviour
     [SerializeField] private bool autoFindPlayer = true;
     [SerializeField] private float chaseRefreshInterval = 0.15f;
     [SerializeField] private float retargetInterval = 0.5f;
+    [SerializeField, Min(0.1f)] private float attackWindupDuration = 0.65f;
 
     private CharacterActor actor;
+    private CharacterActor windupTarget;
     private float nextChaseRefreshTime;
     private float nextRetargetTime;
+    private float windupEndTime;
+
+    public event System.Action AttackWindupStarted;
+    public event System.Action AttackWindupCompleted;
+    public event System.Action AttackWindupCanceled;
+
+    public bool IsWindingUp => windupTarget != null;
 
     private void Awake()
     {
@@ -22,6 +31,7 @@ public class EnemyAIController : MonoBehaviour
     {
         chaseRefreshInterval = Mathf.Max(0.05f, chaseRefreshInterval);
         retargetInterval = Mathf.Max(0.05f, retargetInterval);
+        attackWindupDuration = Mathf.Max(0.1f, attackWindupDuration);
     }
 
     private void Update()
@@ -30,7 +40,14 @@ public class EnemyAIController : MonoBehaviour
 
         if (!CanFightTarget())
         {
+            CancelAttackWindup();
             actor?.Motor?.Stop();
+            return;
+        }
+
+        if (IsWindingUp)
+        {
+            UpdateAttackWindup();
             return;
         }
 
@@ -38,7 +55,7 @@ public class EnemyAIController : MonoBehaviour
         {
             actor.Motor.Stop();
             actor.Motor.FaceToward(target.transform.position);
-            actor.Combat.TryBasicAttack(target.Health);
+            StartAttackWindup();
             return;
         }
 
@@ -49,6 +66,64 @@ public class EnemyAIController : MonoBehaviour
 
         nextChaseRefreshTime = Time.time + chaseRefreshInterval;
         actor.Motor.TryMoveTo(target.transform.position);
+    }
+
+    private void OnDisable()
+    {
+        CancelAttackWindup();
+    }
+
+    private void StartAttackWindup()
+    {
+        if (actor.Combat.IsCoolingDown || target == null || target.Health == null || !target.Health.IsAlive)
+        {
+            return;
+        }
+
+        windupTarget = target;
+        windupEndTime = Time.time + attackWindupDuration;
+        AttackWindupStarted?.Invoke();
+    }
+
+    private void UpdateAttackWindup()
+    {
+        actor.Motor.Stop();
+
+        if (windupTarget == null || windupTarget.Health == null || !windupTarget.Health.IsAlive)
+        {
+            CancelAttackWindup();
+            return;
+        }
+
+        actor.Motor.FaceToward(windupTarget.transform.position);
+
+        if (Time.time < windupEndTime)
+        {
+            return;
+        }
+
+        CharacterActor resolvedTarget = windupTarget;
+        windupTarget = null;
+
+        // Damage authority remains in CombatDriver. Rechecking range here makes leaving the ring a true dodge.
+        if (actor.Combat.TryBasicAttack(resolvedTarget.Health))
+        {
+            AttackWindupCompleted?.Invoke();
+            return;
+        }
+
+        AttackWindupCanceled?.Invoke();
+    }
+
+    private void CancelAttackWindup()
+    {
+        if (!IsWindingUp)
+        {
+            return;
+        }
+
+        windupTarget = null;
+        AttackWindupCanceled?.Invoke();
     }
 
     private void ResolveTarget(bool force = false)
