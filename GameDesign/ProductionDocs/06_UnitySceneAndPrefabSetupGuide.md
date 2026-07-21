@@ -11,11 +11,11 @@
 - 시각 Animator를 각 루트의 `CombatAnimationDriver`에 명시 지정하고 Root Motion은 끈다. 캡슐은 `MeshRenderer`만 숨기며 Collider는 보존한다.
 - Play Mode에서 Hero와 Orc의 Idle, Move, Attack, Hit, Death를 확인했다. 이 연결은 회귀 전용이다.
 
-## E3-C: 다음 Unity Play Mode 체크리스트
+## E3-C: 다음 Unity Play Mode 조정 체크리스트
 
-- [ ] 스크립트/프리팹을 다시 불러온 뒤 `PF_DungeonEnemy_Melee`의 `EnemyAttackTelegraph`가 주황색 펄스 링을 표시하는지 확인한다.
-- [ ] 링이 지면과 겹치고 읽히는지만 본다. 필요하면 Inspector의 `ringHeight`, `ringWidth`, `ringColor`만 조정한다.
-- [ ] `신호 → 이탈해 회피 → 남아 한 번 피격 → 적 처치 후 기존 보상`을 한 번의 Play Mode에서 확인한다.
+- [x] `EnemyAttackTelegraph`의 주황색 펄스 링과 실행 피해 경로는 동작한다.
+- [x] `Gameplay/Player`만 이동속도 `5.5`, NavMesh 가속 `20`·회전속도 `540`, 공격 간격 `0.75초`로 조정했다. 적의 피해·사거리·경고 시간·보상은 바꾸지 않았다.
+- [ ] `신호 → 이탈 회피 → 재교전 → 잔류 한 번 피격 → 적 처치 후 기존 보상`을 확인한다.
 - [ ] 보상·저장·계약·드롭 수치와 Animator Controller는 수정하지 않는다.
 
 ## 확인 기준
