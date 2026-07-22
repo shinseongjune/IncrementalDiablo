@@ -62,6 +62,8 @@ $requiredPaths = @(
     @{ Name = "Defense save manager"; Path = "Assets\02.Scripts\GroundDefense\Runtime\DefenseSaveManager.cs" },
     @{ Name = "Dungeon director"; Path = "Assets\02.Scripts\Dungeon\ExpeditionDirector.cs" },
     @{ Name = "Dungeon room"; Path = "Assets\02.Scripts\Dungeon\CombatRoom.cs" },
+    @{ Name = "Dungeon traversal controller"; Path = "Assets\02.Scripts\Dungeon\DungeonTraversalController.cs" },
+    @{ Name = "Dungeon traversal trigger"; Path = "Assets\02.Scripts\Dungeon\DungeonTraversalTrigger.cs" },
     @{ Name = "Dungeon spawner"; Path = "Assets\02.Scripts\Dungeon\EnemySpawner.cs" },
     @{ Name = "Combat animation binding"; Path = "Assets\02.Scripts\Character\Core\CombatAnimationDriver.cs" },
     @{ Name = "Playable HUD"; Path = "Assets\02.Scripts\UI\PlayableLoopHud.cs" },
@@ -103,6 +105,14 @@ if (Test-Path -LiteralPath $enemyPrefabPath) {
     $enemyPrefabText = Get-Content -LiteralPath $enemyPrefabPath -Raw
     foreach ($token in @("NavMeshAgent:", "CapsuleCollider:", "team: 2", "Assembly-CSharp::CombatAnimationDriver")) {
         Require-Text "Dungeon enemy prefab contract" $enemyPrefabText $token
+    }
+}
+
+$traversalPath = Get-ProjectPath "Assets\02.Scripts\Dungeon\DungeonTraversalController.cs"
+if (Test-Path -LiteralPath $traversalPath) {
+    $traversalText = Get-Content -LiteralPath $traversalPath -Raw
+    foreach ($token in @("class DungeonTraversalController", "TryEnterRoom", "TryReturnToEntrance", "SetExternalStartControl")) {
+        Require-Text "Dungeon traversal contract" $traversalText $token
     }
 }
 

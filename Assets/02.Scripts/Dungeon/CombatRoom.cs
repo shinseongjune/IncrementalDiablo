@@ -38,6 +38,7 @@ public class CombatRoom : MonoBehaviour
 
     private ExpeditionDirector subscribedExpedition;
     private bool resolvingRoom;
+    private bool externalStartControl;
 
     public event Action Changed;
     public event Action<CombatRoomResult> Resolved;
@@ -138,6 +139,20 @@ public class CombatRoom : MonoBehaviour
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Lets a physical traversal route decide when the player has entered the active room.
+    /// Without this claim, legacy one-room expeditions keep their automatic start behavior.
+    /// </summary>
+    public void SetExternalStartControl(bool enabled)
+    {
+        externalStartControl = enabled;
+
+        if (!externalStartControl)
+        {
+            TryBeginForRunningExpedition();
+        }
     }
 
     public bool ForceClearRoom()
@@ -362,7 +377,7 @@ public class CombatRoom : MonoBehaviour
 
     private void TryBeginForRunningExpedition()
     {
-        if (!startWhenExpeditionRuns || expedition == null || !expedition.IsRunning)
+        if (!startWhenExpeditionRuns || externalStartControl || expedition == null || !expedition.IsRunning)
         {
             return;
         }
