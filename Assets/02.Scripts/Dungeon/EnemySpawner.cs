@@ -8,6 +8,11 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private CombatRoom combatRoom;
     [SerializeField] private bool autoFindCombatRoom = true;
 
+    [Header("Traversal Spawn Setup")]
+    [SerializeField] private DungeonTraversalController traversal;
+    [SerializeField] private bool autoFindTraversal = true;
+    [SerializeField] private bool requireRoomSpecificSpawnPointsWhenTraversalIsConfigured = true;
+
     [Header("Spawn Setup")]
     [SerializeField] private GameObject enemyPrefab;
     [SerializeField] private Transform[] spawnPoints = new Transform[0];
@@ -39,11 +44,13 @@ public class EnemySpawner : MonoBehaviour
     private void Awake()
     {
         ResolveCombatRoom();
+        ResolveTraversal();
     }
 
     private void OnEnable()
     {
         ResolveCombatRoom();
+        ResolveTraversal();
         SubscribeToRoom();
         TrySpawnForCurrentRoom();
     }
@@ -70,6 +77,7 @@ public class EnemySpawner : MonoBehaviour
     public bool SpawnForCurrentRoom()
     {
         ResolveCombatRoom();
+        ResolveTraversal();
 
         if (combatRoom == null)
         {
@@ -101,8 +109,21 @@ public class EnemySpawner : MonoBehaviour
             return false;
         }
 
-        int spawnCount = ResolveSpawnCount();
-        if (!TryResolveSpawnPositions(spawnCount, templateAgent, out List<Vector3> spawnPositions, out string placementBlocker))
+        if (!TryResolveActiveSpawnPoints(roomIndex, out Transform[] activeSpawnPoints, out string spawnPointBlocker))
+        {
+            ClearPreviousSpawns();
+            ReportSpawnBlocker(roomIndex, spawnPointBlocker);
+            Debug.LogWarning(lastSpawnMessage, this);
+            return false;
+        }
+
+        int spawnCount = ResolveSpawnCount(activeSpawnPoints);
+        if (!TryResolveSpawnPositions(
+                spawnCount,
+                activeSpawnPoints,
+                templateAgent,
+                out List<Vector3> spawnPositions,
+                out string placementBlocker))
         {
             ClearPreviousSpawns();
             ReportSpawnBlocker(roomIndex, placementBlocker);
@@ -116,7 +137,7 @@ public class EnemySpawner : MonoBehaviour
 
         for (int i = 0; i < spawnCount; i++)
         {
-            Health enemyHealth = SpawnEnemy(i, spawnPositions[i], balance);
+            Health enemyHealth = SpawnEnemy(i, spawnPositions[i], activeSpawnPoints, balance);
             if (enemyHealth != null)
             {
                 spawnedEnemyHealths.Add(enemyHealth);
@@ -197,9 +218,13 @@ public class EnemySpawner : MonoBehaviour
                combatRoom.State == CombatRoomState.Failed;
     }
 
-    private Health SpawnEnemy(int spawnIndex, Vector3 position, DungeonDepthBalanceProfile balance)
+    private Health SpawnEnemy(
+        int spawnIndex,
+        Vector3 position,
+        Transform[] activeSpawnPoints,
+        DungeonDepthBalanceProfile balance)
     {
-        Quaternion rotation = ResolveSpawnRotation(spawnIndex);
+        Quaternion rotation = ResolveSpawnRotation(spawnIndex, activeSpawnPoints);
         Transform parent = spawnParent == null ? transform : spawnParent;
         GameObject spawned = Instantiate(enemyPrefab, position, rotation, parent);
         spawned.name = $"{spawnedNamePrefix}_{spawnIndex + 1:00}";
@@ -276,6 +301,7 @@ public class EnemySpawner : MonoBehaviour
 
     private bool TryResolveSpawnPositions(
         int spawnCount,
+        Transform[] activeSpawnPoints,
         NavMeshAgent templateAgent,
         out List<Vector3> spawnPositions,
         out string blocker)
@@ -284,7 +310,7 @@ public class EnemySpawner : MonoBehaviour
 
         for (int i = 0; i < spawnCount; i++)
         {
-            Vector3 requestedPosition = ResolveSpawnPosition(i);
+            Vector3 requestedPosition = ResolveSpawnPosition(i, activeSpawnPoints);
             if (!snapSpawnPointsToNavMesh)
             {
                 spawnPositions.Add(requestedPosition);
@@ -309,18 +335,53 @@ public class EnemySpawner : MonoBehaviour
         return true;
     }
 
-    private int ResolveSpawnCount()
+    private bool TryResolveActiveSpawnPoints(
+        int roomIndex,
+        out Transform[] activeSpawnPoints,
+        out string blocker)
     {
-        int validSpawnPoints = CountValidSpawnPoints();
+        activeSpawnPoints = spawnPoints;
+        blocker = string.Empty;
+
+        if (!requireRoomSpecificSpawnPointsWhenTraversalIsConfigured ||
+            traversal == null ||
+            !traversal.HasConfiguredRooms)
+        {
+            return true;
+        }
+
+        if (!traversal.TryGetRoomSpawnPoints(roomIndex, out activeSpawnPoints))
+        {
+            blocker = $"EnemySpawner blocked room {roomIndex + 1}: no traversal room node is configured.";
+            return false;
+        }
+
+        if (CountValidSpawnPoints(activeSpawnPoints) == 0)
+        {
+            blocker = $"EnemySpawner blocked room {roomIndex + 1}: assign at least one room-local spawn marker.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private int ResolveSpawnCount(Transform[] activeSpawnPoints)
+    {
+        int validSpawnPoints = CountValidSpawnPoints(activeSpawnPoints);
         return validSpawnPoints > 0 ? validSpawnPoints : fallbackSpawnCount;
     }
 
-    private int CountValidSpawnPoints()
+    private static int CountValidSpawnPoints(Transform[] activeSpawnPoints)
     {
         int count = 0;
-        for (int i = 0; i < spawnPoints.Length; i++)
+        if (activeSpawnPoints == null)
         {
-            if (spawnPoints[i] != null)
+            return count;
+        }
+
+        for (int i = 0; i < activeSpawnPoints.Length; i++)
+        {
+            if (activeSpawnPoints[i] != null)
             {
                 count++;
             }
@@ -329,9 +390,9 @@ public class EnemySpawner : MonoBehaviour
         return count;
     }
 
-    private Vector3 ResolveSpawnPosition(int spawnIndex)
+    private Vector3 ResolveSpawnPosition(int spawnIndex, Transform[] activeSpawnPoints)
     {
-        Transform spawnPoint = ResolveSpawnPoint(spawnIndex);
+        Transform spawnPoint = ResolveSpawnPoint(spawnIndex, activeSpawnPoints);
         if (spawnPoint != null)
         {
             return spawnPoint.position;
@@ -347,18 +408,23 @@ public class EnemySpawner : MonoBehaviour
         return transform.position + offset;
     }
 
-    private Quaternion ResolveSpawnRotation(int spawnIndex)
+    private Quaternion ResolveSpawnRotation(int spawnIndex, Transform[] activeSpawnPoints)
     {
-        Transform spawnPoint = ResolveSpawnPoint(spawnIndex);
+        Transform spawnPoint = ResolveSpawnPoint(spawnIndex, activeSpawnPoints);
         return spawnPoint == null ? transform.rotation : spawnPoint.rotation;
     }
 
-    private Transform ResolveSpawnPoint(int spawnIndex)
+    private static Transform ResolveSpawnPoint(int spawnIndex, Transform[] activeSpawnPoints)
     {
         int seen = 0;
-        for (int i = 0; i < spawnPoints.Length; i++)
+        if (activeSpawnPoints == null)
         {
-            Transform spawnPoint = spawnPoints[i];
+            return null;
+        }
+
+        for (int i = 0; i < activeSpawnPoints.Length; i++)
+        {
+            Transform spawnPoint = activeSpawnPoints[i];
             if (spawnPoint == null)
             {
                 continue;
@@ -471,6 +537,18 @@ public class EnemySpawner : MonoBehaviour
         {
             combatRoom = FindAnyObjectByType<CombatRoom>();
         }
+    }
+
+    private void ResolveTraversal()
+    {
+        if (traversal != null || !autoFindTraversal)
+        {
+            return;
+        }
+
+        traversal = GetComponent<DungeonTraversalController>();
+        traversal ??= GetComponentInParent<DungeonTraversalController>();
+        traversal ??= FindAnyObjectByType<DungeonTraversalController>();
     }
 
     private void SubscribeToRoom()

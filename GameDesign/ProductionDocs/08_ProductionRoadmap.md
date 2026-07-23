@@ -8,7 +8,7 @@
 
 E3-C는 텔레그래프와 반응성 조정을 배포한 뒤, 최종 회피 감각 확인을 이후 행동 패키지로 보류했다. 다시 열지 않는다.
 
-완료: `DungeonTraversalController`와 `DungeonTraversalTrigger`가 자동 한 방 시작을 물리 방 진입으로 바꾸고, 방 클리어 뒤 다음 길을 열며, 마지막 보상 뒤 입구 귀환을 처리하는 계약을 소유한다. 기존 `CombatRoom` 전투 판정과 `ExpeditionDirector` 보상 권한은 그대로다.
+완료: `DungeonTraversalController`와 `DungeonTraversalTrigger`가 자동 한 방 시작을 물리 방 진입으로 바꾸고, 방 클리어 뒤 다음 길을 열며, 방별 스폰 지점을 선택하고 마지막 보상 뒤 입구 귀환을 처리하는 계약을 소유한다. 기존 `CombatRoom` 전투 판정과 `ExpeditionDirector` 보상 권한은 그대로다.
 
 다음 E3-D 체크리스트:
 

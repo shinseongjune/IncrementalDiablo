@@ -18,7 +18,7 @@
 ## E3-D: 첫 물리 던전 설정 체크리스트
 
 - `Gameplay/DungeonRoot`에 `DungeonTraversalController`를 추가하고 `ExpeditionDirector`, `CombatRoom`, `Player`, 입구 귀환 Transform을 지정한다. 기존 자동 한 방 시작은 이 컴포넌트가 점유한다.
-- 입구 뒤에 순서가 있는 두 개 이상의 전투 방을 배치한다. 각 방 입구에는 `Is Trigger` Collider와 `DungeonTraversalTrigger(EnterRoom)`를 두고, Controller의 `rooms[0..n]`에 같은 순서로 넣는다. `ExpeditionDirector.totalRooms`는 그 방 수와 같게 설정한다.
+- 입구 뒤에 순서가 있는 두 개 이상의 전투 방을 배치한다. 각 방 입구에는 `Is Trigger` Collider와 `DungeonTraversalTrigger(EnterRoom)`를 두고, Controller의 `rooms[0..n]`에 같은 순서로 넣는다. 각 node에는 그 방 안의 적 스폰 Transform을 하나 이상 넣어 `EnemySpawner`가 다른 방의 스폰 지점을 재사용하지 않게 한다. `ExpeditionDirector.totalRooms`는 그 방 수와 같게 설정한다.
 - 각 방의 다음 길을 막는 기존 문·벽·오브젝트를 해당 `Exit Blocker`에 지정한다. 마지막 보상/퇴장에는 `DungeonTraversalTrigger(ReturnToEntrance)`를 두고 Controller의 `returnTrigger`에 지정한다.
 - NavMesh를 다시 굽고, Play Mode에서 `입구 계약 시작 → 첫 방 진입/전투 → 길 개방 → 다음 방 → 보상/퇴장 → 입구 귀환`을 확인한다. 외부 씬 변경 뒤 `Gameplay`를 다시 연다.
 

@@ -111,8 +111,16 @@ if (Test-Path -LiteralPath $enemyPrefabPath) {
 $traversalPath = Get-ProjectPath "Assets\02.Scripts\Dungeon\DungeonTraversalController.cs"
 if (Test-Path -LiteralPath $traversalPath) {
     $traversalText = Get-Content -LiteralPath $traversalPath -Raw
-    foreach ($token in @("class DungeonTraversalController", "TryEnterRoom", "TryReturnToEntrance", "SetExternalStartControl")) {
+    foreach ($token in @("class DungeonTraversalController", "TryEnterRoom", "TryReturnToEntrance", "TryGetRoomSpawnPoints", "SpawnPointCount", "SetExternalStartControl")) {
         Require-Text "Dungeon traversal contract" $traversalText $token
+    }
+}
+
+$enemySpawnerPath = Get-ProjectPath "Assets\02.Scripts\Dungeon\EnemySpawner.cs"
+if (Test-Path -LiteralPath $enemySpawnerPath) {
+    $enemySpawnerText = Get-Content -LiteralPath $enemySpawnerPath -Raw
+    foreach ($token in @("DungeonTraversalController traversal", "TryResolveActiveSpawnPoints", "room-local spawn marker")) {
+        Require-Text "Dungeon room-local spawn contract" $enemySpawnerText $token
     }
 }
 

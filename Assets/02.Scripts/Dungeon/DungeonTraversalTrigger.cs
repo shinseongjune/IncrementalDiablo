@@ -18,6 +18,26 @@ public class DungeonTraversalTrigger : MonoBehaviour
     public TriggerAction Action => action;
     public int RoomIndex => roomIndex;
 
+    public bool TryValidateTrigger(out string message)
+    {
+        EnsureTriggerCollider();
+
+        if (triggerCollider == null)
+        {
+            message = $"{name} needs a Collider.";
+            return false;
+        }
+
+        if (!triggerCollider.isTrigger)
+        {
+            message = $"{name} Collider must use Is Trigger.";
+            return false;
+        }
+
+        message = string.Empty;
+        return true;
+    }
+
     private void Awake()
     {
         ResolveReferences();

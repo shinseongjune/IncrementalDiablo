@@ -8,7 +8,7 @@
 
 - `ExpeditionDirector`가 깊이, 계약, 조우, 진행, 보상 대기 상태를 소유한다.
 - `CombatRoom`과 `EnemySpawner`가 실제 전투와 스폰을 연결한다.
-- `DungeonTraversalController`와 `DungeonTraversalTrigger`가 입구, 현재 방 진입, 방 클리어 뒤 길 개방, 퇴장·귀환만 소유한다. 전투 판정과 보상 권한은 옮기지 않는다.
+- `DungeonTraversalController`와 `DungeonTraversalTrigger`가 입구, 현재 방 진입, 방 클리어 뒤 길 개방, 퇴장·귀환과 방별 스폰 위치 계약을 소유한다. `EnemySpawner`는 그 위치에서만 적 생성·추적을 맡고, 전투 판정과 보상 권한은 옮기지 않는다.
 - 계약은 진입 전 위험/보상 차이를 보여 주며, 활성 실행 상태와 보상은 저장/불러오기와 일관돼야 한다.
 - 실패는 명확한 복귀와 다음 선택을 남기고, 성공은 보상 처리로 연결된다.
 

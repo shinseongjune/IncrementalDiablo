@@ -27,6 +27,7 @@ public class DungeonTraversalController : MonoBehaviour
 
     public string LastTraversalMessage => lastTraversalMessage;
     public int ConfiguredRoomCount => rooms == null ? 0 : rooms.Length;
+    public bool HasConfiguredRooms => ConfiguredRoomCount > 0;
 
     private void Awake()
     {
@@ -57,6 +58,11 @@ public class DungeonTraversalController : MonoBehaviour
     private void OnValidate()
     {
         rooms ??= Array.Empty<DungeonTraversalRoomNode>();
+
+        for (int i = 0; i < rooms.Length; i++)
+        {
+            rooms[i]?.Validate();
+        }
     }
 
     public bool TryEnterRoom(int roomIndex)
@@ -119,6 +125,23 @@ public class DungeonTraversalController : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// Returns only the spawn markers for the requested physical room. EnemySpawner keeps
+    /// ownership of instantiation and combat tracking, while this route keeps room location data.
+    /// </summary>
+    public bool TryGetRoomSpawnPoints(int roomIndex, out Transform[] spawnPoints)
+    {
+        spawnPoints = Array.Empty<Transform>();
+
+        if (!IsConfiguredRoomIndex(roomIndex) || rooms[roomIndex] == null)
+        {
+            return false;
+        }
+
+        spawnPoints = rooms[roomIndex].SpawnPoints;
+        return true;
+    }
+
     public bool TryValidateContract(out string message)
     {
         ResolveRuntimeLinks();
@@ -143,11 +166,47 @@ public class DungeonTraversalController : MonoBehaviour
 
         for (int i = 0; i < ConfiguredRoomCount; i++)
         {
-            if (rooms[i] == null || rooms[i].EntryTrigger == null)
+            DungeonTraversalRoomNode room = rooms[i];
+            if (room == null || room.EntryTrigger == null)
             {
                 message = $"Room node {i + 1} needs an EnterRoom trigger.";
                 return false;
             }
+
+            if (room.EntryTrigger.Action != DungeonTraversalTrigger.TriggerAction.EnterRoom ||
+                room.EntryTrigger.RoomIndex != i)
+            {
+                message = $"Room node {i + 1} needs an EnterRoom trigger with room index {i}.";
+                return false;
+            }
+
+            if (!room.EntryTrigger.TryValidateTrigger(out message))
+            {
+                return false;
+            }
+
+            if (room.SpawnPointCount == 0)
+            {
+                message = $"Room node {i + 1} needs at least one room-local enemy spawn marker.";
+                return false;
+            }
+
+            if (room.ExitBlocker == null)
+            {
+                message = $"Room node {i + 1} needs an Exit Blocker for the next route state.";
+                return false;
+            }
+        }
+
+        if (returnTrigger.Action != DungeonTraversalTrigger.TriggerAction.ReturnToEntrance)
+        {
+            message = "Assign a valid ReturnToEntrance trigger.";
+            return false;
+        }
+
+        if (!returnTrigger.TryValidateTrigger(out message))
+        {
+            return false;
         }
 
         message = $"Traversal contract ready: {ConfiguredRoomCount} room(s) plus return route.";
@@ -305,7 +364,32 @@ public sealed class DungeonTraversalRoomNode
 {
     [SerializeField] private DungeonTraversalTrigger entryTrigger;
     [SerializeField] private GameObject exitBlocker;
+    [SerializeField] private Transform[] spawnPoints = Array.Empty<Transform>();
 
     public DungeonTraversalTrigger EntryTrigger => entryTrigger;
     public GameObject ExitBlocker => exitBlocker;
+    public Transform[] SpawnPoints => spawnPoints ?? Array.Empty<Transform>();
+
+    public int SpawnPointCount
+    {
+        get
+        {
+            int count = 0;
+            Transform[] configuredSpawnPoints = SpawnPoints;
+            for (int i = 0; i < configuredSpawnPoints.Length; i++)
+            {
+                if (configuredSpawnPoints[i] != null)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+    }
+
+    public void Validate()
+    {
+        spawnPoints ??= Array.Empty<Transform>();
+    }
 }
