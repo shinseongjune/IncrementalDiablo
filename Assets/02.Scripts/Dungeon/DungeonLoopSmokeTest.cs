@@ -40,6 +40,12 @@ public static class DungeonLoopSmokeTest
             return false;
         }
 
+        if (!TryValidateExpeditionSnapshotContract(expedition, builder, out string snapshotFailure))
+        {
+            report = Finish(false, builder, snapshotFailure);
+            return false;
+        }
+
         int startingInventoryCount = inventory.Count;
         AppendStep(builder, $"Start inventory: {startingInventoryCount}/{inventory.Capacity}.");
 
@@ -160,37 +166,115 @@ public static class DungeonLoopSmokeTest
 
         AppendStep(builder, $"Started dungeon expedition with {expedition.ActiveContract.DisplayName} / {expedition.ActiveEncounter.DisplayName}.");
 
-        int guard = Mathf.Max(1, expedition.TotalRooms) + 2;
-        while (expedition.IsRunning && guard > 0)
+        if (!expedition.CompleteRoom())
         {
-            if (!expedition.CompleteRoom())
-            {
-                failure = "Expedition room clear call failed while the run was active.";
-                return false;
-            }
-
-            guard--;
-        }
-
-        if (expedition.IsRunning)
-        {
-            failure = "Expedition did not leave Running state after clearing guarded rooms.";
+            failure = "Expedition room clear call failed while the run was active.";
             return false;
         }
 
-        if (expedition.State != DungeonRunState.Cleared)
+        if (!expedition.IsAwaitingRoomExit || !expedition.RewardPending)
         {
-            failure = $"Expedition ended in {expedition.State}, not Cleared.";
+            failure = "Expedition did not preserve a pending reward and return-or-descend choice after clearing a room.";
             return false;
         }
 
-        if (expedition.RewardPending && !expedition.TryGrantPendingReward())
+        int clearedDepth = expedition.Depth;
+        int clearedRoomIndex = expedition.CurrentRoomIndex;
+        if (!expedition.TryEnterDeeperRoom() || !expedition.IsRunning ||
+            expedition.Depth != clearedDepth + 1 || expedition.CurrentRoomIndex != clearedRoomIndex + 1)
         {
-            failure = "Expedition cleared but pending reward could not be granted.";
+            failure = "Deeper exit did not advance the active seeded room plan.";
             return false;
         }
 
-        AppendStep(builder, "Cleared dungeon and granted reward.");
+        if (expedition.RunPlan == null || !expedition.RunPlan.rewardPending)
+        {
+            failure = "Deeper exit did not retain the unbanked reward in DungeonRunPlan.";
+            return false;
+        }
+
+        if (!expedition.CompleteRoom())
+        {
+            failure = "Expedition could not clear the room reached through the deeper exit.";
+            return false;
+        }
+
+        if (!expedition.TryReturnToHub())
+        {
+            failure = "Return portal could not bank the cleared room reward.";
+            return false;
+        }
+
+        if (expedition.State != DungeonRunState.Ready)
+        {
+            failure = $"Return portal ended in {expedition.State}, not Ready.";
+            return false;
+        }
+
+        AppendStep(builder, "Cleared a room, descended with the pending reward, then banked through the return portal.");
+        return true;
+    }
+
+    private static bool TryValidateExpeditionSnapshotContract(
+        ExpeditionDirector expedition,
+        StringBuilder builder,
+        out string failure)
+    {
+        failure = string.Empty;
+        if (!expedition.IsSnapshotReady)
+        {
+            failure = "Expedition snapshot is not ready before the smoke test starts.";
+            return false;
+        }
+
+        DungeonRunPlan plan = DungeonRunPlan.CreateNew("snapshot_test", 987654, 3);
+        plan.AssignCurrentRoomTemplate("crypt_a");
+        DungeonExpeditionSnapshot running = new DungeonExpeditionSnapshot
+        {
+            state = DungeonRunState.Running,
+            resumePoint = DungeonRoomResumePoint.RestartCurrentRoom,
+            dungeonId = "snapshot_test",
+            depth = 3,
+            selectedDepth = 3,
+            highestUnlockedDepth = 3,
+            totalRooms = 1,
+            currentRoomIndex = 0,
+            runPlan = plan,
+            rewardPending = false
+        };
+
+        if (!running.TryValidate(out string runningError))
+        {
+            failure = $"Running expedition snapshot is invalid: {runningError}";
+            return false;
+        }
+
+        DungeonSaveData runningSave = running.ToSaveData();
+        if (!runningSave.expeditionSnapshot.MatchesLegacy(runningSave))
+        {
+            failure = "Running expedition snapshot does not match its save mirror.";
+            return false;
+        }
+
+        DungeonExpeditionSnapshot awaitingExit = running.Clone();
+        awaitingExit.state = DungeonRunState.AwaitingExit;
+        awaitingExit.resumePoint = DungeonRoomResumePoint.AwaitingExit;
+        awaitingExit.rewardPending = true;
+        awaitingExit.runPlan.SetRewardPending(true, 3);
+        if (!awaitingExit.TryValidate(out string awaitingError))
+        {
+            failure = $"Awaiting-exit expedition snapshot is invalid: {awaitingError}";
+            return false;
+        }
+
+        DungeonSaveData awaitingSave = awaitingExit.ToSaveData();
+        if (!awaitingSave.expeditionSnapshot.MatchesLegacy(awaitingSave))
+        {
+            failure = "Awaiting-exit expedition snapshot does not match its save mirror.";
+            return false;
+        }
+
+        AppendStep(builder, "Validated running and awaiting-exit dungeon snapshot round trips.");
         return true;
     }
 

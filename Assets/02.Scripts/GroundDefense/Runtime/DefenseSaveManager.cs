@@ -6,7 +6,7 @@ using UnityEngine;
 [DefaultExecutionOrder(1000)]
 public class DefenseSaveManager : MonoBehaviour
 {
-    private const int CurrentSaveVersion = 6;
+    private const int CurrentSaveVersion = 9;
     public const string NoSaveRecoveryGuidance =
         "No save yet. Start the frontline, choose a contract, clear a room, then save after handling the reward.";
 
@@ -32,9 +32,12 @@ public class DefenseSaveManager : MonoBehaviour
     {
         ResolveReferences();
 
-        if (loadOnStart)
+        bool restored = loadOnStart && TryLoadAndSimulateOfflineProgress();
+        if (!restored)
         {
-            TryLoadAndSimulateOfflineProgress();
+            // Nothing may start a dungeon from the scene's serialized runtime fields. A fresh session is
+            // an explicit Ready snapshot, and a failed restore leaves the old file untouched for recovery.
+            expedition?.InitializeFreshSnapshot();
         }
     }
 
@@ -168,7 +171,14 @@ public class DefenseSaveManager : MonoBehaviour
             LastLoadReport = AppendLoadReport(LastLoadReport, BuildDefenseLoadSummary(saveData.defense));
             if (expedition != null)
             {
-                expedition.ApplySaveData(saveData.dungeon);
+                if (!expedition.TryApplySaveData(saveData.dungeon, out string dungeonRestoreReport))
+                {
+                    LastLoadReport = $"Load failed: {dungeonRestoreReport}";
+                    Debug.LogWarning(LastLoadReport, this);
+                    return false;
+                }
+
+                LastLoadReport = AppendLoadReport(LastLoadReport, dungeonRestoreReport);
             }
 
             if (inventory != null)
@@ -232,7 +242,12 @@ public class DefenseSaveManager : MonoBehaviour
                 return false;
             }
 
-            MigrateSaveData(saveData);
+            if (!TryMigrateSaveData(saveData, out failureReason))
+            {
+                saveData = null;
+                return false;
+            }
+
             return true;
         }
         catch (Exception exception)
@@ -308,6 +323,11 @@ public class DefenseSaveManager : MonoBehaviour
             return false;
         }
 
+        if (expedition != null && !expedition.IsSnapshotReady)
+        {
+            return false;
+        }
+
         saveData = new GameSaveData
         {
             version = CurrentSaveVersion,
@@ -324,14 +344,31 @@ public class DefenseSaveManager : MonoBehaviour
         return true;
     }
 
-    private void MigrateSaveData(GameSaveData saveData)
+    private bool TryMigrateSaveData(GameSaveData saveData, out string failureReason)
     {
+        failureReason = string.Empty;
         if (saveData == null)
         {
-            return;
+            failureReason = "Save migration failed: save data is null.";
+            return false;
         }
 
         int sourceVersion = saveData.version;
+        if (sourceVersion >= CurrentSaveVersion)
+        {
+            if (saveData.dungeon?.expeditionSnapshot == null)
+            {
+                failureReason = "Save migration failed: v9 dungeon snapshot is missing.";
+                return false;
+            }
+
+            if (!saveData.dungeon.expeditionSnapshot.TryValidate(out string snapshotError))
+            {
+                failureReason = $"Save migration failed: {snapshotError}";
+                return false;
+            }
+        }
+
         if (sourceVersion < 2)
         {
             saveData.dungeon ??= new DungeonSaveData();
@@ -347,8 +384,12 @@ public class DefenseSaveManager : MonoBehaviour
         }
 
         saveData.uiSettings ??= new UiSettingsSaveData();
+        MigrateDungeonSnapshotSource(saveData.dungeon);
+        MigrateDungeonExitChoiceSaveData(saveData.dungeon);
         MigrateDungeonContractSaveData(saveData.dungeon);
         MigrateDungeonEncounterSaveData(saveData.dungeon);
+        MigrateDungeonRunPlanSaveData(saveData.dungeon);
+        FinalizeDungeonSnapshot(saveData.dungeon);
 
         ItemDefinitionRegistry registry = inventory?.DefinitionRegistry;
         ItemDefinitionMigrationReport itemReport = registry?.MigrateInventorySaveData(saveData.inventory);
@@ -362,6 +403,8 @@ public class DefenseSaveManager : MonoBehaviour
             saveData.version = CurrentSaveVersion;
             LastLoadReport = $"Save schema v{sourceVersion} -> v{CurrentSaveVersion}. {LastLoadReport}";
         }
+
+        return true;
     }
 
     private static void MigrateDungeonContractSaveData(DungeonSaveData dungeon)
@@ -392,9 +435,7 @@ public class DefenseSaveManager : MonoBehaviour
             dungeon.selectedContractId = dungeon.offeredContractIdA;
         }
 
-        if (dungeon.state == DungeonRunState.Running ||
-            dungeon.state == DungeonRunState.Cleared ||
-            dungeon.state == DungeonRunState.Failed)
+        if (dungeon.state != DungeonRunState.Ready)
         {
             if (!DungeonContractModel.TryGetContract(dungeon.activeContractId, out _))
             {
@@ -431,9 +472,7 @@ public class DefenseSaveManager : MonoBehaviour
             dungeon.selectedEncounterId = encounter.Id;
         }
 
-        if (dungeon.state == DungeonRunState.Running ||
-            dungeon.state == DungeonRunState.Cleared ||
-            dungeon.state == DungeonRunState.Failed)
+        if (dungeon.state != DungeonRunState.Ready)
         {
             if (!DungeonEncounterModel.TryGetEncounter(dungeon.activeEncounterId, out _))
             {
@@ -450,6 +489,99 @@ public class DefenseSaveManager : MonoBehaviour
             dungeon.lastEncounterSummary = DungeonEncounterModel.FormatDetailText(
                 DungeonEncounterModel.GetEncounterOrDefault(dungeon.selectedEncounterId));
         }
+    }
+
+    private static void MigrateDungeonRunPlanSaveData(DungeonSaveData dungeon)
+    {
+        if (dungeon == null)
+        {
+            return;
+        }
+
+        bool shouldPersistPlan = dungeon.state != DungeonRunState.Ready || dungeon.rewardPending;
+        if (!shouldPersistPlan)
+        {
+            dungeon.runPlan = null;
+            return;
+        }
+
+        if (dungeon.runPlan == null)
+        {
+            dungeon.runPlan = DungeonRunPlan.CreateMigrated(
+                dungeon.dungeonId,
+                Mathf.Max(1, dungeon.depth),
+                Mathf.Max(0, dungeon.currentRoomIndex),
+                dungeon.contractOfferSeed,
+                dungeon.encounterSeed);
+        }
+        else
+        {
+            dungeon.runPlan.Normalize(
+                dungeon.dungeonId,
+                Mathf.Max(1, dungeon.depth),
+                Mathf.Max(0, dungeon.currentRoomIndex));
+        }
+
+        int rewardDepth = dungeon.rewardPending ? GetPendingRewardDepth(dungeon) : 0;
+        dungeon.runPlan.SetRewardPending(dungeon.rewardPending, rewardDepth);
+    }
+
+    private static void MigrateDungeonExitChoiceSaveData(DungeonSaveData dungeon)
+    {
+        if (dungeon == null)
+        {
+            return;
+        }
+
+        // v7 treated a cleared expedition as its terminal reward state. v8 preserves a pending
+        // reward as a return-or-descend decision and normalizes already-paid clears to Ready.
+        if (dungeon.state == DungeonRunState.Cleared)
+        {
+            dungeon.state = dungeon.rewardPending
+                ? DungeonRunState.AwaitingExit
+                : DungeonRunState.Ready;
+        }
+
+        if (dungeon.state == DungeonRunState.AwaitingExit && !dungeon.rewardPending)
+        {
+            dungeon.state = DungeonRunState.Ready;
+        }
+
+        if (dungeon.state == DungeonRunState.Failed)
+        {
+            dungeon.state = DungeonRunState.Ready;
+            dungeon.rewardPending = false;
+            dungeon.runPlan = null;
+        }
+    }
+
+    private static void MigrateDungeonSnapshotSource(DungeonSaveData dungeon)
+    {
+        if (dungeon?.expeditionSnapshot == null)
+        {
+            return;
+        }
+
+        // v9 writes the nested snapshot and its legacy mirror together. On load the snapshot wins so an
+        // interrupted write cannot combine a newer run plan with stale top-level fields.
+        dungeon.expeditionSnapshot.CopyTo(dungeon);
+    }
+
+    private static void FinalizeDungeonSnapshot(DungeonSaveData dungeon)
+    {
+        if (dungeon == null)
+        {
+            return;
+        }
+
+        dungeon.expeditionSnapshot = DungeonExpeditionSnapshot.FromLegacy(dungeon);
+    }
+
+    private static int GetPendingRewardDepth(DungeonSaveData dungeon)
+    {
+        DungeonContractProfile contract = DungeonContractModel.GetContractOrDefault(dungeon.activeContractId);
+        DungeonEncounterProfile encounter = DungeonEncounterModel.GetEncounterOrDefault(dungeon.activeEncounterId);
+        return Mathf.Max(1, dungeon.depth + contract.RewardDepthOffset + encounter.RewardDepthOffset);
     }
 
     private void RestoreEquipmentState(GameSaveData saveData)

@@ -10,6 +10,11 @@ public class CombatRoom : MonoBehaviour
     [SerializeField] private bool startWhenExpeditionRuns = true;
     [SerializeField] private float startCountdownSeconds = 1.5f;
 
+    [Header("Additive Room Gate")]
+    [SerializeField] private DungeonRoomLoader roomLoader;
+    [SerializeField] private bool autoFindRoomLoader = true;
+    [SerializeField] private bool requireLoadedTemplateWhenRoomLoaderIsConfigured = true;
+
     [Header("Actor Tracking")]
     [SerializeField] private Health heroHealth;
     [SerializeField] private Health[] enemyHealths = new Health[0];
@@ -35,6 +40,7 @@ public class CombatRoom : MonoBehaviour
     [SerializeField] private float currentEnemyHealth;
     [SerializeField] private CombatRoomResult lastResult;
     [SerializeField] private string trackedEnemySetupBlocker;
+    [SerializeField] private string roomTemplateBlocker;
 
     private ExpeditionDirector subscribedExpedition;
     private bool resolvingRoom;
@@ -53,6 +59,8 @@ public class CombatRoom : MonoBehaviour
     public bool UsesTrackedCombatants => heroHealth != null && HasAnyEnemyReference();
     public bool HasTrackedEnemySetupBlocker => !string.IsNullOrWhiteSpace(trackedEnemySetupBlocker);
     public string TrackedEnemySetupBlocker => trackedEnemySetupBlocker;
+    public bool HasRoomTemplateBlocker => !string.IsNullOrWhiteSpace(roomTemplateBlocker);
+    public string RoomTemplateBlocker => roomTemplateBlocker;
     public bool IsPrototypeSimulationAvailable => simulateWhenNoEnemies && !HasAnyEnemyReference() && (!HasTrackedEnemySetupBlocker || !blockPrototypeSimulationWhenEnemySetupBlocked);
     public int ActiveDepth => expedition == null ? 1 : expedition.Depth;
     public DungeonEncounterProfile ActiveEncounter => expedition == null
@@ -65,12 +73,14 @@ public class CombatRoom : MonoBehaviour
     private void Awake()
     {
         ResolveExpedition();
+        ResolveRoomLoader();
         ResolveTrackedCombatants();
     }
 
     private void OnEnable()
     {
         ResolveExpedition();
+        ResolveRoomLoader();
         ResolveTrackedCombatants();
         SubscribeToExpedition();
         SetTrackedEnemiesActive(expedition != null && expedition.IsRunning && state == CombatRoomState.Running);
@@ -85,6 +95,7 @@ public class CombatRoom : MonoBehaviour
     private void Update()
     {
         ResolveExpedition();
+        ResolveRoomLoader();
         SubscribeToExpedition();
         TryBeginForRunningExpedition();
 
@@ -114,16 +125,24 @@ public class CombatRoom : MonoBehaviour
     public bool BeginRoom()
     {
         ResolveExpedition();
+        ResolveRoomLoader();
         ResolveTrackedCombatants();
 
-        if (expedition == null || !expedition.IsRunning)
+        if (expedition == null || !expedition.IsSnapshotReady || !expedition.IsRunning)
         {
             Debug.LogWarning("CombatRoom cannot begin because no running ExpeditionDirector was found.", this);
             return false;
         }
 
+        if (!TryValidateActiveRoomTemplate(out string roomBlocker))
+        {
+            SetRoomTemplateBlocker(roomBlocker);
+            return false;
+        }
+
         activeRoomIndex = expedition.CurrentRoomIndex;
         ClearTrackedEnemySetupBlocker(false);
+        ClearRoomTemplateBlocker(false);
         RefillTrackedCombatants();
         state = CombatRoomState.Starting;
         countdownRemaining = startCountdownSeconds;
@@ -377,7 +396,8 @@ public class CombatRoom : MonoBehaviour
 
     private void TryBeginForRunningExpedition()
     {
-        if (!startWhenExpeditionRuns || externalStartControl || expedition == null || !expedition.IsRunning)
+        if (!startWhenExpeditionRuns || externalStartControl || expedition == null ||
+            !expedition.IsSnapshotReady || !expedition.IsRunning)
         {
             return;
         }
@@ -420,6 +440,7 @@ public class CombatRoom : MonoBehaviour
         currentHeroHealth = 0f;
         currentEnemyHealth = 0f;
         ClearTrackedEnemySetupBlocker(false);
+        ClearRoomTemplateBlocker(false);
         SetTrackedEnemiesActive(false);
         SetLastResult(CombatRoomResolution.None, "Room idle");
         NotifyChanged();
@@ -479,6 +500,33 @@ public class CombatRoom : MonoBehaviour
         }
     }
 
+    private void SetRoomTemplateBlocker(string message)
+    {
+        string normalizedMessage = string.IsNullOrWhiteSpace(message) ? string.Empty : message.Trim();
+        if (string.Equals(roomTemplateBlocker, normalizedMessage, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        roomTemplateBlocker = normalizedMessage;
+        SetLastResult(CombatRoomResolution.None, roomTemplateBlocker);
+        NotifyChanged();
+    }
+
+    private void ClearRoomTemplateBlocker(bool notifyChanged)
+    {
+        if (!HasRoomTemplateBlocker)
+        {
+            return;
+        }
+
+        roomTemplateBlocker = string.Empty;
+        if (notifyChanged)
+        {
+            NotifyChanged();
+        }
+    }
+
     private void SetLastResult(CombatRoomResolution resolution, string message)
     {
         lastResult = new CombatRoomResult
@@ -498,6 +546,49 @@ public class CombatRoom : MonoBehaviour
         {
             expedition = FindAnyObjectByType<ExpeditionDirector>();
         }
+    }
+
+    private void ResolveRoomLoader()
+    {
+        if (roomLoader == null && autoFindRoomLoader)
+        {
+            roomLoader = FindAnyObjectByType<DungeonRoomLoader>();
+        }
+    }
+
+    private bool TryValidateActiveRoomTemplate(out string blocker)
+    {
+        blocker = string.Empty;
+
+        if (!requireLoadedTemplateWhenRoomLoaderIsConfigured || roomLoader == null)
+        {
+            return true;
+        }
+
+        if (!roomLoader.HasLoadedActiveRoom || roomLoader.CurrentTemplate == null)
+        {
+            blocker = "CombatRoom is waiting for DungeonRoomLoader to load the active room plan.";
+            return false;
+        }
+
+        if (expedition == null || expedition.RunPlan == null ||
+            !string.Equals(roomLoader.CurrentTemplateId, expedition.CurrentRoomTemplateId, StringComparison.Ordinal))
+        {
+            blocker = "CombatRoom blocked: the loaded room template does not match the active DungeonRunPlan.";
+            return false;
+        }
+
+        Transform[] enemyAnchors = roomLoader.CurrentTemplate.EnemySpawnAnchors;
+        for (int i = 0; i < enemyAnchors.Length; i++)
+        {
+            if (enemyAnchors[i] != null)
+            {
+                return true;
+            }
+        }
+
+        blocker = "CombatRoom blocked: the active DungeonRoomTemplate has no enemy spawn anchor.";
+        return false;
     }
 
     private void ResolveTrackedCombatants()

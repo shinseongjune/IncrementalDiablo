@@ -8786,6 +8786,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 853067402}
   m_CullTransparentMesh: 1
+--- !u!1 &886468580
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 886468581}
+  m_Layer: 0
+  m_Name: DungeonHubReturnPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &886468581
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 886468580}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1962279248}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &892541682
 GameObject:
   m_ObjectHideFlags: 0
@@ -14435,8 +14466,8 @@ Camera:
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
-  orthographic: 0
-  orthographic size: 5
+  orthographic: 1
+  orthographic size: 16.5
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -14460,8 +14491,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1765742936}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.5552844, y: 0.011716429, z: 0.0066949585, w: 0.83155113}
-  m_LocalPosition: {x: 0, y: 11.21, z: -6.47}
+  m_LocalRotation: {x: 0.53729963, y: 0, z: 0, w: 0.8433914}
+  m_LocalPosition: {x: 0, y: 16, z: -7.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -15698,6 +15729,7 @@ GameObject:
   - component: {fileID: 1962279249}
   - component: {fileID: 1962279250}
   - component: {fileID: 1962279251}
+  - component: {fileID: 1962279252}
   m_Layer: 0
   m_Name: DungeonRoot
   m_TagString: Untagged
@@ -15721,6 +15753,9 @@ MonoBehaviour:
   autoFindExpedition: 1
   startWhenExpeditionRuns: 1
   startCountdownSeconds: 1.5
+  roomLoader: {fileID: 1962279252}
+  autoFindRoomLoader: 1
+  requireLoadedTemplateWhenRoomLoaderIsConfigured: 1
   heroHealth: {fileID: 1417038739}
   enemyHealths:
   - {fileID: 0}
@@ -15748,6 +15783,7 @@ MonoBehaviour:
     enemyHealthRemaining: 0
     message: 
   trackedEnemySetupBlocker: 
+  roomTemplateBlocker:
 --- !u!114 &1962279247
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15758,14 +15794,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 177e982cd2084578a6f8e6c83871c6c7, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ExpeditionDirector
   dungeonId: prototype_crypt
   depth: 1
   totalRooms: 1
-  resetToReadyOnAwake: 1
   runtime:
+    version: 1
     state: 0
+    resumePoint: 0
     dungeonId: 
     depth: 1
     selectedDepth: 1
@@ -15783,12 +15820,24 @@ MonoBehaviour:
     totalRooms: 1
     currentRoomIndex: 0
     roomsCompleted: 0
+    runPlan:
+      version: 2
+      runSeed: 0
+      currentDepth: 1
+      currentRoomIndex: 0
+      currentRoomTemplateId: prototype_crypt
+      hasAssignedRoomTemplate: 0
+      currentRoomSeed: 0
+      propPlacementSeed: 0
+      enemyPlacementSeed: 0
+      portalPlacementSeed: 0
+      rewardPending: 0
+      pendingRewardDepth: 0
     elapsedSeconds: 0
     rewardPending: 0
     lastResult: 
   lootDropper: {fileID: 1962279249}
   autoFindLootDropper: 1
-  grantRewardOnExpeditionClear: 1
 --- !u!4 &1962279248
 Transform:
   m_ObjectHideFlags: 0
@@ -15803,6 +15852,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 181298563}
+  - {fileID: 886468581}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1962279249
@@ -15901,6 +15951,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemySpawner
   combatRoom: {fileID: 1962279246}
   autoFindCombatRoom: 1
+  traversal: {fileID: 0}
+  autoFindTraversal: 1
+  requireRoomSpecificSpawnPointsWhenTraversalIsConfigured: 1
+  roomLoader: {fileID: 1962279252}
+  autoFindRoomLoader: 1
+  requireTemplateSpawnAnchorsWhenRoomLoaderIsConfigured: 1
   enemyPrefab: {fileID: 484105498317282540, guid: e6b8d89befeed7142b3a193a5bc783e4, type: 3}
   spawnPoints:
   - {fileID: 293555883}
@@ -15915,6 +15971,29 @@ MonoBehaviour:
   spawnedNamePrefix: SpawnedDungeonEnemy
   spawnedEnemyHealths: []
   lastSpawnMessage: 
+--- !u!114 &1962279252
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1962279245}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 12a1b83d630a4e02873c7371581e7d2f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DungeonRoomLoader
+  expedition: {fileID: 1962279247}
+  player: {fileID: 1417038732}
+  returnToHubPoint: {fileID: 886468581}
+  autoFindRuntimeLinks: 1
+  roomCatalog:
+  - templateId: crypt_a
+    scenePath: Assets/01.Scenes/DungeonRooms/DungeonRoom_Crypt_A.unity
+  - templateId: crypt_b
+    scenePath: Assets/01.Scenes/DungeonRooms/DungeonRoom_Crypt_B.unity
+  entranceNavMeshSampleRadius: 2
+  lastLoadMessage:
 --- !u!1 &1964451399
 GameObject:
   m_ObjectHideFlags: 0

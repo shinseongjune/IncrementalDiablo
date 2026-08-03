@@ -1,29 +1,23 @@
 # Unity Setup Guide
 
-## 원칙
+## 현재 경계
 
-코드가 권한과 재사용 규칙을 소유하고, Unity Editor는 모델·애니메이션·맵·카메라의 시각 판단을 완성한다. 자동 작업은 위치, 크기, 방 형태, 카메라 구도를 임의로 결정하지 않는다.
+E3-D의 최종 형태는 `Gameplay`에 고정된 두 방을 배치하는 것이 아니다. 중립적인 `crypt_a`/`crypt_b` additive 방 Scene, 각 방 전용 NavMesh, `Gameplay/DungeonRoot`의 `DungeonRoomLoader` 카탈로그와 Build Settings 연결은 준비되었다. 기존 고정 경로, `EnterRoom`, `ReturnToEntrance`를 새로 배치하지 않는다.
 
-## E3-B: 완료된 모델·Animator 연결
+## 방 템플릿 제작 체크리스트
 
-- Hero `HeroDefault`와 적 `OrcPADefault`는 기존 `Player`/`PF_DungeonEnemy_Melee` 루트의 `Model` 자식이다. 전투·이동·Collider 권한은 루트에만 둔다.
-- 공통 상태기 `Assets/06.Art/Animations/Combat.controller`가 `MoveSpeed`(Float), `Attack`·`Hit`·`Death`(Trigger)와 다섯 상태를 소유한다. Hero/Orc는 `Assets/03.Characters/*/*_Combat.overrideController`로 클립만 바꾼다.
-- 시각 Animator를 각 루트의 `CombatAnimationDriver`에 명시 지정하고 Root Motion은 끈다. 캡슐은 `MeshRenderer`만 숨기며 Collider는 보존한다.
-- Play Mode에서 Hero와 Orc의 Idle, Move, Attack, Hit, Death를 확인했다. 이 연결은 회귀 전용이다.
+다음은 이후 템플릿을 추가하거나 Play Mode를 확인할 때 Unity Editor에서 수행한다.
 
-## E3-C: 보류된 전투 감각 확인
-
-- 텔레그래프와 반응성 조정은 배포했다. 최종 `신호 → 이탈 회피 → 재교전` 감각 확인은 이후 행동 패키지 작업으로 보류한다.
-
-## E3-D: 첫 물리 던전 설정 체크리스트
-
-- `Gameplay/DungeonRoot`에 `DungeonTraversalController`를 추가하고 `ExpeditionDirector`, `CombatRoom`, `Player`, 입구 귀환 Transform을 지정한다. 기존 자동 한 방 시작은 이 컴포넌트가 점유한다.
-- 입구 뒤에 순서가 있는 두 개 이상의 전투 방을 배치한다. 각 방 입구에는 `Is Trigger` Collider와 `DungeonTraversalTrigger(EnterRoom)`를 두고, Controller의 `rooms[0..n]`에 같은 순서로 넣는다. 각 node에는 그 방 안의 적 스폰 Transform을 하나 이상 넣어 `EnemySpawner`가 다른 방의 스폰 지점을 재사용하지 않게 한다. `ExpeditionDirector.totalRooms`는 그 방 수와 같게 설정한다.
-- 각 방의 다음 길을 막는 기존 문·벽·오브젝트를 해당 `Exit Blocker`에 지정한다. 마지막 보상/퇴장에는 `DungeonTraversalTrigger(ReturnToEntrance)`를 두고 Controller의 `returnTrigger`에 지정한다.
-- NavMesh를 다시 굽고, Play Mode에서 `입구 계약 시작 → 첫 방 진입/전투 → 길 개방 → 다음 방 → 보상/퇴장 → 입구 귀환`을 확인한다. 외부 씬 변경 뒤 `Gameplay`를 다시 연다.
+1. `DungeonRoom_Crypt_A`와 `DungeonRoom_Crypt_B`를 열어 루트 `DungeonRoomTemplate`의 `crypt_a`/`crypt_b` ID, 입구·귀환 포탈·심층 출구·적 앵커를 확인한다. 새 방도 같은 계약으로 additive Scene으로 만든다.
+2. `Return Portal` 앵커 위치에 Trigger Collider와 `ReturnPortal`을, `Deeper Exit` 앵커 위치에 Trigger Collider와 `DeeperExit`을 추가한 뒤 각 컴포넌트를 템플릿의 동명 필드에 연결한다. 포탈 Mesh/VFX는 각각 `Active Visuals`에 연결해 방을 정리하기 전에는 보이지 않게 한다.
+3. 적·오브젝트·장애물 앵커를 템플릿 안에 둔다. 입구와 두 출구의 이동 경로를 침범하는 앵커는 만들지 않고, 방 전용 NavMesh를 굽는다.
+4. `Gameplay`의 `DungeonRoot > DungeonRoomLoader`에서 `ExpeditionDirector`, Player, 영구 거점의 `Return To Hub Point`, `crypt_a`/`crypt_b` Scene Path를 확인한다. 새 additive Scene도 카탈로그와 Build Settings에 함께 넣는다.
+5. 같은 `DungeonRoomLoader`를 `CombatRoom > Additive Room Gate`와 `EnemySpawner > Additive Room Spawn Setup`에 연결하고 두 Require 옵션을 켠다. 최종 additive 원정을 시험할 때는 전환용 `DungeonTraversalController`를 비활성화해 자동 전투 시작을 막지 않게 한다. 로더가 연결된 동안 기존 `Spawn Points`는 사용되지 않으며, 생성 적은 템플릿 루트에 속한다.
+6. 서로 다른 템플릿 둘 이상을 카탈로그에 넣고, 시작·저장·불러오기에서 같은 템플릿 ID·입구 위치·적 앵커가 복원되는지 확인한다. 방을 정리한 뒤 ReturnPortal은 보상을 확정하고 거점으로 돌려보내며, DeeperExit은 같은 미확정 보상으로 다음 방을 한 번만 로드하는지 확인한다.
+7. `Camera_DungeonPanel`의 16:9 Game View에서 입구와 북쪽의 ReturnPortal/DeeperExit 영역이 동시에 보이는지 확인한다. 북쪽 출구를 HUD 바깥이나 카메라 밖에 두지 않는다.
 
 ## 확인 기준
 
-- 외부 씬/프리팹 변경 뒤 Unity에서 다시 열어 누락 스크립트를 확인한다.
-- 시각 또는 조작 변화는 Play Mode에서 확인한다.
-- 문서만 바꾼 날에는 Unity 설정 확인을 반복하지 않는다.
+- 템플릿의 미적 배치·조명·카메라 판단은 Unity Editor에서 한다. 코드가 임의의 방 구조나 장식 위치를 결정하지 않는다.
+- 런타임 방 계획, 저장, 보상, 전투 권한은 코드 계약이 소유한다.
+- 시각 또는 조작 변경은 Play Mode에서 확인한다.

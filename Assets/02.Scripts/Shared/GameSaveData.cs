@@ -3,7 +3,7 @@ using System;
 [Serializable]
 public class GameSaveData
 {
-    public int version = 6;
+    public int version = 9;
     public string savedAtUtc;
     public float playTimeSeconds;
     public ResourceAmount[] currencies;
@@ -53,6 +53,8 @@ public class HeroSaveData
 [Serializable]
 public class DungeonSaveData
 {
+    // v9 canonical source. The fields below remain only as the migration bridge for v8 and earlier files.
+    public DungeonExpeditionSnapshot expeditionSnapshot;
     public DungeonRunState state = DungeonRunState.Ready;
     public string dungeonId;
     public int depth = 1;
@@ -71,6 +73,7 @@ public class DungeonSaveData
     public int totalRooms = 1;
     public int currentRoomIndex;
     public int roomsCompleted;
+    public DungeonRunPlan runPlan;
     public float elapsedSeconds;
     public bool rewardPending;
     public string lastResult;

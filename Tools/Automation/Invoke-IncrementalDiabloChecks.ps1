@@ -65,6 +65,13 @@ $requiredPaths = @(
     @{ Name = "Dungeon traversal controller"; Path = "Assets\02.Scripts\Dungeon\DungeonTraversalController.cs" },
     @{ Name = "Dungeon traversal trigger"; Path = "Assets\02.Scripts\Dungeon\DungeonTraversalTrigger.cs" },
     @{ Name = "Dungeon spawner"; Path = "Assets\02.Scripts\Dungeon\EnemySpawner.cs" },
+    @{ Name = "Dungeon run plan"; Path = "Assets\02.Scripts\Dungeon\DungeonRunPlan.cs" },
+    @{ Name = "Dungeon expedition snapshot"; Path = "Assets\02.Scripts\Dungeon\DungeonExpeditionSnapshot.cs" },
+    @{ Name = "Dungeon room template"; Path = "Assets\02.Scripts\Dungeon\DungeonRoomTemplate.cs" },
+    @{ Name = "Dungeon room loader"; Path = "Assets\02.Scripts\Dungeon\DungeonRoomLoader.cs" },
+    @{ Name = "Dungeon room exit"; Path = "Assets\02.Scripts\Dungeon\DungeonRoomExit.cs" },
+    @{ Name = "Return portal"; Path = "Assets\02.Scripts\Dungeon\ReturnPortal.cs" },
+    @{ Name = "Deeper exit"; Path = "Assets\02.Scripts\Dungeon\DeeperExit.cs" },
     @{ Name = "Combat animation binding"; Path = "Assets\02.Scripts\Character\Core\CombatAnimationDriver.cs" },
     @{ Name = "Playable HUD"; Path = "Assets\02.Scripts\UI\PlayableLoopHud.cs" },
     @{ Name = "Product direction"; Path = "GameDesign\GameDesignDocument.md" },
@@ -119,8 +126,80 @@ if (Test-Path -LiteralPath $traversalPath) {
 $enemySpawnerPath = Get-ProjectPath "Assets\02.Scripts\Dungeon\EnemySpawner.cs"
 if (Test-Path -LiteralPath $enemySpawnerPath) {
     $enemySpawnerText = Get-Content -LiteralPath $enemySpawnerPath -Raw
-    foreach ($token in @("DungeonTraversalController traversal", "TryResolveActiveSpawnPoints", "room-local spawn marker")) {
+    foreach ($token in @("DungeonTraversalController traversal", "DungeonRoomLoader roomLoader", "TryResolveActiveSpawnPoints", "EnemySpawnAnchors", "room-local spawn marker")) {
         Require-Text "Dungeon room-local spawn contract" $enemySpawnerText $token
+    }
+}
+
+$combatRoomPath = Get-ProjectPath "Assets\02.Scripts\Dungeon\CombatRoom.cs"
+if (Test-Path -LiteralPath $combatRoomPath) {
+    $combatRoomText = Get-Content -LiteralPath $combatRoomPath -Raw
+    foreach ($token in @("DungeonRoomLoader roomLoader", "TryValidateActiveRoomTemplate", "CurrentRoomTemplateId", "HasLoadedActiveRoom", "EnemySpawnAnchors")) {
+        Require-Text "Dungeon additive-room combat gate" $combatRoomText $token
+    }
+}
+
+$runPlanPath = Get-ProjectPath "Assets\02.Scripts\Dungeon\DungeonRunPlan.cs"
+if (Test-Path -LiteralPath $runPlanPath) {
+    $runPlanText = Get-Content -LiteralPath $runPlanPath -Raw
+    foreach ($token in @("class DungeonRunPlan", "runSeed", "currentRoomTemplateId", "hasAssignedRoomTemplate", "AssignCurrentRoomTemplate", "pendingRewardDepth", "CreateMigrated", "TryValidate")) {
+        Require-Text "Dungeon run plan contract" $runPlanText $token
+    }
+}
+
+$expeditionSnapshotPath = Get-ProjectPath "Assets\02.Scripts\Dungeon\DungeonExpeditionSnapshot.cs"
+if (Test-Path -LiteralPath $expeditionSnapshotPath) {
+    $expeditionSnapshotText = Get-Content -LiteralPath $expeditionSnapshotPath -Raw
+    foreach ($token in @("class DungeonExpeditionSnapshot", "DungeonRoomResumePoint", "RestartCurrentRoom", "AwaitingExit", "TryValidate", "MatchesLegacy", "ToSaveData")) {
+        Require-Text "Dungeon expedition snapshot contract" $expeditionSnapshotText $token
+    }
+}
+
+$roomTemplatePath = Get-ProjectPath "Assets\02.Scripts\Dungeon\DungeonRoomTemplate.cs"
+if (Test-Path -LiteralPath $roomTemplatePath) {
+    $roomTemplateText = Get-Content -LiteralPath $roomTemplatePath -Raw
+    foreach ($token in @("class DungeonRoomTemplate", "entrancePoint", "returnPortalPoint", "deeperExitPoint", "ReturnPortal returnPortal", "DeeperExit deeperExit", "enemySpawnAnchors", "TryValidate")) {
+        Require-Text "Dungeon room template contract" $roomTemplateText $token
+    }
+}
+
+$playerControllerPath = Get-ProjectPath "Assets\02.Scripts\Character\Controllers\PlayerController.cs"
+if (Test-Path -LiteralPath $playerControllerPath) {
+    $playerControllerText = Get-Content -LiteralPath $playerControllerPath -Raw
+    foreach ($token in @("TryResolveExitClick", "DungeonRoomExit", "QueryTriggerInteraction.Collide", "DisplayName")) {
+        Require-Text "Dungeon portal click contract" $playerControllerText $token
+    }
+}
+
+$roomExitPath = Get-ProjectPath "Assets\02.Scripts\Dungeon\DungeonRoomExit.cs"
+if (Test-Path -LiteralPath $roomExitPath) {
+    $roomExitText = Get-Content -LiteralPath $roomExitPath -Raw
+    foreach ($token in @("abstract string DisplayName", "public bool TryUse()", "OnTriggerEnter")) {
+        Require-Text "Dungeon portal interaction contract" $roomExitText $token
+    }
+}
+
+$roomLoaderPath = Get-ProjectPath "Assets\02.Scripts\Dungeon\DungeonRoomLoader.cs"
+if (Test-Path -LiteralPath $roomLoaderPath) {
+    $roomLoaderText = Get-Content -LiteralPath $roomLoaderPath -Raw
+    foreach ($token in @("class DungeonRoomLoader", "DungeonRoomCatalogEntry", "LoadSceneAsync", "UnloadSceneAsync", "TryValidateCatalog", "TryAssignCurrentRoomTemplate", "TryReturnToHub", "TryEnterDeeperRoom", "HasLoadedActiveRoom", "IsSnapshotReady", "returnToHubPoint")) {
+        Require-Text "Dungeon room loader contract" $roomLoaderText $token
+    }
+}
+
+$saveDataPath = Get-ProjectPath "Assets\02.Scripts\Shared\GameSaveData.cs"
+if (Test-Path -LiteralPath $saveDataPath) {
+    $saveDataText = Get-Content -LiteralPath $saveDataPath -Raw
+    foreach ($token in @("version = 9", "DungeonExpeditionSnapshot expeditionSnapshot", "DungeonRunPlan runPlan")) {
+        Require-Text "Dungeon run-plan save contract" $saveDataText $token
+    }
+}
+
+$saveManagerPath = Get-ProjectPath "Assets\02.Scripts\GroundDefense\Runtime\DefenseSaveManager.cs"
+if (Test-Path -LiteralPath $saveManagerPath) {
+    $saveManagerText = Get-Content -LiteralPath $saveManagerPath -Raw
+    foreach ($token in @("CurrentSaveVersion = 9", "TryMigrateSaveData", "MigrateDungeonSnapshotSource", "FinalizeDungeonSnapshot", "MigrateDungeonExitChoiceSaveData", "MigrateDungeonRunPlanSaveData", "GetPendingRewardDepth")) {
+        Require-Text "Dungeon run-plan migration contract" $saveManagerText $token
     }
 }
 

@@ -9,18 +9,24 @@ public class ExpeditionDirector : MonoBehaviour
     [SerializeField] private int totalRooms = 1;
 
     [Header("Runtime")]
-    [SerializeField] private bool resetToReadyOnAwake = true;
-    [SerializeField] private DungeonSaveData runtime = new DungeonSaveData();
+    [SerializeField] private DungeonExpeditionSnapshot runtime = new DungeonExpeditionSnapshot();
 
     [Header("Rewards")]
     [SerializeField] private LootDropper lootDropper;
     [SerializeField] private bool autoFindLootDropper = true;
-    [SerializeField] private bool grantRewardOnExpeditionClear = true;
 
     public event Action Changed;
 
+    /// <summary>
+    /// Runtime projections must wait until the save manager has applied either a validated snapshot or
+    /// a deliberate new-session snapshot. This prevents Awake/OnEnable ordering from creating a second run.
+    /// </summary>
+    public bool IsSnapshotReady { get; private set; }
+
     public DungeonRunState State => runtime == null ? DungeonRunState.Ready : runtime.state;
     public bool IsRunning => State == DungeonRunState.Running;
+    public bool IsAwaitingRoomExit => State == DungeonRunState.AwaitingExit;
+    public bool HasActiveExpedition => IsRunning || IsAwaitingRoomExit;
     public string DungeonId => runtime == null || string.IsNullOrWhiteSpace(runtime.dungeonId) ? dungeonId : runtime.dungeonId;
     public int Depth => runtime == null ? Mathf.Max(1, depth) : Mathf.Max(1, runtime.depth);
     public int SelectedDepth => runtime == null
@@ -29,11 +35,15 @@ public class ExpeditionDirector : MonoBehaviour
     public int HighestUnlockedDepth => runtime == null
         ? Mathf.Max(1, depth)
         : Mathf.Max(1, runtime.highestUnlockedDepth, Mathf.Max(1, runtime.depth));
-    public bool CanSelectPreviousDepth => !IsRunning && SelectedDepth > 1;
-    public bool CanSelectNextDepth => !IsRunning && SelectedDepth < HighestUnlockedDepth;
+    public bool CanSelectPreviousDepth => !HasActiveExpedition && SelectedDepth > 1;
+    public bool CanSelectNextDepth => !HasActiveExpedition && SelectedDepth < HighestUnlockedDepth;
     public int TotalRooms => runtime == null ? Mathf.Max(1, totalRooms) : Mathf.Max(1, runtime.totalRooms);
     public int CurrentRoomIndex => runtime == null ? 0 : Mathf.Max(0, runtime.currentRoomIndex);
     public int RoomsCompleted => runtime == null ? 0 : Mathf.Max(0, runtime.roomsCompleted);
+    public DungeonRunPlan RunPlan => runtime == null ? null : runtime.runPlan;
+    public DungeonRoomResumePoint ResumePoint => runtime == null ? DungeonRoomResumePoint.None : runtime.resumePoint;
+    public int RunSeed => RunPlan == null ? 0 : RunPlan.runSeed;
+    public string CurrentRoomTemplateId => RunPlan == null ? string.Empty : RunPlan.currentRoomTemplateId;
     public float ElapsedSeconds => runtime == null ? 0f : Mathf.Max(0f, runtime.elapsedSeconds);
     public bool RewardPending => runtime != null && runtime.rewardPending;
     public string LastResult => runtime == null ? string.Empty : runtime.lastResult;
@@ -60,16 +70,12 @@ public class ExpeditionDirector : MonoBehaviour
     public float ActiveEnemyDamageMultiplier => ActiveContract.EnemyDamageMultiplier * ActiveEncounter.EnemyDamageMultiplier;
     public int ActiveRewardDepthOffset => ActiveContract.RewardDepthOffset + ActiveEncounter.RewardDepthOffset;
     public int ActiveRewardDepth => GetRewardDepth(Depth, ActiveContract, ActiveEncounter);
-    public bool CanSelectContract => !IsRunning;
+    public bool CanSelectContract => !HasActiveExpedition;
 
     private void Awake()
     {
         EnsureRuntime();
-
-        if (resetToReadyOnAwake)
-        {
-            ResetToReady();
-        }
+        IsSnapshotReady = false;
     }
 
     private void Update()
@@ -97,11 +103,13 @@ public class ExpeditionDirector : MonoBehaviour
     {
         EnsureRuntime();
         runtime.state = DungeonRunState.Ready;
+        runtime.resumePoint = DungeonRoomResumePoint.None;
         runtime.dungeonId = dungeonId;
         runtime.depth = SelectedDepth;
         runtime.totalRooms = Mathf.Max(1, totalRooms);
         runtime.currentRoomIndex = 0;
         runtime.roomsCompleted = 0;
+        runtime.runPlan = null;
         runtime.elapsedSeconds = 0f;
         runtime.rewardPending = false;
         runtime.activeContractId = string.Empty;
@@ -114,14 +122,24 @@ public class ExpeditionDirector : MonoBehaviour
             runtime.offeredContractIdB);
         runtime.lastEncounterSummary = DungeonEncounterModel.FormatDetailText(SelectedEncounter);
         runtime.lastResult = "Ready";
+        IsSnapshotReady = true;
         NotifyChanged();
+    }
+
+    /// <summary>
+    /// Establishes the first authoritative snapshot when no readable save exists. It is intentionally
+    /// called by DefenseSaveManager after startup, never by Awake.
+    /// </summary>
+    public void InitializeFreshSnapshot()
+    {
+        ResetToReady();
     }
 
     public bool StartExpedition()
     {
         EnsureRuntime();
 
-        if (runtime.state == DungeonRunState.Running)
+        if (HasActiveExpedition)
         {
             return false;
         }
@@ -132,6 +150,7 @@ public class ExpeditionDirector : MonoBehaviour
         DungeonContractProfile contract = SelectedContract;
         DungeonEncounterProfile encounter = SelectedEncounter;
         runtime.state = DungeonRunState.Running;
+        runtime.resumePoint = DungeonRoomResumePoint.RestartCurrentRoom;
         runtime.dungeonId = dungeonId;
         runtime.depth = SelectedDepth;
         runtime.activeContractId = contract.Id;
@@ -141,6 +160,10 @@ public class ExpeditionDirector : MonoBehaviour
         runtime.totalRooms = Mathf.Max(1, totalRooms);
         runtime.currentRoomIndex = 0;
         runtime.roomsCompleted = 0;
+        runtime.runPlan = DungeonRunPlan.CreateNew(
+            dungeonId,
+            DungeonRunPlan.CreateRuntimeSeed(),
+            runtime.depth);
         runtime.elapsedSeconds = 0f;
         runtime.rewardPending = false;
         runtime.lastContractSummary = DungeonContractModel.FormatDetailText(contract);
@@ -154,7 +177,7 @@ public class ExpeditionDirector : MonoBehaviour
     {
         EnsureRuntime();
 
-        if (runtime.state == DungeonRunState.Running ||
+        if (HasActiveExpedition ||
             targetDepth < 1 ||
             targetDepth > runtime.highestUnlockedDepth)
         {
@@ -218,7 +241,7 @@ public class ExpeditionDirector : MonoBehaviour
     {
         EnsureRuntime();
 
-        if (runtime.state == DungeonRunState.Running ||
+        if (HasActiveExpedition ||
             string.IsNullOrWhiteSpace(contractId) ||
             !DungeonContractModel.TryGetContract(contractId, out DungeonContractProfile contract) ||
             !IsOfferedContract(contract.Id))
@@ -239,7 +262,7 @@ public class ExpeditionDirector : MonoBehaviour
     {
         EnsureRuntime();
 
-        if (runtime.state == DungeonRunState.Running)
+        if (HasActiveExpedition)
         {
             return false;
         }
@@ -266,41 +289,88 @@ public class ExpeditionDirector : MonoBehaviour
             return false;
         }
 
-        runtime.roomsCompleted = Mathf.Clamp(runtime.roomsCompleted + 1, 0, Mathf.Max(1, runtime.totalRooms));
+        runtime.roomsCompleted = runtime.roomsCompleted == int.MaxValue
+            ? int.MaxValue
+            : Mathf.Max(0, runtime.roomsCompleted) + 1;
+        runtime.totalRooms = Mathf.Max(runtime.totalRooms, runtime.currentRoomIndex + 1, runtime.roomsCompleted);
+        runtime.state = DungeonRunState.AwaitingExit;
+        runtime.resumePoint = DungeonRoomResumePoint.AwaitingExit;
+        runtime.rewardPending = true;
+        EnsureRunPlan();
+        runtime.runPlan.SetRewardPending(true, ActiveRewardDepth);
+        runtime.lastResult = $"Room cleared / Choose Return Portal to bank the reward or Deeper Exit for depth {Depth + 1}.";
 
-        if (runtime.roomsCompleted >= runtime.totalRooms)
+        NotifyChanged();
+        return true;
+    }
+
+    /// <summary>
+    /// Continues the active seeded expedition after a cleared room. The unbanked reward stays pending,
+    /// while DungeonRunPlan derives and persists the next room's depth, index, and placement seeds.
+    /// </summary>
+    public bool TryEnterDeeperRoom()
+    {
+        EnsureRuntime();
+
+        if (!IsAwaitingRoomExit || !runtime.rewardPending)
         {
-            runtime.state = DungeonRunState.Cleared;
-            runtime.currentRoomIndex = Mathf.Max(0, runtime.totalRooms - 1);
-            runtime.rewardPending = true;
-            runtime.lastResult = "Expedition cleared";
-            int unlockedDepth = TryUnlockNextDepth();
-            if (grantRewardOnExpeditionClear)
-            {
-                TryGrantPendingReward();
-            }
-
-            if (unlockedDepth > 0)
-            {
-                runtime.lastResult = $"{runtime.lastResult} / Depth {unlockedDepth} unlocked";
-            }
-
-            if (!string.IsNullOrWhiteSpace(runtime.activeContractId))
-            {
-                runtime.lastResult = $"{runtime.lastResult} / Contract: {ActiveContract.DisplayName}";
-            }
-
-            if (!string.IsNullOrWhiteSpace(runtime.activeEncounterId))
-            {
-                runtime.lastResult = $"{runtime.lastResult} / Encounter: {ActiveEncounter.DisplayName}";
-            }
-        }
-        else
-        {
-            runtime.currentRoomIndex = runtime.roomsCompleted;
-            runtime.lastResult = $"Room cleared / Encounter: {ActiveEncounter.DisplayName}";
+            return false;
         }
 
+        runtime.depth = runtime.depth == int.MaxValue ? int.MaxValue : Mathf.Max(1, runtime.depth) + 1;
+        runtime.highestUnlockedDepth = Mathf.Max(runtime.highestUnlockedDepth, runtime.depth);
+        runtime.currentRoomIndex = runtime.currentRoomIndex == int.MaxValue
+            ? int.MaxValue
+            : Mathf.Max(0, runtime.currentRoomIndex) + 1;
+        runtime.totalRooms = Mathf.Max(runtime.totalRooms, runtime.currentRoomIndex + 1);
+        runtime.state = DungeonRunState.Running;
+        runtime.resumePoint = DungeonRoomResumePoint.RestartCurrentRoom;
+        EnsureRunPlan();
+        runtime.runPlan.SetCurrentRoom(dungeonId, runtime.depth, runtime.currentRoomIndex);
+        runtime.runPlan.SetRewardPending(true, ActiveRewardDepth);
+        runtime.lastResult = $"Deeper exit chosen / Loading depth {runtime.depth}, room {runtime.currentRoomIndex + 1}.";
+        NotifyChanged();
+        return true;
+    }
+
+    /// <summary>
+    /// Banks the cleared room's pending reward and closes the expedition. Physical hub placement is owned
+    /// by DungeonRoomLoader so the current additive room can be unloaded safely after this state change.
+    /// </summary>
+    public bool TryReturnToHub()
+    {
+        EnsureRuntime();
+
+        if (!IsAwaitingRoomExit)
+        {
+            return false;
+        }
+
+        if (runtime.rewardPending && !TryGrantPendingReward())
+        {
+            return false;
+        }
+
+        ResetToReady();
+        runtime.lastResult = "Return portal banked the expedition reward. Ready for a new expedition.";
+        NotifyChanged();
+        return true;
+    }
+
+    /// <summary>
+    /// Persists the catalog choice for the active room so a later load cannot roll a different template.
+    /// DungeonRoomLoader owns catalog lookup and scene lifetime; ExpeditionDirector retains save authority.
+    /// </summary>
+    public bool TryAssignCurrentRoomTemplate(string templateId)
+    {
+        EnsureRuntime();
+
+        if (!IsRunning || runtime.runPlan == null || !runtime.runPlan.AssignCurrentRoomTemplate(templateId))
+        {
+            return false;
+        }
+
+        runtime.lastResult = $"Room template assigned: {runtime.runPlan.currentRoomTemplateId}";
         NotifyChanged();
         return true;
     }
@@ -319,9 +389,13 @@ public class ExpeditionDirector : MonoBehaviour
             return false;
         }
 
-        runtime.state = DungeonRunState.Failed;
+        string contractName = ActiveContract.DisplayName;
+        string encounterName = ActiveEncounter.DisplayName;
         runtime.rewardPending = false;
-        runtime.lastResult = $"Expedition failed / Contract: {ActiveContract.DisplayName} / Encounter: {ActiveEncounter.DisplayName}";
+        EnsureRunPlan();
+        runtime.runPlan.SetRewardPending(false, 0);
+        ResetToReady();
+        runtime.lastResult = $"Expedition failed / Contract: {contractName} / Encounter: {encounterName}";
         NotifyChanged();
         return true;
     }
@@ -359,6 +433,10 @@ public class ExpeditionDirector : MonoBehaviour
         }
 
         runtime.rewardPending = false;
+        if (runtime.runPlan != null)
+        {
+            runtime.runPlan.SetRewardPending(false, 0);
+        }
         runtime.lastResult = lootDropper.LastRewardAutoConverted
             ? $"Reward converted: {item.DisplayName} -> {FormatRewards(lootDropper.LastConversionRewards)} / Contract: {ActiveContract.DisplayName} / Encounter: {ActiveEncounter.DisplayName}"
             : $"Reward granted: {item.DisplayName} / Contract: {ActiveContract.DisplayName} / Encounter: {ActiveEncounter.DisplayName}";
@@ -375,105 +453,32 @@ public class ExpeditionDirector : MonoBehaviour
     {
         EnsureRuntime();
 
-        return new DungeonSaveData
-        {
-            state = runtime.state,
-            dungeonId = runtime.dungeonId,
-            depth = Mathf.Max(1, runtime.depth),
-            selectedDepth = SelectedDepth,
-            highestUnlockedDepth = HighestUnlockedDepth,
-            contractOfferSeed = runtime.contractOfferSeed,
-            offeredContractIdA = runtime.offeredContractIdA,
-            offeredContractIdB = runtime.offeredContractIdB,
-            selectedContractId = runtime.selectedContractId,
-            activeContractId = runtime.activeContractId,
-            lastContractSummary = runtime.lastContractSummary,
-            encounterSeed = Mathf.Max(0, runtime.encounterSeed),
-            selectedEncounterId = runtime.selectedEncounterId,
-            activeEncounterId = runtime.activeEncounterId,
-            lastEncounterSummary = runtime.lastEncounterSummary,
-            totalRooms = Mathf.Max(1, runtime.totalRooms),
-            currentRoomIndex = Mathf.Max(0, runtime.currentRoomIndex),
-            roomsCompleted = Mathf.Clamp(runtime.roomsCompleted, 0, Mathf.Max(1, runtime.totalRooms)),
-            elapsedSeconds = Mathf.Max(0f, runtime.elapsedSeconds),
-            rewardPending = runtime.rewardPending,
-            lastResult = runtime.lastResult
-        };
+        runtime.version = DungeonExpeditionSnapshot.CurrentVersion;
+        runtime.resumePoint = DungeonExpeditionSnapshot.GetExpectedResumePoint(runtime.state);
+        return runtime.ToSaveData();
     }
 
     public void ApplySaveData(DungeonSaveData saveData)
     {
-        if (saveData == null)
+        TryApplySaveData(saveData, out _);
+    }
+
+    public bool TryApplySaveData(DungeonSaveData saveData, out string report)
+    {
+        DungeonExpeditionSnapshot incoming = saveData?.expeditionSnapshot == null
+            ? DungeonExpeditionSnapshot.FromLegacy(saveData)
+            : saveData.expeditionSnapshot.Clone();
+
+        if (!incoming.TryValidate(out report))
         {
-            runtime = new DungeonSaveData
-            {
-                depth = Mathf.Max(1, depth),
-                selectedDepth = Mathf.Max(1, depth),
-                highestUnlockedDepth = Mathf.Max(1, depth)
-            };
-            ResetToReady();
-            return;
+            return false;
         }
 
-        int activeDepth = Mathf.Max(1, saveData.depth);
-        int highestDepth = Mathf.Max(activeDepth, Mathf.Max(1, saveData.highestUnlockedDepth));
-        int selectedDepth = saveData.selectedDepth > 0 ? saveData.selectedDepth : activeDepth;
-        runtime = new DungeonSaveData
-        {
-            state = saveData.state,
-            dungeonId = string.IsNullOrWhiteSpace(saveData.dungeonId) ? dungeonId : saveData.dungeonId,
-            depth = Mathf.Clamp(activeDepth, 1, highestDepth),
-            selectedDepth = Mathf.Clamp(selectedDepth, 1, highestDepth),
-            highestUnlockedDepth = highestDepth,
-            contractOfferSeed = Mathf.Max(0, saveData.contractOfferSeed),
-            offeredContractIdA = saveData.offeredContractIdA,
-            offeredContractIdB = saveData.offeredContractIdB,
-            selectedContractId = saveData.selectedContractId,
-            activeContractId = saveData.activeContractId,
-            lastContractSummary = saveData.lastContractSummary,
-            encounterSeed = Mathf.Max(0, saveData.encounterSeed),
-            selectedEncounterId = saveData.selectedEncounterId,
-            activeEncounterId = saveData.activeEncounterId,
-            lastEncounterSummary = saveData.lastEncounterSummary,
-            totalRooms = Mathf.Max(1, saveData.totalRooms),
-            currentRoomIndex = Mathf.Max(0, saveData.currentRoomIndex),
-            roomsCompleted = Mathf.Max(0, saveData.roomsCompleted),
-            elapsedSeconds = Mathf.Max(0f, saveData.elapsedSeconds),
-            rewardPending = saveData.rewardPending,
-            lastResult = saveData.lastResult
-        };
-
-        runtime.roomsCompleted = Mathf.Clamp(runtime.roomsCompleted, 0, runtime.totalRooms);
-        runtime.currentRoomIndex = Mathf.Clamp(runtime.currentRoomIndex, 0, Mathf.Max(0, runtime.totalRooms - 1));
-
-        if (runtime.state != DungeonRunState.Ready &&
-            runtime.state != DungeonRunState.Running &&
-            runtime.state != DungeonRunState.Cleared &&
-            runtime.state != DungeonRunState.Failed)
-        {
-            runtime.state = DungeonRunState.Ready;
-        }
-
-        EnsureContractOffer();
-        EnsureSelectedContract();
-        EnsureSelectedEncounter();
-        if (runtime.state == DungeonRunState.Ready)
-        {
-            runtime.activeContractId = string.Empty;
-            runtime.activeEncounterId = string.Empty;
-        }
-        else if (!DungeonContractModel.TryGetContract(runtime.activeContractId, out _))
-        {
-            runtime.activeContractId = runtime.selectedContractId;
-        }
-
-        if (runtime.state != DungeonRunState.Ready &&
-            !DungeonEncounterModel.TryGetEncounter(runtime.activeEncounterId, out _))
-        {
-            runtime.activeEncounterId = runtime.selectedEncounterId;
-        }
-
+        runtime = incoming;
+        IsSnapshotReady = true;
+        report = $"Dungeon snapshot v{runtime.version} restored: {runtime.state}/{runtime.resumePoint}, depth {runtime.depth}, room {runtime.currentRoomIndex + 1}.";
         NotifyChanged();
+        return true;
     }
 
     private void EnsureRuntime()
@@ -481,7 +486,7 @@ public class ExpeditionDirector : MonoBehaviour
         if (runtime == null)
         {
             int initialDepth = Mathf.Max(1, depth);
-            runtime = new DungeonSaveData
+            runtime = new DungeonExpeditionSnapshot
             {
                 depth = initialDepth,
                 selectedDepth = initialDepth,
@@ -495,6 +500,8 @@ public class ExpeditionDirector : MonoBehaviour
         int selectedDepth = runtime.selectedDepth > 0 ? runtime.selectedDepth : activeDepth;
         runtime.selectedDepth = Mathf.Clamp(selectedDepth, 1, runtime.highestUnlockedDepth);
         runtime.depth = Mathf.Clamp(activeDepth, 1, runtime.highestUnlockedDepth);
+        runtime.version = DungeonExpeditionSnapshot.CurrentVersion;
+        runtime.resumePoint = DungeonExpeditionSnapshot.GetExpectedResumePoint(runtime.state);
         EnsureContractOffer();
         EnsureSelectedContract();
         EnsureSelectedEncounter();
@@ -513,6 +520,35 @@ public class ExpeditionDirector : MonoBehaviour
         {
             runtime.activeEncounterId = runtime.selectedEncounterId;
         }
+
+        EnsureRunPlan();
+    }
+
+    private void EnsureRunPlan()
+    {
+        bool hasActiveRunState = HasActiveExpedition;
+        if (!hasActiveRunState)
+        {
+            runtime.runPlan = null;
+            return;
+        }
+
+        if (runtime.runPlan == null)
+        {
+            runtime.runPlan = DungeonRunPlan.CreateMigrated(
+                dungeonId,
+                runtime.depth,
+                runtime.currentRoomIndex,
+                runtime.contractOfferSeed,
+                runtime.encounterSeed);
+        }
+        else
+        {
+            runtime.runPlan.Normalize(dungeonId, runtime.depth, runtime.currentRoomIndex);
+        }
+
+        int rewardDepth = runtime.rewardPending ? ActiveRewardDepth : 0;
+        runtime.runPlan.SetRewardPending(runtime.rewardPending, rewardDepth);
     }
 
     private void GenerateContractOffer(bool clearSelection)
@@ -583,19 +619,6 @@ public class ExpeditionDirector : MonoBehaviour
     {
         int rewardDepthOffset = Mathf.Max(0, contract.RewardDepthOffset) + Mathf.Max(0, encounter.RewardDepthOffset);
         return Mathf.Max(1, sourceDepth + rewardDepthOffset);
-    }
-
-    private int TryUnlockNextDepth()
-    {
-        int clearedDepth = Mathf.Max(1, runtime.depth);
-        if (clearedDepth != runtime.highestUnlockedDepth ||
-            runtime.highestUnlockedDepth == int.MaxValue)
-        {
-            return 0;
-        }
-
-        runtime.highestUnlockedDepth += 1;
-        return runtime.highestUnlockedDepth;
     }
 
     private void ResolveLootDropper()

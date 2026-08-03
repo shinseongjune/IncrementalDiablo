@@ -69,6 +69,16 @@ public class PlayerController : MonoBehaviour
 
     public bool HandlePrimaryClickRay(Ray ray, bool stationaryAttack)
     {
+        if (TryResolveExitClick(ray, out DungeonRoomExit clickedExit))
+        {
+            ClearAttackCommand();
+            bool used = clickedExit.TryUse();
+            lastClickMessage = used
+                ? $"{clickedExit.DisplayName} selected."
+                : $"{clickedExit.DisplayName} is not available yet. Clear the room first.";
+            return used;
+        }
+
         if (!TryResolveClick(ray, out RaycastHit hit, out Health clickedHealth))
         {
             lastClickMessage = "Click ignored: no valid dungeon surface or enemy hit.";
@@ -215,6 +225,29 @@ public class PlayerController : MonoBehaviour
         }
 
         return targetActor.Team != actor.Team;
+    }
+
+    private bool TryResolveExitClick(Ray ray, out DungeonRoomExit clickedExit)
+    {
+        clickedExit = null;
+        RaycastHit[] hits = Physics.RaycastAll(ray, rayDistance, clickMask, QueryTriggerInteraction.Collide);
+        if (hits == null || hits.Length == 0)
+        {
+            return false;
+        }
+
+        Array.Sort(hits, CompareRaycastHitsByDistance);
+        for (int i = 0; i < hits.Length; i++)
+        {
+            DungeonRoomExit exit = hits[i].collider.GetComponentInParent<DungeonRoomExit>();
+            if (exit != null && exit.IsAvailable)
+            {
+                clickedExit = exit;
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private bool TryResolveClick(Ray ray, out RaycastHit resolvedHit, out Health attackTarget)

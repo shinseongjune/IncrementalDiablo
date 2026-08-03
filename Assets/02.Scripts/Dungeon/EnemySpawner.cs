@@ -13,6 +13,11 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private bool autoFindTraversal = true;
     [SerializeField] private bool requireRoomSpecificSpawnPointsWhenTraversalIsConfigured = true;
 
+    [Header("Additive Room Spawn Setup")]
+    [SerializeField] private DungeonRoomLoader roomLoader;
+    [SerializeField] private bool autoFindRoomLoader = true;
+    [SerializeField] private bool requireTemplateSpawnAnchorsWhenRoomLoaderIsConfigured = true;
+
     [Header("Spawn Setup")]
     [SerializeField] private GameObject enemyPrefab;
     [SerializeField] private Transform[] spawnPoints = new Transform[0];
@@ -45,12 +50,14 @@ public class EnemySpawner : MonoBehaviour
     {
         ResolveCombatRoom();
         ResolveTraversal();
+        ResolveRoomLoader();
     }
 
     private void OnEnable()
     {
         ResolveCombatRoom();
         ResolveTraversal();
+        ResolveRoomLoader();
         SubscribeToRoom();
         TrySpawnForCurrentRoom();
     }
@@ -78,6 +85,7 @@ public class EnemySpawner : MonoBehaviour
     {
         ResolveCombatRoom();
         ResolveTraversal();
+        ResolveRoomLoader();
 
         if (combatRoom == null)
         {
@@ -225,7 +233,7 @@ public class EnemySpawner : MonoBehaviour
         DungeonDepthBalanceProfile balance)
     {
         Quaternion rotation = ResolveSpawnRotation(spawnIndex, activeSpawnPoints);
-        Transform parent = spawnParent == null ? transform : spawnParent;
+        Transform parent = ResolveSpawnParent();
         GameObject spawned = Instantiate(enemyPrefab, position, rotation, parent);
         spawned.name = $"{spawnedNamePrefix}_{spawnIndex + 1:00}";
         spawnedObjects.Add(spawned);
@@ -342,6 +350,24 @@ public class EnemySpawner : MonoBehaviour
     {
         activeSpawnPoints = spawnPoints;
         blocker = string.Empty;
+
+        if (requireTemplateSpawnAnchorsWhenRoomLoaderIsConfigured && roomLoader != null)
+        {
+            if (!roomLoader.HasLoadedRoom || roomLoader.CurrentTemplate == null)
+            {
+                blocker = "EnemySpawner blocked the active room: DungeonRoomLoader has not loaded its template.";
+                return false;
+            }
+
+            activeSpawnPoints = roomLoader.CurrentTemplate.EnemySpawnAnchors;
+            if (CountValidSpawnPoints(activeSpawnPoints) == 0)
+            {
+                blocker = "EnemySpawner blocked the active room: DungeonRoomTemplate needs at least one enemy spawn anchor.";
+                return false;
+            }
+
+            return true;
+        }
 
         if (!requireRoomSpecificSpawnPointsWhenTraversalIsConfigured ||
             traversal == null ||
@@ -549,6 +575,30 @@ public class EnemySpawner : MonoBehaviour
         traversal = GetComponent<DungeonTraversalController>();
         traversal ??= GetComponentInParent<DungeonTraversalController>();
         traversal ??= FindAnyObjectByType<DungeonTraversalController>();
+    }
+
+    private void ResolveRoomLoader()
+    {
+        if (roomLoader != null || !autoFindRoomLoader)
+        {
+            return;
+        }
+
+        roomLoader = GetComponent<DungeonRoomLoader>();
+        roomLoader ??= GetComponentInParent<DungeonRoomLoader>();
+        roomLoader ??= FindAnyObjectByType<DungeonRoomLoader>();
+    }
+
+    private Transform ResolveSpawnParent()
+    {
+        if (requireTemplateSpawnAnchorsWhenRoomLoaderIsConfigured &&
+            roomLoader != null &&
+            roomLoader.CurrentTemplate != null)
+        {
+            return roomLoader.CurrentTemplate.transform;
+        }
+
+        return spawnParent == null ? transform : spawnParent;
     }
 
     private void SubscribeToRoom()

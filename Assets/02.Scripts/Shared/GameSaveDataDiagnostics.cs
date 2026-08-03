@@ -29,7 +29,7 @@ public static class GameSaveDataDiagnostics
         ValidateHeader(saveData, errors, warnings);
         ValidateCurrencies(saveData.currencies, errors);
         ValidateDefense(saveData.defense, errors);
-        ValidateDungeon(saveData.dungeon, errors);
+        ValidateDungeon(saveData.dungeon, errors, warnings);
         ValidateInventoryAndHero(saveData.inventory, saveData.hero, definitionRegistry, errors, warnings);
         ValidateUiSettings(saveData.uiSettings, warnings);
 
@@ -162,7 +162,10 @@ public static class GameSaveDataDiagnostics
         }
     }
 
-    private static void ValidateDungeon(DungeonSaveData dungeon, List<string> errors)
+    private static void ValidateDungeon(
+        DungeonSaveData dungeon,
+        List<string> errors,
+        List<string> warnings)
     {
         if (dungeon == null)
         {
@@ -197,6 +200,8 @@ public static class GameSaveDataDiagnostics
 
         ValidateDungeonContracts(dungeon, errors);
         ValidateDungeonEncounters(dungeon, errors);
+        ValidateDungeonRunPlan(dungeon, errors);
+        ValidateDungeonSnapshot(dungeon, errors, warnings);
 
         if (dungeon.totalRooms < 1)
         {
@@ -221,6 +226,53 @@ public static class GameSaveDataDiagnostics
         if (dungeon.elapsedSeconds < 0f)
         {
             errors.Add("dungeon elapsedSeconds cannot be negative");
+        }
+    }
+
+    private static void ValidateDungeonRunPlan(DungeonSaveData dungeon, List<string> errors)
+    {
+        bool requiresPlan = dungeon.state == DungeonRunState.Running ||
+                            dungeon.state == DungeonRunState.AwaitingExit || dungeon.rewardPending;
+        if (dungeon.runPlan == null)
+        {
+            if (requiresPlan)
+            {
+                errors.Add("dungeon run plan is required for an active or reward-pending expedition");
+            }
+
+            return;
+        }
+
+        if (!dungeon.runPlan.TryValidate(
+                dungeon.depth,
+                dungeon.currentRoomIndex,
+                dungeon.rewardPending,
+                out string runPlanError))
+        {
+            errors.Add(runPlanError);
+        }
+    }
+
+    private static void ValidateDungeonSnapshot(
+        DungeonSaveData dungeon,
+        List<string> errors,
+        List<string> warnings)
+    {
+        if (dungeon.expeditionSnapshot == null)
+        {
+            warnings.Add("dungeon expedition snapshot is absent and will be migrated from legacy fields");
+            return;
+        }
+
+        if (!dungeon.expeditionSnapshot.TryValidate(out string snapshotError))
+        {
+            errors.Add(snapshotError);
+            return;
+        }
+
+        if (!dungeon.expeditionSnapshot.MatchesLegacy(dungeon))
+        {
+            errors.Add("dungeon expedition snapshot does not match its legacy migration mirror");
         }
     }
 
@@ -260,6 +312,7 @@ public static class GameSaveDataDiagnostics
         }
 
         if ((dungeon.state == DungeonRunState.Running ||
+             dungeon.state == DungeonRunState.AwaitingExit ||
              (dungeon.state == DungeonRunState.Cleared && dungeon.rewardPending)) &&
             string.IsNullOrWhiteSpace(dungeon.activeContractId))
         {
@@ -286,6 +339,7 @@ public static class GameSaveDataDiagnostics
         }
 
         if ((dungeon.state == DungeonRunState.Running ||
+             dungeon.state == DungeonRunState.AwaitingExit ||
              (dungeon.state == DungeonRunState.Cleared && dungeon.rewardPending)) &&
             string.IsNullOrWhiteSpace(dungeon.activeEncounterId))
         {

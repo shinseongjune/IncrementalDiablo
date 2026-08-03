@@ -132,6 +132,12 @@ public class PlayableLoopHud : MonoBehaviour
             return;
         }
 
+        if (expedition.IsAwaitingRoomExit)
+        {
+            SetMessage("Use the room's Return Portal to bank the reward, or the Deeper Exit to keep it at risk.");
+            return;
+        }
+
         if (!expedition.StartExpedition())
         {
             SetMessage("Dungeon expedition is already running.");
@@ -530,7 +536,7 @@ public class PlayableLoopHud : MonoBehaviour
 
         string rewardState = BuildRewardStateText();
         string result = string.IsNullOrWhiteSpace(expedition.LastResult) ? "none" : expedition.LastResult;
-        int balanceDepth = expedition.IsRunning ? expedition.Depth : expedition.SelectedDepth;
+        int balanceDepth = expedition.HasActiveExpedition ? expedition.Depth : expedition.SelectedDepth;
         DungeonDepthBalanceProfile balance = expedition.GetEffectiveDepthBalance(balanceDepth);
         string balanceText =
             $"Band {balance.BandNumber} / Threat HP x{balance.EnemyHealthMultiplier:0.##} DMG x{balance.EnemyDamageMultiplier:0.##} / " +
@@ -540,7 +546,7 @@ public class PlayableLoopHud : MonoBehaviour
 
         if (useCompactStatusText)
         {
-            string activeDepthText = expedition.IsRunning ? $"Depth {expedition.Depth}" : $"Depth {expedition.SelectedDepth}/{expedition.HighestUnlockedDepth}";
+            string activeDepthText = expedition.HasActiveExpedition ? $"Depth {expedition.Depth}" : $"Depth {expedition.SelectedDepth}/{expedition.HighestUnlockedDepth}";
             string compactDungeonText = $"Dungeon: {expedition.State} / {activeDepthText} / {rewardState}\n{contractText}\n{encounterText}";
             if (combatRoom == null || !expedition.IsRunning)
             {
@@ -674,7 +680,7 @@ public class PlayableLoopHud : MonoBehaviour
 
         if (expedition.RewardPending)
         {
-            return "Reward ready";
+            return expedition.IsAwaitingRoomExit ? "Return or descend" : "Reward ready";
         }
 
         if (expedition.State == DungeonRunState.Cleared)
@@ -975,6 +981,11 @@ public class PlayableLoopHud : MonoBehaviour
                 : "Next: wait for the room result; failure should explain what to improve.";
         }
 
+        if (expedition.IsAwaitingRoomExit)
+        {
+            return "Next: click the blue Return Portal to bank this reward, or the orange Deeper Exit to risk it in the next room.";
+        }
+
         if (expedition.RewardPending)
         {
             return "Next: claim the dungeon reward.";
@@ -1153,6 +1164,12 @@ public class PlayableLoopHud : MonoBehaviour
             hint = combatRoom != null && combatRoom.UsesTrackedCombatants
                 ? "Next: finish the room; failure returns you to defense without the item reward."
                 : "Next: wait for the room result; failure should explain what to improve.";
+            return true;
+        }
+
+        if (expedition.IsAwaitingRoomExit)
+        {
+            hint = "Next: click the blue Return Portal to bank the reward, or the orange Deeper Exit to continue with it at risk.";
             return true;
         }
 
@@ -1337,8 +1354,9 @@ public class PlayableLoopHud : MonoBehaviour
         SetInteractable(selectContractAButton, expedition != null && expedition.CanSelectContract);
         SetInteractable(selectContractBButton, expedition != null && expedition.CanSelectContract);
         SetInteractable(refreshDungeonContractButton, expedition != null && expedition.CanSelectContract);
-        SetInteractable(startDungeonButton, expedition != null && !expedition.IsRunning);
-        SetInteractable(claimRewardButton, expedition != null && (expedition.RewardPending || expedition.State == DungeonRunState.Cleared));
+        SetInteractable(startDungeonButton, expedition != null && !expedition.HasActiveExpedition);
+        SetInteractable(claimRewardButton, expedition != null && !expedition.IsAwaitingRoomExit &&
+            (expedition.RewardPending || expedition.State == DungeonRunState.Cleared));
         SetInteractable(equipLatestButton, latest != null && latest.IsDefinitionResolved && inventory != null && equipmentSlots != null);
         SetInteractable(salvageLatestButton, latest != null && latest.IsDefinitionResolved && salvageService != null);
         SetInteractable(saveButton, saveManager != null);
@@ -1785,6 +1803,12 @@ public class PlayableLoopHud : MonoBehaviour
 
         if (result.resolution == CombatRoomResolution.Cleared)
         {
+            if (expedition != null && expedition.IsAwaitingRoomExit)
+            {
+                SetMessage("Room cleared. Click the blue Return Portal to bank the reward, or the orange Deeper Exit to continue the expedition.");
+                return;
+            }
+
             string rewardText = expedition != null && expedition.State == DungeonRunState.Cleared
                 ? "Dungeon cleared."
                 : "Room cleared.";
@@ -1848,7 +1872,7 @@ public class PlayableLoopHud : MonoBehaviour
             return;
         }
 
-        if (expedition.State == DungeonRunState.Running)
+        if (expedition.State == DungeonRunState.Running || expedition.State == DungeonRunState.AwaitingExit)
         {
             screenLayout.ShowDungeonFocus();
             return;

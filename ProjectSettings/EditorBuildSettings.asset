@@ -8,5 +8,11 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/01.Scenes/Gameplay.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/01.Scenes/DungeonRooms/DungeonRoom_Crypt_A.unity
+    guid: c4cd30370deae324181258b90e7b5458
+  - enabled: 1
+    path: Assets/01.Scenes/DungeonRooms/DungeonRoom_Crypt_B.unity
+    guid: a9bf330cf5b062b4a97d7778711585fa
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
