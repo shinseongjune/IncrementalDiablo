@@ -15967,6 +15967,7 @@ MonoBehaviour:
   snapSpawnPointsToNavMesh: 1
   navMeshSpawnSampleRadius: 2
   fallbackSpawnCount: 1
+  maxEnemiesPerRoom: 1
   fallbackSpawnRadius: 2
   spawnedNamePrefix: SpawnedDungeonEnemy
   spawnedEnemyHealths: []

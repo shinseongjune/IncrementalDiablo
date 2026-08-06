@@ -612,6 +612,14 @@ public class CombatRoom : MonoBehaviour
             return;
         }
 
+        if (roomLoader != null && requireLoadedTemplateWhenRoomLoaderIsConfigured)
+        {
+            // Additive dungeon encounters are owned by EnemySpawner. Searching every loaded
+            // CharacterActor here can accidentally bind frontline enemies to the room before
+            // its template-spawned enemies register.
+            return;
+        }
+
         CharacterActor[] actors = FindObjectsByType<CharacterActor>(FindObjectsInactive.Include);
         List<Health> trackedEnemies = new List<Health>(actors.Length);
 

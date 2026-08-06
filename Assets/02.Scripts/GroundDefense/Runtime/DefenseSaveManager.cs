@@ -362,6 +362,10 @@ public class DefenseSaveManager : MonoBehaviour
                 return false;
             }
 
+            // Ready has no resumable room or pending reward. Recover only this harmless stale mirror
+            // shape before strict validation; active snapshots still fail closed if their plan is invalid.
+            saveData.dungeon.expeditionSnapshot.TryRepairStaleReadyRunPlan();
+
             if (!saveData.dungeon.expeditionSnapshot.TryValidate(out string snapshotError))
             {
                 failureReason = $"Save migration failed: {snapshotError}";

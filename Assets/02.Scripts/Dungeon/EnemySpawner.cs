@@ -28,6 +28,7 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private bool snapSpawnPointsToNavMesh = true;
     [SerializeField] private float navMeshSpawnSampleRadius = 2f;
     [SerializeField] private int fallbackSpawnCount = 1;
+    [SerializeField, Min(1)] private int maxEnemiesPerRoom = 1;
     [SerializeField] private float fallbackSpawnRadius = 2f;
     [SerializeField] private string spawnedNamePrefix = "SpawnedDungeonEnemy";
 
@@ -73,6 +74,7 @@ public class EnemySpawner : MonoBehaviour
         spawnedEnemyHealths ??= new List<Health>();
         navMeshSpawnSampleRadius = Mathf.Max(0f, navMeshSpawnSampleRadius);
         fallbackSpawnCount = Mathf.Max(1, fallbackSpawnCount);
+        maxEnemiesPerRoom = Mathf.Max(1, maxEnemiesPerRoom);
         fallbackSpawnRadius = Mathf.Max(0f, fallbackSpawnRadius);
 
         if (string.IsNullOrWhiteSpace(spawnedNamePrefix))
@@ -394,7 +396,8 @@ public class EnemySpawner : MonoBehaviour
     private int ResolveSpawnCount(Transform[] activeSpawnPoints)
     {
         int validSpawnPoints = CountValidSpawnPoints(activeSpawnPoints);
-        return validSpawnPoints > 0 ? validSpawnPoints : fallbackSpawnCount;
+        int requestedCount = validSpawnPoints > 0 ? validSpawnPoints : fallbackSpawnCount;
+        return Mathf.Min(Mathf.Max(1, maxEnemiesPerRoom), requestedCount);
     }
 
     private static int CountValidSpawnPoints(Transform[] activeSpawnPoints)

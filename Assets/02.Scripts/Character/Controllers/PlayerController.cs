@@ -136,7 +136,13 @@ public class PlayerController : MonoBehaviour
 
             if (actor.Combat.TryBasicAttack(pendingAttackTarget))
             {
-                ClearAttackCommand();
+                // A selected enemy remains the active target until it dies or the player gives a new
+                // command. Requiring a click for every cooldown made the first room unwinnable while
+                // the player was already in melee range.
+                if (!pendingAttackTarget.IsAlive)
+                {
+                    ClearAttackCommand();
+                }
             }
 
             return;

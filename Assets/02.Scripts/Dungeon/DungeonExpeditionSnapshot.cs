@@ -210,6 +210,26 @@ public sealed class DungeonExpeditionSnapshot
         return true;
     }
 
+    /// <summary>
+    /// Repairs the only safe stale-plan case found in early v9 saves. A Ready snapshot has no
+    /// resumable room or pending reward, so a leftover run plan has no player-owned progress to keep.
+    /// All other invalid snapshot shapes remain load failures for explicit recovery handling.
+    /// </summary>
+    public bool TryRepairStaleReadyRunPlan()
+    {
+        if (version != CurrentVersion ||
+            state != DungeonRunState.Ready ||
+            resumePoint != DungeonRoomResumePoint.None ||
+            rewardPending ||
+            runPlan == null)
+        {
+            return false;
+        }
+
+        runPlan = null;
+        return true;
+    }
+
     public bool MatchesLegacy(DungeonSaveData legacy)
     {
         if (legacy == null ||

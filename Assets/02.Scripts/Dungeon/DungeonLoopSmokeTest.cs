@@ -274,7 +274,40 @@ public static class DungeonLoopSmokeTest
             return false;
         }
 
-        AppendStep(builder, "Validated running and awaiting-exit dungeon snapshot round trips.");
+        DungeonExpeditionSnapshot staleReady = new DungeonExpeditionSnapshot
+        {
+            state = DungeonRunState.Ready,
+            resumePoint = DungeonRoomResumePoint.None,
+            dungeonId = "snapshot_test",
+            depth = 3,
+            selectedDepth = 3,
+            highestUnlockedDepth = 3,
+            totalRooms = 1,
+            runPlan = DungeonRunPlan.CreateNew("snapshot_test", 654321, 3)
+        };
+
+        if (staleReady.TryValidate(out _))
+        {
+            failure = "Stale Ready expedition snapshot unexpectedly passed validation.";
+            return false;
+        }
+
+        string readyError = string.Empty;
+        if (!staleReady.TryRepairStaleReadyRunPlan() ||
+            !staleReady.TryValidate(out readyError))
+        {
+            failure = $"Stale Ready expedition snapshot could not be repaired: {readyError}";
+            return false;
+        }
+
+        DungeonSaveData readySave = staleReady.ToSaveData();
+        if (!readySave.expeditionSnapshot.MatchesLegacy(readySave))
+        {
+            failure = "Repaired Ready expedition snapshot does not match its save mirror.";
+            return false;
+        }
+
+        AppendStep(builder, "Validated running, awaiting-exit, and stale-Ready repair snapshot round trips.");
         return true;
     }
 

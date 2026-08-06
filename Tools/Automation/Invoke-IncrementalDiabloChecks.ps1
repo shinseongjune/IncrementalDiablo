@@ -126,9 +126,13 @@ if (Test-Path -LiteralPath $traversalPath) {
 $enemySpawnerPath = Get-ProjectPath "Assets\02.Scripts\Dungeon\EnemySpawner.cs"
 if (Test-Path -LiteralPath $enemySpawnerPath) {
     $enemySpawnerText = Get-Content -LiteralPath $enemySpawnerPath -Raw
-    foreach ($token in @("DungeonTraversalController traversal", "DungeonRoomLoader roomLoader", "TryResolveActiveSpawnPoints", "EnemySpawnAnchors", "room-local spawn marker")) {
+    foreach ($token in @("DungeonTraversalController traversal", "DungeonRoomLoader roomLoader", "TryResolveActiveSpawnPoints", "EnemySpawnAnchors", "maxEnemiesPerRoom", "ResolveSpawnCount", "room-local spawn marker")) {
         Require-Text "Dungeon room-local spawn contract" $enemySpawnerText $token
     }
+}
+
+if (Test-Path -LiteralPath $scenePath) {
+    Require-Text "Dungeon opening enemy cap" $sceneText "maxEnemiesPerRoom: 1"
 }
 
 $combatRoomPath = Get-ProjectPath "Assets\02.Scripts\Dungeon\CombatRoom.cs"
