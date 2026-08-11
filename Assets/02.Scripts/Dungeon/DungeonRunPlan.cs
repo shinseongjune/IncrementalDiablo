@@ -31,7 +31,7 @@ public class DungeonRunPlan
         return plan;
     }
 
-    public static DungeonRunPlan CreateMigrated(
+    public static DungeonRunPlan CreateRestored(
         string dungeonId,
         int depth,
         int roomIndex,

@@ -1,17 +1,21 @@
 using System;
 
+/// <summary>
+/// Complete, self-contained player profile. Format v2 separates account progression from the
+/// concrete defense and dungeon worlds so runtime actors no longer disappear into aggregate data.
+/// </summary>
 [Serializable]
-public class GameSaveData
+public sealed class GameProfileSave
 {
-    public int version = 9;
+    public const int CurrentFormatVersion = 2;
+
+    public int formatVersion = CurrentFormatVersion;
+    public long generation;
     public string savedAtUtc;
-    public float playTimeSeconds;
-    public ResourceAmount[] currencies;
-    public DefenseSaveData defense = new DefenseSaveData();
-    public DungeonSaveData dungeon = new DungeonSaveData();
-    public HeroSaveData hero = new HeroSaveData();
-    public InventorySaveData inventory = new InventorySaveData();
-    public UiSettingsSaveData uiSettings = new UiSettingsSaveData();
+    public string integrityHash;
+    public AccountSnapshot account = new AccountSnapshot();
+    public DefenseWorldSnapshot defenseWorld = new DefenseWorldSnapshot();
+    public DungeonWorldSnapshot dungeonWorld;
 }
 
 [Serializable]
@@ -46,44 +50,14 @@ public class HeroSaveData
 {
     public int level = 1;
     public float experience;
-    public float currentHealth = 100f;
-    public long[] equippedItemInstanceIds = new long[0];
-}
-
-[Serializable]
-public class DungeonSaveData
-{
-    // v9 canonical source. The fields below remain only as the migration bridge for v8 and earlier files.
-    public DungeonExpeditionSnapshot expeditionSnapshot;
-    public DungeonRunState state = DungeonRunState.Ready;
-    public string dungeonId;
-    public int depth = 1;
-    public int selectedDepth = 1;
-    public int highestUnlockedDepth = 1;
-    public int contractOfferSeed;
-    public string offeredContractIdA = DungeonContractModel.DefaultContractId;
-    public string offeredContractIdB = "ravenous_pact";
-    public string selectedContractId = DungeonContractModel.DefaultContractId;
-    public string activeContractId = DungeonContractModel.DefaultContractId;
-    public string lastContractSummary;
-    public int encounterSeed;
-    public string selectedEncounterId = DungeonEncounterModel.DefaultEncounterId;
-    public string activeEncounterId = DungeonEncounterModel.DefaultEncounterId;
-    public string lastEncounterSummary;
-    public int totalRooms = 1;
-    public int currentRoomIndex;
-    public int roomsCompleted;
-    public DungeonRunPlan runPlan;
-    public float elapsedSeconds;
-    public bool rewardPending;
-    public string lastResult;
+    public long[] equippedItemInstanceIds = Array.Empty<long>();
 }
 
 [Serializable]
 public class InventorySaveData
 {
     public long nextItemInstanceId = 1;
-    public ItemInstanceSaveData[] itemInstances = new ItemInstanceSaveData[0];
+    public ItemInstanceSaveData[] itemInstances = Array.Empty<ItemInstanceSaveData>();
 }
 
 [Serializable]
@@ -96,7 +70,7 @@ public class ItemInstanceSaveData
     public ItemRarity rarity = ItemRarity.Normal;
     public int level = 1;
     public int rolledPower;
-    public ItemAffixRoll[] affixRolls = new ItemAffixRoll[0];
+    public ItemAffixRoll[] affixRolls = Array.Empty<ItemAffixRoll>();
     public int durability = 100;
     public bool equipped;
 }

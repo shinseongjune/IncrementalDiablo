@@ -69,6 +69,10 @@ public class CombatRoom : MonoBehaviour
     public DungeonDepthBalanceProfile DepthBalance => expedition == null
         ? DungeonDepthBalanceModel.Evaluate(ActiveDepth)
         : expedition.GetEffectiveDepthBalance(ActiveDepth);
+    public bool IsStableForWorldSnapshot => !GameRuntimeRestoreGate.IsRestoring &&
+                                            !resolvingRoom &&
+                                            state != CombatRoomState.Starting &&
+                                            (state == CombatRoomState.Running || state == CombatRoomState.Cleared || state == CombatRoomState.Failed);
 
     private void Awake()
     {
@@ -94,6 +98,11 @@ public class CombatRoom : MonoBehaviour
 
     private void Update()
     {
+        if (GameRuntimeRestoreGate.IsRestoring)
+        {
+            return;
+        }
+
         ResolveExpedition();
         ResolveRoomLoader();
         SubscribeToExpedition();
@@ -214,6 +223,76 @@ public class CombatRoom : MonoBehaviour
         SetTrackedEnemiesActive(state == CombatRoomState.Running);
         ClearTrackedEnemySetupBlocker(false);
         NotifyChanged();
+    }
+
+    public bool TryCreateWorldSnapshot(out DungeonCombatWorldSnapshot snapshot, out string error)
+    {
+        snapshot = null;
+        if (!IsStableForWorldSnapshot)
+        {
+            error = "Dungeon combat is transitioning and cannot be checkpointed.";
+            return false;
+        }
+
+        snapshot = new DungeonCombatWorldSnapshot
+        {
+            state = state,
+            countdownRemaining = CountdownRemaining,
+            elapsedSeconds = ElapsedSeconds,
+            currentHeroHealth = CurrentHeroHealth,
+            currentEnemyHealth = CurrentEnemyHealth
+        };
+        error = string.Empty;
+        return true;
+    }
+
+    public bool TryRestoreWorldSnapshot(
+        DungeonCombatWorldSnapshot snapshot,
+        Health restoredHero,
+        IReadOnlyList<Health> restoredEnemies,
+        out string error)
+    {
+        if (snapshot == null || !Enum.IsDefined(typeof(CombatRoomState), snapshot.state) ||
+            snapshot.countdownRemaining < 0f || snapshot.elapsedSeconds < 0f ||
+            snapshot.currentHeroHealth < 0f || snapshot.currentEnemyHealth < 0f)
+        {
+            error = "Dungeon combat restore snapshot is invalid.";
+            return false;
+        }
+
+        if (snapshot.state == CombatRoomState.Starting)
+        {
+            error = "Dungeon combat restore cannot resume an in-progress start countdown.";
+            return false;
+        }
+
+        heroHealth = restoredHero;
+        List<Health> validEnemies = new List<Health>();
+        if (restoredEnemies != null)
+        {
+            for (int i = 0; i < restoredEnemies.Count; i++)
+            {
+                if (restoredEnemies[i] != null)
+                {
+                    validEnemies.Add(restoredEnemies[i]);
+                }
+            }
+        }
+
+        enemyHealths = validEnemies.ToArray();
+        state = snapshot.state;
+        activeRoomIndex = expedition == null ? snapshot.state == CombatRoomState.Idle ? -1 : 0 : expedition.CurrentRoomIndex;
+        countdownRemaining = snapshot.countdownRemaining;
+        elapsedSeconds = snapshot.elapsedSeconds;
+        currentHeroHealth = snapshot.currentHeroHealth;
+        currentEnemyHealth = snapshot.currentEnemyHealth;
+        ClearTrackedEnemySetupBlocker(false);
+        ClearRoomTemplateBlocker(false);
+        SetLastResult(CombatRoomResolution.None, "Dungeon combat restored from world checkpoint.");
+        SetTrackedEnemiesActive(state == CombatRoomState.Running);
+        NotifyChanged();
+        error = string.Empty;
+        return true;
     }
 
     public void ReportTrackedEnemySetupBlocker(string message)
@@ -396,7 +475,7 @@ public class CombatRoom : MonoBehaviour
 
     private void TryBeginForRunningExpedition()
     {
-        if (!startWhenExpeditionRuns || externalStartControl || expedition == null ||
+        if (GameRuntimeRestoreGate.IsRestoring || !startWhenExpeditionRuns || externalStartControl || expedition == null ||
             !expedition.IsSnapshotReady || !expedition.IsRunning)
         {
             return;

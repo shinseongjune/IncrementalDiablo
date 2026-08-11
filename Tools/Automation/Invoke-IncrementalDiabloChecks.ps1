@@ -60,6 +60,9 @@ $requiredPaths = @(
     @{ Name = "Dungeon enemy prefab"; Path = "Assets\04.Prefabs\Dungeon\PF_DungeonEnemy_Melee.prefab" },
     @{ Name = "Defense authority"; Path = "Assets\02.Scripts\GroundDefense\Runtime\DefenseDirector.cs" },
     @{ Name = "Defense save manager"; Path = "Assets\02.Scripts\GroundDefense\Runtime\DefenseSaveManager.cs" },
+    @{ Name = "World checkpoint schema"; Path = "Assets\02.Scripts\Shared\WorldSaveSnapshots.cs" },
+    @{ Name = "World restore gate"; Path = "Assets\02.Scripts\Shared\GameRuntimeRestoreGate.cs" },
+    @{ Name = "World checkpoint self-test"; Path = "Assets\02.Scripts\Shared\WorldCheckpointSelfTest.cs" },
     @{ Name = "Dungeon director"; Path = "Assets\02.Scripts\Dungeon\ExpeditionDirector.cs" },
     @{ Name = "Dungeon room"; Path = "Assets\02.Scripts\Dungeon\CombatRoom.cs" },
     @{ Name = "Dungeon traversal controller"; Path = "Assets\02.Scripts\Dungeon\DungeonTraversalController.cs" },
@@ -146,7 +149,7 @@ if (Test-Path -LiteralPath $combatRoomPath) {
 $runPlanPath = Get-ProjectPath "Assets\02.Scripts\Dungeon\DungeonRunPlan.cs"
 if (Test-Path -LiteralPath $runPlanPath) {
     $runPlanText = Get-Content -LiteralPath $runPlanPath -Raw
-    foreach ($token in @("class DungeonRunPlan", "runSeed", "currentRoomTemplateId", "hasAssignedRoomTemplate", "AssignCurrentRoomTemplate", "pendingRewardDepth", "CreateMigrated", "TryValidate")) {
+    foreach ($token in @("class DungeonRunPlan", "runSeed", "currentRoomTemplateId", "hasAssignedRoomTemplate", "AssignCurrentRoomTemplate", "pendingRewardDepth", "CreateRestored", "TryValidate")) {
         Require-Text "Dungeon run plan contract" $runPlanText $token
     }
 }
@@ -154,7 +157,7 @@ if (Test-Path -LiteralPath $runPlanPath) {
 $expeditionSnapshotPath = Get-ProjectPath "Assets\02.Scripts\Dungeon\DungeonExpeditionSnapshot.cs"
 if (Test-Path -LiteralPath $expeditionSnapshotPath) {
     $expeditionSnapshotText = Get-Content -LiteralPath $expeditionSnapshotPath -Raw
-    foreach ($token in @("class DungeonExpeditionSnapshot", "DungeonRoomResumePoint", "RestartCurrentRoom", "AwaitingExit", "TryValidate", "MatchesLegacy", "ToSaveData")) {
+    foreach ($token in @("class DungeonExpeditionSnapshot", "DungeonRoomResumePoint", "RestartCurrentRoom", "AwaitingExit", "TryValidate", "Clone")) {
         Require-Text "Dungeon expedition snapshot contract" $expeditionSnapshotText $token
     }
 }
@@ -186,7 +189,7 @@ if (Test-Path -LiteralPath $roomExitPath) {
 $roomLoaderPath = Get-ProjectPath "Assets\02.Scripts\Dungeon\DungeonRoomLoader.cs"
 if (Test-Path -LiteralPath $roomLoaderPath) {
     $roomLoaderText = Get-Content -LiteralPath $roomLoaderPath -Raw
-    foreach ($token in @("class DungeonRoomLoader", "DungeonRoomCatalogEntry", "LoadSceneAsync", "UnloadSceneAsync", "TryValidateCatalog", "TryAssignCurrentRoomTemplate", "TryReturnToHub", "TryEnterDeeperRoom", "HasLoadedActiveRoom", "IsSnapshotReady", "returnToHubPoint")) {
+    foreach ($token in @("class DungeonRoomLoader", "DungeonRoomCatalogEntry", "LoadSceneAsync", "UnloadSceneAsync", "TryValidateCatalog", "TryAssignCurrentRoomTemplate", "TryReturnToHub", "TryEnterDeeperRoom", "HasLoadedActiveRoom", "IsTransitioning", "IsSnapshotReady", "returnToHubPoint")) {
         Require-Text "Dungeon room loader contract" $roomLoaderText $token
     }
 }
@@ -194,16 +197,52 @@ if (Test-Path -LiteralPath $roomLoaderPath) {
 $saveDataPath = Get-ProjectPath "Assets\02.Scripts\Shared\GameSaveData.cs"
 if (Test-Path -LiteralPath $saveDataPath) {
     $saveDataText = Get-Content -LiteralPath $saveDataPath -Raw
-    foreach ($token in @("version = 9", "DungeonExpeditionSnapshot expeditionSnapshot", "DungeonRunPlan runPlan")) {
-        Require-Text "Dungeon run-plan save contract" $saveDataText $token
+    foreach ($token in @("class GameProfileSave", "CurrentFormatVersion = 2", "AccountSnapshot account", "DefenseWorldSnapshot defenseWorld", "DungeonWorldSnapshot dungeonWorld")) {
+        Require-Text "World checkpoint v2 contract" $saveDataText $token
+    }
+}
+
+$expeditionSnapshotPath = Get-ProjectPath "Assets\02.Scripts\Dungeon\DungeonExpeditionSnapshot.cs"
+if (Test-Path -LiteralPath $expeditionSnapshotPath) {
+    $expeditionSnapshotText = Get-Content -LiteralPath $expeditionSnapshotPath -Raw
+    foreach ($transientToken in @("lastResult", "lastContractSummary", "lastEncounterSummary")) {
+        if ($expeditionSnapshotText.Contains($transientToken)) {
+            Add-Result "World checkpoint purity contract" "FAIL" "Transient UI state remains persisted: $transientToken"
+        } else {
+            Add-Result "World checkpoint purity contract" "PASS" "Transient UI state absent: $transientToken"
+        }
     }
 }
 
 $saveManagerPath = Get-ProjectPath "Assets\02.Scripts\GroundDefense\Runtime\DefenseSaveManager.cs"
 if (Test-Path -LiteralPath $saveManagerPath) {
     $saveManagerText = Get-Content -LiteralPath $saveManagerPath -Raw
-    foreach ($token in @("CurrentSaveVersion = 9", "TryMigrateSaveData", "MigrateDungeonSnapshotSource", "FinalizeDungeonSnapshot", "MigrateDungeonExitChoiceSaveData", "MigrateDungeonRunPlanSaveData", "GetPendingRewardDepth")) {
-        Require-Text "Dungeon run-plan migration contract" $saveManagerText $token
+    foreach ($token in @("incremental_diablo_world_v2.json", "BackupSavePath", "TryReadCandidate", "File.Replace", "PromoteAfterInvalidPrimary", "GameRuntimeRestoreGate", "TryCreateDungeonWorldSnapshot", "WorldCheckpointRecovery")) {
+        Require-Text "World checkpoint v2 persistence contract" $saveManagerText $token
+    }
+
+    foreach ($legacyToken in @("TryMigrateSaveData", "MigrateDungeon", "FinalizeDungeonSnapshot", "CurrentSaveVersion")) {
+        if ($saveManagerText.Contains($legacyToken)) {
+            Add-Result "World checkpoint v2 persistence contract" "FAIL" "Legacy migration path remains: $legacyToken"
+        } else {
+            Add-Result "World checkpoint v2 persistence contract" "PASS" "Legacy migration path absent: $legacyToken"
+        }
+    }
+}
+
+$worldSnapshotPath = Get-ProjectPath "Assets\02.Scripts\Shared\WorldSaveSnapshots.cs"
+if (Test-Path -LiteralPath $worldSnapshotPath) {
+    $worldSnapshotText = Get-Content -LiteralPath $worldSnapshotPath -Raw
+    foreach ($token in @("class AccountSnapshot", "class DefenseWorldSnapshot", "class DungeonWorldSnapshot", "WorldActorAction", "SelectHighestValid")) {
+        Require-Text "World snapshot ownership contract" $worldSnapshotText $token
+    }
+}
+
+$worldSelfTestPath = Get-ProjectPath "Assets\02.Scripts\Shared\WorldCheckpointSelfTest.cs"
+if (Test-Path -LiteralPath $worldSelfTestPath) {
+    $worldSelfTestText = Get-Content -LiteralPath $worldSelfTestPath -Raw
+    foreach ($token in @("TryRun", "round-trip", "corruption", "SelectHighestValid", "DungeonRunState.Running")) {
+        Require-Text "World checkpoint self-test contract" $worldSelfTestText $token
     }
 }
 
@@ -213,7 +252,10 @@ try {
     if ($SkipBuild) {
         Add-Result "dotnet build" "SKIP" "Skipped by -SkipBuild."
     } else {
-        Invoke-Check "dotnet build" { dotnet build .\IncrementalDiablo.sln -v:minimal }
+        # Unity-generated project references can race through the shared compiler server when the
+        # solution builds both runtime and editor assemblies in parallel. Keep this validation
+        # deterministic; it does not change the compiled source set.
+        Invoke-Check "dotnet build" { dotnet build .\IncrementalDiablo.sln -m:1 -v:minimal }
     }
 } finally {
     Pop-Location

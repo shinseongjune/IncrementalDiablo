@@ -31,6 +31,9 @@ public sealed class GroundDefenseNavMeshUnit : MonoBehaviour
     private Material attackLineMaterial;
     private Vector3 attackLineEnd;
     private bool deathReported;
+    private string stableEntityId;
+    private WorldActorAction currentAction = WorldActorAction.Idle;
+    private string currentTargetEntityId;
 
     public GroundDefenseNavMeshUnitSide Side => side;
     public CharacterActor Actor => actor;
@@ -40,6 +43,9 @@ public sealed class GroundDefenseNavMeshUnit : MonoBehaviour
         ? transform.position + Vector3.up * 1.1f
         : visualRoot.position;
     public bool IsAlive => Health != null && Health.IsAlive;
+    public string StableEntityId => stableEntityId;
+    public WorldActorAction CurrentAction => currentAction;
+    public string CurrentTargetEntityId => currentTargetEntityId;
 
     private void Awake()
     {
@@ -50,6 +56,11 @@ public sealed class GroundDefenseNavMeshUnit : MonoBehaviour
 
     private void Update()
     {
+        if (GameRuntimeRestoreGate.IsRestoring)
+        {
+            return;
+        }
+
         TickVisualFeedback();
         TickAttackOwnershipLine();
 
@@ -66,6 +77,7 @@ public sealed class GroundDefenseNavMeshUnit : MonoBehaviour
 
         if (actor.Motor == null || actor.Combat == null || !actor.Motor.IsOnNavMesh)
         {
+            currentAction = WorldActorAction.Idle;
             return;
         }
 
@@ -90,13 +102,19 @@ public sealed class GroundDefenseNavMeshUnit : MonoBehaviour
         GroundDefenseNavMeshUnitSide unitSide,
         Vector3 spawnPosition,
         Transform nextVisualRoot,
-        Renderer nextVisualRenderer)
+        Renderer nextVisualRenderer,
+        string nextStableEntityId,
+        WorldActorAction restoredAction = WorldActorAction.Idle,
+        string restoredTargetEntityId = null)
     {
         battlefield = owner;
         side = unitSide;
         homePosition = spawnPosition;
         visualRoot = nextVisualRoot;
         visualRenderer = nextVisualRenderer;
+        stableEntityId = string.IsNullOrWhiteSpace(nextStableEntityId) ? gameObject.name : nextStableEntityId;
+        currentAction = restoredAction;
+        currentTargetEntityId = restoredTargetEntityId ?? string.Empty;
         baseVisualScale = visualRoot == null ? Vector3.one : visualRoot.localScale;
         CreateAttackOwnershipLine(unitSide);
     }
@@ -139,12 +157,15 @@ public sealed class GroundDefenseNavMeshUnit : MonoBehaviour
             return;
         }
 
+        currentTargetEntityId = target.StableEntityId;
         if (!actor.Combat.IsInRange(target.transform))
         {
+            currentAction = WorldActorAction.ChasingTarget;
             actor.Motor.TryMoveTo(target.transform.position);
             return;
         }
 
+        currentAction = WorldActorAction.Attacking;
         actor.Motor.Stop();
         actor.Motor.FaceToward(target.transform.position);
         if (actor.Combat.TryBasicAttack(target.Health))
@@ -158,13 +179,16 @@ public sealed class GroundDefenseNavMeshUnit : MonoBehaviour
     private void FightWall()
     {
         Vector3 wallApproach = battlefield.WallApproachPosition;
+        currentTargetEntityId = "defense-wall";
         if (Vector3.Distance(transform.position, wallApproach) >
             actor.Stats.GetValue(StatId.AttackRange))
         {
+            currentAction = WorldActorAction.ChasingTarget;
             actor.Motor.TryMoveTo(wallApproach);
             return;
         }
 
+        currentAction = WorldActorAction.Attacking;
         actor.Motor.Stop();
         actor.Motor.FaceToward(battlefield.WallPosition);
         if (actor.Combat.TryPlayBasicAttackInPlace())
@@ -179,10 +203,14 @@ public sealed class GroundDefenseNavMeshUnit : MonoBehaviour
     {
         if (Vector3.Distance(transform.position, homePosition) <= 0.3f)
         {
+            currentAction = WorldActorAction.Idle;
+            currentTargetEntityId = string.Empty;
             actor.Motor.Stop();
             return;
         }
 
+        currentAction = WorldActorAction.ReturningHome;
+        currentTargetEntityId = string.Empty;
         actor.Motor.TryMoveTo(homePosition);
     }
 
@@ -194,6 +222,8 @@ public sealed class GroundDefenseNavMeshUnit : MonoBehaviour
         }
 
         deathReported = true;
+        currentAction = WorldActorAction.Defeated;
+        currentTargetEntityId = string.Empty;
         actor.Motor?.Stop();
         if (agent != null)
         {

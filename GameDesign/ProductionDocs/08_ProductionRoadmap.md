@@ -19,7 +19,7 @@
 - [x] `CombatRoom`은 현재 `DungeonRunPlan` 템플릿이 로드된 뒤에만 시작하고, `EnemySpawner`는 그 템플릿의 적 앵커에서만 생성하게 연결했다.
 - [x] 방 정리 뒤 `ReturnPortal`/`DeeperExit`를 열고, 귀환은 보상을 확정해 거점으로 돌려보내며 심층 선택은 미확정 보상을 유지한 채 다음 시드 방을 로드한다. 이 선택 상태도 v8 저장으로 복원한다.
 - [x] 중립적인 `crypt_a`/`crypt_b` additive 템플릿과 각 방 NavMesh, `Gameplay/DungeonRoot` 카탈로그, Build Settings를 연결했다.
-- [x] v9 단일 원정 스냅샷과 복원 게이트를 만들었다. 진행 중 저장은 같은 방을 입구 체크포인트에서 재시작하고, 포탈 선택 저장은 그대로 복원한다.
+- [ ] v2 월드 체크포인트는 `AccountSnapshot` + `DefenseWorldSnapshot` + 열린 경우의 `DungeonWorldSnapshot`을 한 세대/해시 봉투에 저장한다. 안정 tick에서만 캡처하고, 주/백업 중 가장 높은 정상 세대를 복원한다. 방어 건물·전 유닛과 열린 던전의 영웅/적 위치·체력·행동이 실제로 이어지는 Play Mode 증명이 남아야 한다. v1/v9 파일은 읽거나 변환하지 않는다.
 - [ ] Play Mode에서 `귀환 확정 → 새 원정`, `심층 → 다음 방`, `사망 → 미확정 보상 폐기`, `저장/불러오기 복원`, 북쪽 포탈이 보이는 카메라 프레이밍을 확인한다.
 
 ## 첫 버티컬 슬라이스

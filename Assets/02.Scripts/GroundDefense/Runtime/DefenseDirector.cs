@@ -96,7 +96,7 @@ public class DefenseDirector : MonoBehaviour
 
     private void Update()
     {
-        if (ShouldAccrueDefenseIncome())
+        if (!GameRuntimeRestoreGate.IsRestoring && ShouldAccrueDefenseIncome())
         {
             TickFrontline(Time.deltaTime);
         }

@@ -46,6 +46,11 @@ public class EnemySpawner : MonoBehaviour
     public bool HasEnemyPrefab => enemyPrefab != null;
     public bool HasSpawnedEnemies => HasSpawnedEnemyRecords();
     public string LastSpawnMessage => lastSpawnMessage;
+    public bool IsStableForWorldSnapshot => combatRoom != null &&
+                                            !GameRuntimeRestoreGate.IsRestoring &&
+                                            (combatRoom.State == CombatRoomState.Running ||
+                                             combatRoom.State == CombatRoomState.Cleared ||
+                                             combatRoom.State == CombatRoomState.Failed);
 
     private void Awake()
     {
@@ -85,6 +90,11 @@ public class EnemySpawner : MonoBehaviour
 
     public bool SpawnForCurrentRoom()
     {
+        if (GameRuntimeRestoreGate.IsRestoring)
+        {
+            return false;
+        }
+
         ResolveCombatRoom();
         ResolveTraversal();
         ResolveRoomLoader();
@@ -176,6 +186,11 @@ public class EnemySpawner : MonoBehaviour
 
     private void HandleRoomChanged()
     {
+        if (GameRuntimeRestoreGate.IsRestoring)
+        {
+            return;
+        }
+
         if (combatRoom == null)
         {
             return;
@@ -193,7 +208,7 @@ public class EnemySpawner : MonoBehaviour
 
     private void TrySpawnForCurrentRoom()
     {
-        if (!spawnOnRoomStart || combatRoom == null)
+        if (GameRuntimeRestoreGate.IsRestoring || !spawnOnRoomStart || combatRoom == null)
         {
             return;
         }
@@ -239,6 +254,8 @@ public class EnemySpawner : MonoBehaviour
         GameObject spawned = Instantiate(enemyPrefab, position, rotation, parent);
         spawned.name = $"{spawnedNamePrefix}_{spawnIndex + 1:00}";
         spawnedObjects.Add(spawned);
+        WorldEntityIdentity identity = spawned.GetComponent<WorldEntityIdentity>() ?? spawned.AddComponent<WorldEntityIdentity>();
+        identity.Configure($"dungeon-enemy-{spawnIndex + 1:00}");
 
         if (disableSpawnedEnemiesUntilRoomRuns && combatRoom.State != CombatRoomState.Running)
         {
@@ -251,6 +268,144 @@ public class EnemySpawner : MonoBehaviour
             balance.EnemyHealthMultiplier,
             balance.EnemyDamageMultiplier);
         return enemyHealth;
+    }
+
+    public bool TryCreateWorldSnapshots(
+        out DungeonActorWorldSnapshot[] snapshots,
+        out string error)
+    {
+        snapshots = null;
+        if (!IsStableForWorldSnapshot)
+        {
+            error = "Dungeon enemies are not at a stable combat checkpoint.";
+            return false;
+        }
+
+        List<DungeonActorWorldSnapshot> captured = new List<DungeonActorWorldSnapshot>(spawnedEnemyHealths.Count);
+        for (int i = 0; i < spawnedEnemyHealths.Count; i++)
+        {
+            Health health = spawnedEnemyHealths[i];
+            CharacterActor actor = health == null ? null : health.GetComponent<CharacterActor>();
+            if (health == null || actor == null || actor.Team != CharacterTeam.Enemy)
+            {
+                error = $"Dungeon enemy {i} is missing a valid CharacterActor.";
+                return false;
+            }
+
+            WorldEntityIdentity identity = health.GetComponent<WorldEntityIdentity>();
+            EnemyAIController enemyAi = health.GetComponent<EnemyAIController>();
+            captured.Add(new DungeonActorWorldSnapshot
+            {
+                entityId = identity == null || string.IsNullOrWhiteSpace(identity.EntityId)
+                    ? $"dungeon-enemy-{i + 1:00}"
+                    : identity.EntityId,
+                archetypeId = "melee_enemy",
+                team = CharacterTeam.Enemy,
+                position = health.transform.position,
+                rotation = health.transform.rotation,
+                currentHealth = health.Current,
+                maxHealth = health.Max,
+                action = enemyAi == null ? WorldActorAction.Idle : enemyAi.CurrentWorldAction,
+                actionRemainingSeconds = enemyAi == null ? 0f : enemyAi.RemainingActionSeconds,
+                targetEntityId = "hero",
+                active = health.gameObject.activeSelf
+            });
+        }
+
+        snapshots = captured.ToArray();
+        error = string.Empty;
+        return true;
+    }
+
+    public bool TryRestoreWorldSnapshots(
+        DungeonActorWorldSnapshot[] snapshots,
+        CharacterActor hero,
+        out List<Health> restoredEnemies,
+        out string error)
+    {
+        restoredEnemies = new List<Health>();
+        ResolveCombatRoom();
+        ResolveRoomLoader();
+        if (combatRoom == null || roomLoader == null || !roomLoader.HasLoadedActiveRoom)
+        {
+            error = "Dungeon enemy restore requires the active additive room.";
+            return false;
+        }
+
+        if (enemyPrefab == null)
+        {
+            error = "Dungeon enemy restore requires an enemy prefab.";
+            return false;
+        }
+
+        if (!TryValidateEnemyPrefab(out _, out error))
+        {
+            return false;
+        }
+
+        DungeonActorWorldSnapshot[] source = snapshots ?? System.Array.Empty<DungeonActorWorldSnapshot>();
+        ClearPreviousSpawns();
+        DungeonDepthBalanceProfile balance = combatRoom.DepthBalance;
+        for (int i = 0; i < source.Length; i++)
+        {
+            DungeonActorWorldSnapshot snapshot = source[i];
+            if (!WorldSaveSnapshotValidator.TryValidateDungeonActor(snapshot, $"enemy {i}", CharacterTeam.Enemy, out error))
+            {
+                ClearPreviousSpawns();
+                return false;
+            }
+
+            Health restored = SpawnEnemyFromWorldSnapshot(snapshot, balance);
+            if (restored == null)
+            {
+                ClearPreviousSpawns();
+                error = $"Dungeon enemy restore could not instantiate actor {i}.";
+                return false;
+            }
+
+            restoredEnemies.Add(restored);
+        }
+
+        spawnedEnemyHealths = new List<Health>(restoredEnemies);
+        lastSpawnedRoomIndex = combatRoom.ActiveRoomIndex;
+        lastBlockedRoomIndex = int.MinValue;
+        for (int i = 0; i < restoredEnemies.Count; i++)
+        {
+            EnemyAIController enemyAi = restoredEnemies[i].GetComponent<EnemyAIController>();
+            enemyAi?.RestoreWorldAction(source[i].action, source[i].actionRemainingSeconds, hero);
+        }
+
+        SetLastSpawnMessage($"Restored {restoredEnemies.Count} dungeon enemy world actor(s).");
+        error = string.Empty;
+        return true;
+    }
+
+    private Health SpawnEnemyFromWorldSnapshot(
+        DungeonActorWorldSnapshot snapshot,
+        DungeonDepthBalanceProfile balance)
+    {
+        if (!NavMesh.SamplePosition(snapshot.position, out NavMeshHit hit, navMeshSpawnSampleRadius, NavMesh.AllAreas))
+        {
+            return null;
+        }
+
+        GameObject spawned = Instantiate(enemyPrefab, hit.position, snapshot.rotation, ResolveSpawnParent());
+        spawned.name = string.IsNullOrWhiteSpace(snapshot.entityId) ? spawnedNamePrefix : snapshot.entityId;
+        spawnedObjects.Add(spawned);
+        WorldEntityIdentity identity = spawned.GetComponent<WorldEntityIdentity>() ?? spawned.AddComponent<WorldEntityIdentity>();
+        identity.Configure(snapshot.entityId);
+
+        Health health = spawned.GetComponentInChildren<Health>(includeInactive: true);
+        CharacterStats stats = health == null ? null : health.GetComponent<CharacterStats>();
+        stats?.SetRuntimeCombatMultipliers(balance.EnemyHealthMultiplier, balance.EnemyDamageMultiplier);
+        if (health == null)
+        {
+            return null;
+        }
+
+        health.RestoreCurrent(snapshot.currentHealth);
+        spawned.SetActive(snapshot.active);
+        return health;
     }
 
     private bool TryValidateEnemyPrefab(out NavMeshAgent templateAgent, out string blocker)

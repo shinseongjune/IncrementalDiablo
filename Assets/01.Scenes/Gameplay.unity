@@ -10077,10 +10077,9 @@ MonoBehaviour:
   inventory: {fileID: 0}
   equipmentSlots: {fileID: 1417038735}
   playableHud: {fileID: 0}
-  saveFileName: incremental_diablo_save.json
+  saveFileName: incremental_diablo_world_v2.json
   loadOnStart: 1
-  simulateOfflineOnLoad: 1
-  maxOfflineSeconds: 28800
+  simulateOfflineOnLoad: 0
   autoSaveIntervalSeconds: 15
 --- !u!114 &1045172322
 MonoBehaviour:

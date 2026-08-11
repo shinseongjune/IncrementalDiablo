@@ -81,6 +81,10 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
         new List<GroundDefenseNavMeshUnit>();
     private readonly List<GroundDefenseNavMeshUnit> enemies =
         new List<GroundDefenseNavMeshUnit>();
+    // A unit is absent from the live roster between its defeated-body presentation and its replacement.
+    // Capturing in that interval would turn a complete battlefield into a different one after restore.
+    private readonly HashSet<string> pendingRespawnEntityIds =
+        new HashSet<string>(StringComparer.Ordinal);
 
     private GameObject generatedRoot;
     private NavMeshSurface navMeshSurface;
@@ -91,6 +95,7 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
     private GroundDefenseVisualForceProfile activeForceProfile;
     private DefenseDirector subscribedDefense;
     private bool shuttingDown;
+    private bool isRebuilding;
 
     public Vector3 WallPosition => wallAnchor == null ? transform.position : wallAnchor.position;
     public Vector3 WallApproachPosition =>
@@ -98,7 +103,11 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
     public int ActiveDefenderCount => CountAlive(defenders);
     public int ActiveEnemyCount => CountAlive(enemies);
     public GroundDefenseVisualForceProfile ActiveForceProfile => GetReadableActiveForceProfile();
-    public bool UnitsCanAct => defense != null && defense.Runtime != null && defense.Runtime.IsRunning;
+    public bool UnitsCanAct => !GameRuntimeRestoreGate.IsRestoring && defense != null && defense.Runtime != null && defense.Runtime.IsRunning;
+    public bool IsStableForWorldSnapshot => generatedRoot != null &&
+                                            !isRebuilding &&
+                                            !shuttingDown &&
+                                            !HasUnsettledUnitTransition();
 
     private void OnEnable()
     {
@@ -177,16 +186,90 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
 
     public void NotifyUnitDefeated(GroundDefenseNavMeshUnit unit)
     {
-        if (unit == null || shuttingDown)
+        if (unit == null || shuttingDown || GameRuntimeRestoreGate.IsRestoring)
         {
             return;
         }
 
-        StartCoroutine(ReplaceDefeatedUnit(unit));
+        string entityId = unit.StableEntityId;
+        if (string.IsNullOrWhiteSpace(entityId) || !pendingRespawnEntityIds.Add(entityId))
+        {
+            return;
+        }
+
+        StartCoroutine(ReplaceDefeatedUnit(unit, entityId));
     }
 
-    private void BuildBattlefield()
+    public bool TryCreateWorldSnapshot(out DefenseWorldSnapshot snapshot, out string error)
     {
+        snapshot = null;
+        if (generatedRoot == null || isRebuilding || shuttingDown || defense == null || defense.Runtime == null || wallAnchor == null)
+        {
+            error = "Defense world is still building or has no wall anchor.";
+            return false;
+        }
+
+        if (HasUnsettledUnitTransition())
+        {
+            error = "Defense checkpoint waits for defeated-unit replacement to settle so no actor is lost or recreated on restore.";
+            return false;
+        }
+
+        List<DefenseBuildingWorldSnapshot> buildings = new List<DefenseBuildingWorldSnapshot>
+        {
+            new DefenseBuildingWorldSnapshot
+            {
+                entityId = "defense-wall",
+                archetypeId = "wall",
+                position = wallAnchor.position,
+                rotation = wallAnchor.rotation,
+                currentHealth = defense.Runtime.WallHealth,
+                maxHealth = defense.Runtime.WallMaxHealth,
+                active = wallVisual != null
+            }
+        };
+        List<DefenseUnitWorldSnapshot> units = new List<DefenseUnitWorldSnapshot>(defenders.Count + enemies.Count);
+        AddUnitSnapshots(defenders, units);
+        AddUnitSnapshots(enemies, units);
+
+        snapshot = new DefenseWorldSnapshot
+        {
+            buildings = buildings.ToArray(),
+            units = units.ToArray()
+        };
+        if (!WorldSaveSnapshotValidator.TryValidate(snapshot, out error))
+        {
+            snapshot = null;
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    public bool TryRestoreWorldSnapshot(DefenseWorldSnapshot snapshot, out string error)
+    {
+        if (!WorldSaveSnapshotValidator.TryValidate(snapshot, out error))
+        {
+            return false;
+        }
+
+        BuildBattlefield(snapshot);
+        int restoredCount = defenders.Count + enemies.Count;
+        int expectedCount = snapshot.units == null ? 0 : snapshot.units.Length;
+        if (restoredCount != expectedCount)
+        {
+            error = $"Defense world restored {restoredCount} of {expectedCount} unit(s) onto the NavMesh.";
+            return false;
+        }
+
+        error = string.Empty;
+        return true;
+    }
+
+    private void BuildBattlefield(DefenseWorldSnapshot restoredWorld = null)
+    {
+        isRebuilding = true;
         ClearBattlefield();
         shuttingDown = false;
         ResolveReferences();
@@ -198,6 +281,7 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
             Debug.LogWarning(
                 "GroundDefenseNavMeshBattlefield needs enemy/wall anchors and the readability sheet.",
                 this);
+            isRebuilding = false;
             return;
         }
 
@@ -216,21 +300,38 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
         BuildGroundAndNavMesh();
         BuildWall();
 
-        for (int i = 0; i < activeForceProfile.DefenderCount; i++)
+        if (restoredWorld != null)
         {
-            SpawnUnit(
-                GroundDefenseNavMeshUnitSide.Defender,
-                i,
-                activeForceProfile.DefenderCount);
+            DefenseUnitWorldSnapshot[] restoredUnits = restoredWorld.units ?? Array.Empty<DefenseUnitWorldSnapshot>();
+            for (int i = 0; i < restoredUnits.Length; i++)
+            {
+                DefenseUnitWorldSnapshot unit = restoredUnits[i];
+                if (unit != null)
+                {
+                    SpawnUnit(unit.side, i, restoredUnits.Length, unit);
+                }
+            }
+        }
+        else
+        {
+            for (int i = 0; i < activeForceProfile.DefenderCount; i++)
+            {
+                SpawnUnit(
+                    GroundDefenseNavMeshUnitSide.Defender,
+                    i,
+                    activeForceProfile.DefenderCount);
+            }
+
+            for (int i = 0; i < activeForceProfile.EnemyCount; i++)
+            {
+                SpawnUnit(
+                    GroundDefenseNavMeshUnitSide.Enemy,
+                    i,
+                    activeForceProfile.EnemyCount);
+            }
         }
 
-        for (int i = 0; i < activeForceProfile.EnemyCount; i++)
-        {
-            SpawnUnit(
-                GroundDefenseNavMeshUnitSide.Enemy,
-                i,
-                activeForceProfile.EnemyCount);
-        }
+        isRebuilding = false;
     }
 
     private void BuildGroundAndNavMesh()
@@ -290,9 +391,13 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
     private void SpawnUnit(
         GroundDefenseNavMeshUnitSide side,
         int slotIndex,
-        int slotCount)
+        int slotCount,
+        DefenseUnitWorldSnapshot restoredSnapshot = null,
+        string stableEntityId = null)
     {
-        Vector3 desiredPosition = GetSpawnPosition(side, slotIndex, slotCount);
+        Vector3 desiredPosition = restoredSnapshot == null
+            ? GetSpawnPosition(side, slotIndex, slotCount)
+            : restoredSnapshot.position;
         if (!NavMesh.SamplePosition(
                 desiredPosition,
                 out NavMeshHit hit,
@@ -305,6 +410,11 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
             return;
         }
 
+        string resolvedEntityId = string.IsNullOrWhiteSpace(restoredSnapshot?.entityId)
+            ? (string.IsNullOrWhiteSpace(stableEntityId)
+                ? (side == GroundDefenseNavMeshUnitSide.Defender ? $"defender-{slotIndex + 1:00}" : $"enemy-{slotIndex + 1:00}")
+                : stableEntityId)
+            : restoredSnapshot.entityId;
         string unitName = side == GroundDefenseNavMeshUnitSide.Defender
             ? $"Defender_{slotIndex + 1:00}"
             : $"Enemy_{slotIndex + 1:00}";
@@ -322,6 +432,8 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
         CapsuleCollider collider = unitObject.AddComponent<CapsuleCollider>();
         GroundDefenseNavMeshUnit unit =
             unitObject.AddComponent<GroundDefenseNavMeshUnit>();
+        WorldEntityIdentity identity = unitObject.AddComponent<WorldEntityIdentity>();
+        identity.Configure(resolvedEntityId);
 
         bool isDefender = side == GroundDefenseNavMeshUnitSide.Defender;
         GroundDefenseNavMeshEnemyRole enemyRole = isDefender
@@ -369,7 +481,20 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
             Vector3.up * (isDefender ? defenderVisualHeight : enemyRole.VisualHeight);
 
         BuildOwnershipMarker(unitObject.transform, isDefender);
-        unit.Configure(this, side, hit.position, visual.Root.transform, visual.Renderer);
+        unit.Configure(
+            this,
+            side,
+            restoredSnapshot == null ? hit.position : restoredSnapshot.homePosition,
+            visual.Root.transform,
+            visual.Renderer,
+            resolvedEntityId,
+            restoredSnapshot == null ? WorldActorAction.Idle : restoredSnapshot.action,
+            restoredSnapshot?.targetEntityId);
+        if (restoredSnapshot != null)
+        {
+            unitObject.transform.rotation = restoredSnapshot.rotation;
+            health.RestoreCurrent(restoredSnapshot.currentHealth);
+        }
         if (isDefender)
         {
             defenders.Add(unit);
@@ -420,7 +545,7 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
 
     private void HandleDefenseSaveDataApplied()
     {
-        if (!isActiveAndEnabled)
+        if (!isActiveAndEnabled || GameRuntimeRestoreGate.IsRestoring)
         {
             return;
         }
@@ -712,32 +837,77 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
         return material;
     }
 
-    private IEnumerator ReplaceDefeatedUnit(GroundDefenseNavMeshUnit unit)
+    private IEnumerator ReplaceDefeatedUnit(GroundDefenseNavMeshUnit unit, string entityId)
     {
-        GroundDefenseNavMeshUnitSide side = unit.Side;
-        yield return new WaitForSeconds(defeatedBodySeconds);
-
-        List<GroundDefenseNavMeshUnit> list =
-            side == GroundDefenseNavMeshUnitSide.Defender ? defenders : enemies;
-        int slotIndex = Mathf.Max(0, list.IndexOf(unit));
-        list.Remove(unit);
-        if (unit != null)
+        try
         {
-            Destroy(unit.gameObject);
+            GroundDefenseNavMeshUnitSide side = unit.Side;
+            yield return new WaitForSeconds(defeatedBodySeconds);
+
+            while (GameRuntimeRestoreGate.IsRestoring)
+            {
+                yield return null;
+            }
+
+            List<GroundDefenseNavMeshUnit> list =
+                side == GroundDefenseNavMeshUnitSide.Defender ? defenders : enemies;
+            int slotIndex = Mathf.Max(0, list.IndexOf(unit));
+            list.Remove(unit);
+            if (unit != null)
+            {
+                Destroy(unit.gameObject);
+            }
+
+            float respawnDelay = side == GroundDefenseNavMeshUnitSide.Defender
+                ? activeForceProfile.DefenderRespawnSeconds
+                : activeForceProfile.EnemyRespawnSeconds;
+            yield return new WaitForSeconds(respawnDelay);
+
+            while (GameRuntimeRestoreGate.IsRestoring)
+            {
+                yield return null;
+            }
+
+            if (!shuttingDown && generatedRoot != null)
+            {
+                int desiredCount = side == GroundDefenseNavMeshUnitSide.Defender
+                    ? activeForceProfile.DefenderCount
+                    : activeForceProfile.EnemyCount;
+                SpawnUnit(
+                    side,
+                    Mathf.Min(slotIndex, desiredCount - 1),
+                    desiredCount,
+                    stableEntityId: entityId);
+            }
+        }
+        finally
+        {
+            pendingRespawnEntityIds.Remove(entityId);
+        }
+    }
+
+    private bool HasUnsettledUnitTransition()
+    {
+        if (pendingRespawnEntityIds.Count > 0)
+        {
+            return true;
         }
 
-        float respawnDelay = side == GroundDefenseNavMeshUnitSide.Defender
-            ? activeForceProfile.DefenderRespawnSeconds
-            : activeForceProfile.EnemyRespawnSeconds;
-        yield return new WaitForSeconds(respawnDelay);
+        return HasDefeatedUnit(defenders) || HasDefeatedUnit(enemies);
+    }
 
-        if (!shuttingDown && generatedRoot != null)
+    private static bool HasDefeatedUnit(List<GroundDefenseNavMeshUnit> units)
+    {
+        for (int i = 0; i < units.Count; i++)
         {
-            int desiredCount = side == GroundDefenseNavMeshUnitSide.Defender
-                ? activeForceProfile.DefenderCount
-                : activeForceProfile.EnemyCount;
-            SpawnUnit(side, Mathf.Min(slotIndex, desiredCount - 1), desiredCount);
+            GroundDefenseNavMeshUnit unit = units[i];
+            if (unit != null && !unit.IsAlive)
+            {
+                return true;
+            }
         }
+
+        return false;
     }
 
     private GroundDefenseNavMeshUnit FindNearestAlive(
@@ -781,9 +951,37 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
         return count;
     }
 
+    private static void AddUnitSnapshots(
+        List<GroundDefenseNavMeshUnit> source,
+        List<DefenseUnitWorldSnapshot> destination)
+    {
+        for (int i = 0; i < source.Count; i++)
+        {
+            GroundDefenseNavMeshUnit unit = source[i];
+            if (unit == null || unit.Health == null)
+            {
+                continue;
+            }
+
+            destination.Add(new DefenseUnitWorldSnapshot
+            {
+                entityId = unit.StableEntityId,
+                side = unit.Side,
+                position = unit.transform.position,
+                rotation = unit.transform.rotation,
+                homePosition = unit.HomePosition,
+                currentHealth = unit.Health.Current,
+                maxHealth = unit.Health.Max,
+                action = unit.CurrentAction,
+                targetEntityId = unit.CurrentTargetEntityId
+            });
+        }
+    }
+
     private void ClearBattlefield()
     {
         StopAllCoroutines();
+        pendingRespawnEntityIds.Clear();
         defenders.Clear();
         enemies.Clear();
         wallVisual = null;

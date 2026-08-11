@@ -111,6 +111,35 @@ public class Health : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Applies a value from a validated world snapshot. Normal combat damage events are not replayed
+    /// during restore; listeners receive only the resulting life/death transition when requested.
+    /// </summary>
+    public void RestoreCurrent(float value, bool notify = false)
+    {
+        EnsureInitialized();
+        float previous = current;
+        current = Mathf.Clamp(value, 0f, Max);
+
+        if (!notify || Mathf.Approximately(previous, current))
+        {
+            return;
+        }
+
+        if (previous > 0f && current <= 0f)
+        {
+            Died?.Invoke();
+        }
+        else if (previous <= 0f && current > 0f)
+        {
+            Refilled?.Invoke();
+        }
+        else if (current < previous)
+        {
+            Damaged?.Invoke(previous - current, current);
+        }
+    }
+
     private void HandleStatsChanged()
     {
         EnsureInitialized();

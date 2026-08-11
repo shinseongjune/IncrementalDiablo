@@ -373,7 +373,7 @@ public class PlayableLoopHud : MonoBehaviour
         }
 
         SetMessage(saveManager.TrySave()
-            ? "Game saved. Recovery point ready for frontline, dungeon, inventory, equipment, and HUD settings."
+            ? "World checkpoint saved. Primary file and last valid backup are ready."
             : "Save failed.");
     }
 
@@ -389,13 +389,11 @@ public class PlayableLoopHud : MonoBehaviour
         bool loaded = saveManager.TryLoad();
         if (loaded)
         {
-            SetMessage($"Game loaded. {saveManager.LastLoadReport}");
+            SetMessage($"World checkpoint validated. Restoring the saved world now. {saveManager.LastLoadReport}");
             return;
         }
 
-        SetMessage(saveManager.HasSaveFile
-            ? $"Load failed. {saveManager.LastLoadReport}"
-            : DefenseSaveManager.NoSaveRecoveryGuidance);
+        SetMessage($"Profile not loaded. {saveManager.LastLoadReport}");
     }
 
     public UiSettingsSaveData CreateUiSettingsSaveData()

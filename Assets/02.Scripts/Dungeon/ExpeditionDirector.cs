@@ -16,6 +16,9 @@ public class ExpeditionDirector : MonoBehaviour
     [SerializeField] private bool autoFindLootDropper = true;
 
     public event Action Changed;
+    private string lastResult = "Ready";
+    private string lastContractSummary = string.Empty;
+    private string lastEncounterSummary = string.Empty;
 
     /// <summary>
     /// Runtime projections must wait until the save manager has applied either a validated snapshot or
@@ -46,16 +49,16 @@ public class ExpeditionDirector : MonoBehaviour
     public string CurrentRoomTemplateId => RunPlan == null ? string.Empty : RunPlan.currentRoomTemplateId;
     public float ElapsedSeconds => runtime == null ? 0f : Mathf.Max(0f, runtime.elapsedSeconds);
     public bool RewardPending => runtime != null && runtime.rewardPending;
-    public string LastResult => runtime == null ? string.Empty : runtime.lastResult;
+    public string LastResult => lastResult;
     public string OfferedContractIdA => runtime == null ? DungeonContractModel.DefaultContractId : runtime.offeredContractIdA;
     public string OfferedContractIdB => runtime == null ? "ravenous_pact" : runtime.offeredContractIdB;
     public string SelectedContractId => runtime == null ? DungeonContractModel.DefaultContractId : runtime.selectedContractId;
     public string ActiveContractId => runtime == null ? DungeonContractModel.DefaultContractId : runtime.activeContractId;
-    public string LastContractSummary => runtime == null ? string.Empty : runtime.lastContractSummary;
+    public string LastContractSummary => lastContractSummary;
     public int EncounterSeed => runtime == null ? 0 : Mathf.Max(0, runtime.encounterSeed);
     public string SelectedEncounterId => runtime == null ? DungeonEncounterModel.DefaultEncounterId : runtime.selectedEncounterId;
     public string ActiveEncounterId => runtime == null ? DungeonEncounterModel.DefaultEncounterId : runtime.activeEncounterId;
-    public string LastEncounterSummary => runtime == null ? string.Empty : runtime.lastEncounterSummary;
+    public string LastEncounterSummary => lastEncounterSummary;
     public DungeonContractProfile OfferedContractA => DungeonContractModel.GetContractOrDefault(OfferedContractIdA);
     public DungeonContractProfile OfferedContractB => DungeonContractModel.GetContractOrDefault(OfferedContractIdB);
     public DungeonContractProfile SelectedContract => DungeonContractModel.GetContractOrDefault(SelectedContractId);
@@ -71,6 +74,7 @@ public class ExpeditionDirector : MonoBehaviour
     public int ActiveRewardDepthOffset => ActiveContract.RewardDepthOffset + ActiveEncounter.RewardDepthOffset;
     public int ActiveRewardDepth => GetRewardDepth(Depth, ActiveContract, ActiveEncounter);
     public bool CanSelectContract => !HasActiveExpedition;
+    public bool IsStableForWorldSnapshot => IsSnapshotReady && runtime != null && !GameRuntimeRestoreGate.IsRestoring;
 
     private void Awake()
     {
@@ -80,7 +84,7 @@ public class ExpeditionDirector : MonoBehaviour
 
     private void Update()
     {
-        if (!IsRunning)
+        if (GameRuntimeRestoreGate.IsRestoring || !IsRunning)
         {
             return;
         }
@@ -117,11 +121,11 @@ public class ExpeditionDirector : MonoBehaviour
         EnsureContractOffer();
         EnsureSelectedContract();
         EnsureSelectedEncounter();
-        runtime.lastContractSummary = DungeonContractModel.FormatOfferText(
+        lastContractSummary = DungeonContractModel.FormatOfferText(
             runtime.offeredContractIdA,
             runtime.offeredContractIdB);
-        runtime.lastEncounterSummary = DungeonEncounterModel.FormatDetailText(SelectedEncounter);
-        runtime.lastResult = "Ready";
+        lastEncounterSummary = DungeonEncounterModel.FormatDetailText(SelectedEncounter);
+        lastResult = "Ready";
         IsSnapshotReady = true;
         NotifyChanged();
     }
@@ -166,9 +170,9 @@ public class ExpeditionDirector : MonoBehaviour
             runtime.depth);
         runtime.elapsedSeconds = 0f;
         runtime.rewardPending = false;
-        runtime.lastContractSummary = DungeonContractModel.FormatDetailText(contract);
-        runtime.lastEncounterSummary = DungeonEncounterModel.FormatDetailText(encounter);
-        runtime.lastResult = $"Expedition started / Contract: {contract.DisplayName} / Encounter: {encounter.DisplayName}";
+        lastContractSummary = DungeonContractModel.FormatDetailText(contract);
+        lastEncounterSummary = DungeonEncounterModel.FormatDetailText(encounter);
+        lastResult = $"Expedition started / Contract: {contract.DisplayName} / Encounter: {encounter.DisplayName}";
         NotifyChanged();
         return true;
     }
@@ -188,7 +192,7 @@ public class ExpeditionDirector : MonoBehaviour
         GenerateContractOffer(clearSelection: true);
         EnsureSelectedContract();
         GenerateSelectedEncounter();
-        runtime.lastEncounterSummary = DungeonEncounterModel.FormatDetailText(SelectedEncounter);
+        lastEncounterSummary = DungeonEncounterModel.FormatDetailText(SelectedEncounter);
         NotifyChanged();
         return true;
     }
@@ -251,9 +255,9 @@ public class ExpeditionDirector : MonoBehaviour
 
         runtime.selectedContractId = contract.Id;
         GenerateSelectedEncounter();
-        runtime.lastContractSummary = DungeonContractModel.FormatDetailText(contract);
-        runtime.lastEncounterSummary = DungeonEncounterModel.FormatDetailText(SelectedEncounter);
-        runtime.lastResult = $"Contract selected: {contract.DisplayName} / Next encounter: {SelectedEncounter.DisplayName}";
+        lastContractSummary = DungeonContractModel.FormatDetailText(contract);
+        lastEncounterSummary = DungeonEncounterModel.FormatDetailText(SelectedEncounter);
+        lastResult = $"Contract selected: {contract.DisplayName} / Next encounter: {SelectedEncounter.DisplayName}";
         NotifyChanged();
         return true;
     }
@@ -270,12 +274,12 @@ public class ExpeditionDirector : MonoBehaviour
         runtime.contractOfferSeed++;
         GenerateContractOffer(clearSelection: true);
         EnsureSelectedContract();
-        runtime.lastContractSummary = DungeonContractModel.FormatOfferText(
+        lastContractSummary = DungeonContractModel.FormatOfferText(
             runtime.offeredContractIdA,
             runtime.offeredContractIdB);
         GenerateSelectedEncounter();
-        runtime.lastEncounterSummary = DungeonEncounterModel.FormatDetailText(SelectedEncounter);
-        runtime.lastResult = $"Dungeon contract offer refreshed / Next encounter: {SelectedEncounter.DisplayName}";
+        lastEncounterSummary = DungeonEncounterModel.FormatDetailText(SelectedEncounter);
+        lastResult = $"Dungeon contract offer refreshed / Next encounter: {SelectedEncounter.DisplayName}";
         NotifyChanged();
         return true;
     }
@@ -298,7 +302,7 @@ public class ExpeditionDirector : MonoBehaviour
         runtime.rewardPending = true;
         EnsureRunPlan();
         runtime.runPlan.SetRewardPending(true, ActiveRewardDepth);
-        runtime.lastResult = $"Room cleared / Choose Return Portal to bank the reward or Deeper Exit for depth {Depth + 1}.";
+        lastResult = $"Room cleared / Choose Return Portal to bank the reward or Deeper Exit for depth {Depth + 1}.";
 
         NotifyChanged();
         return true;
@@ -328,7 +332,7 @@ public class ExpeditionDirector : MonoBehaviour
         EnsureRunPlan();
         runtime.runPlan.SetCurrentRoom(dungeonId, runtime.depth, runtime.currentRoomIndex);
         runtime.runPlan.SetRewardPending(true, ActiveRewardDepth);
-        runtime.lastResult = $"Deeper exit chosen / Loading depth {runtime.depth}, room {runtime.currentRoomIndex + 1}.";
+        lastResult = $"Deeper exit chosen / Loading depth {runtime.depth}, room {runtime.currentRoomIndex + 1}.";
         NotifyChanged();
         return true;
     }
@@ -352,7 +356,7 @@ public class ExpeditionDirector : MonoBehaviour
         }
 
         ResetToReady();
-        runtime.lastResult = "Return portal banked the expedition reward. Ready for a new expedition.";
+        lastResult = "Return portal banked the expedition reward. Ready for a new expedition.";
         NotifyChanged();
         return true;
     }
@@ -370,7 +374,7 @@ public class ExpeditionDirector : MonoBehaviour
             return false;
         }
 
-        runtime.lastResult = $"Room template assigned: {runtime.runPlan.currentRoomTemplateId}";
+        lastResult = $"Room template assigned: {runtime.runPlan.currentRoomTemplateId}";
         NotifyChanged();
         return true;
     }
@@ -395,7 +399,7 @@ public class ExpeditionDirector : MonoBehaviour
         EnsureRunPlan();
         runtime.runPlan.SetRewardPending(false, 0);
         ResetToReady();
-        runtime.lastResult = $"Expedition failed / Contract: {contractName} / Encounter: {encounterName}";
+        lastResult = $"Expedition failed / Contract: {contractName} / Encounter: {encounterName}";
         NotifyChanged();
         return true;
     }
@@ -417,7 +421,7 @@ public class ExpeditionDirector : MonoBehaviour
         ResolveLootDropper();
         if (lootDropper == null)
         {
-            runtime.lastResult = "Reward pending: no LootDropper found";
+            lastResult = "Reward pending: no LootDropper found";
             Debug.LogWarning("ExpeditionDirector could not grant a reward because no LootDropper was found.", this);
             NotifyChanged();
             return false;
@@ -425,7 +429,7 @@ public class ExpeditionDirector : MonoBehaviour
 
         if (!lootDropper.TryGrantClearReward(ActiveRewardDepth, out ItemInstance item))
         {
-            runtime.lastResult = string.IsNullOrWhiteSpace(lootDropper.LastDropMessage)
+            lastResult = string.IsNullOrWhiteSpace(lootDropper.LastDropMessage)
                 ? "Reward pending: loot grant failed"
                 : lootDropper.LastDropMessage;
             NotifyChanged();
@@ -437,7 +441,7 @@ public class ExpeditionDirector : MonoBehaviour
         {
             runtime.runPlan.SetRewardPending(false, 0);
         }
-        runtime.lastResult = lootDropper.LastRewardAutoConverted
+        lastResult = lootDropper.LastRewardAutoConverted
             ? $"Reward converted: {item.DisplayName} -> {FormatRewards(lootDropper.LastConversionRewards)} / Contract: {ActiveContract.DisplayName} / Encounter: {ActiveEncounter.DisplayName}"
             : $"Reward granted: {item.DisplayName} / Contract: {ActiveContract.DisplayName} / Encounter: {ActiveEncounter.DisplayName}";
         NotifyChanged();
@@ -449,34 +453,54 @@ public class ExpeditionDirector : MonoBehaviour
         TryGrantPendingReward();
     }
 
-    public DungeonSaveData CreateSaveData()
+    public DungeonExpeditionSnapshot CreateSnapshot()
     {
-        EnsureRuntime();
-
-        runtime.version = DungeonExpeditionSnapshot.CurrentVersion;
-        runtime.resumePoint = DungeonExpeditionSnapshot.GetExpectedResumePoint(runtime.state);
-        return runtime.ToSaveData();
+        return TryCreateStableSnapshot(out DungeonExpeditionSnapshot snapshot, out _) ? snapshot : null;
     }
 
-    public void ApplySaveData(DungeonSaveData saveData)
+    public bool TryCreateStableSnapshot(out DungeonExpeditionSnapshot snapshot, out string error)
     {
-        TryApplySaveData(saveData, out _);
-    }
+        snapshot = null;
+        if (!IsStableForWorldSnapshot)
+        {
+            error = "Expedition snapshot is not ready for a stable checkpoint.";
+            return false;
+        }
 
-    public bool TryApplySaveData(DungeonSaveData saveData, out string report)
-    {
-        DungeonExpeditionSnapshot incoming = saveData?.expeditionSnapshot == null
-            ? DungeonExpeditionSnapshot.FromLegacy(saveData)
-            : saveData.expeditionSnapshot.Clone();
-
-        if (!incoming.TryValidate(out report))
+        DungeonExpeditionSnapshot candidate = runtime.Clone();
+        if (!candidate.TryValidate(out error))
         {
             return false;
         }
 
-        runtime = incoming;
+        snapshot = candidate;
+        error = string.Empty;
+        return true;
+    }
+
+    public bool TryRestoreSnapshot(DungeonExpeditionSnapshot incoming, out string report)
+    {
+        if (incoming == null)
+        {
+            report = "Expedition restore failed: snapshot is missing.";
+            return false;
+        }
+
+        DungeonExpeditionSnapshot candidate = incoming.Clone();
+        if (!candidate.TryValidate(out report))
+        {
+            return false;
+        }
+
+        runtime = candidate;
         IsSnapshotReady = true;
-        report = $"Dungeon snapshot v{runtime.version} restored: {runtime.state}/{runtime.resumePoint}, depth {runtime.depth}, room {runtime.currentRoomIndex + 1}.";
+        lastContractSummary = runtime.state == DungeonRunState.Ready
+            ? DungeonContractModel.FormatOfferText(runtime.offeredContractIdA, runtime.offeredContractIdB)
+            : DungeonContractModel.FormatDetailText(ActiveContract);
+        lastEncounterSummary = DungeonEncounterModel.FormatDetailText(
+            runtime.state == DungeonRunState.Ready ? SelectedEncounter : ActiveEncounter);
+        lastResult = "Expedition world state restored.";
+        report = $"Expedition restored: {runtime.state}/{runtime.resumePoint}, depth {runtime.depth}, room {runtime.currentRoomIndex + 1}.";
         NotifyChanged();
         return true;
     }
@@ -535,7 +559,7 @@ public class ExpeditionDirector : MonoBehaviour
 
         if (runtime.runPlan == null)
         {
-            runtime.runPlan = DungeonRunPlan.CreateMigrated(
+            runtime.runPlan = DungeonRunPlan.CreateRestored(
                 dungeonId,
                 runtime.depth,
                 runtime.currentRoomIndex,
@@ -603,9 +627,9 @@ public class ExpeditionDirector : MonoBehaviour
             GenerateSelectedEncounter();
         }
 
-        if (string.IsNullOrWhiteSpace(runtime.lastEncounterSummary))
+        if (string.IsNullOrWhiteSpace(lastEncounterSummary))
         {
-            runtime.lastEncounterSummary = DungeonEncounterModel.FormatDetailText(SelectedEncounter);
+            lastEncounterSummary = DungeonEncounterModel.FormatDetailText(SelectedEncounter);
         }
     }
 

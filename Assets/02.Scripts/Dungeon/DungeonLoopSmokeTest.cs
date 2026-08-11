@@ -8,6 +8,14 @@ public static class DungeonLoopSmokeTest
     {
         StringBuilder builder = new StringBuilder(640);
 
+        if (!WorldCheckpointSelfTest.TryRun(out string checkpointReport))
+        {
+            report = checkpointReport;
+            return false;
+        }
+
+        AppendStep(builder, checkpointReport);
+
         ExpeditionDirector expedition = UnityObject.FindAnyObjectByType<ExpeditionDirector>();
         SimpleInventory inventory = UnityObject.FindAnyObjectByType<SimpleInventory>();
         DefenseSaveManager saveManager = UnityObject.FindAnyObjectByType<DefenseSaveManager>();
@@ -249,10 +257,12 @@ public static class DungeonLoopSmokeTest
             return false;
         }
 
-        DungeonSaveData runningSave = running.ToSaveData();
-        if (!runningSave.expeditionSnapshot.MatchesLegacy(runningSave))
+        DungeonExpeditionSnapshot restoredRunning = running.Clone();
+        if (!restoredRunning.TryValidate(out string restoredRunningError) ||
+            restoredRunning.state != DungeonRunState.Running ||
+            restoredRunning.resumePoint != DungeonRoomResumePoint.RestartCurrentRoom)
         {
-            failure = "Running expedition snapshot does not match its save mirror.";
+            failure = $"Running expedition snapshot did not survive a direct clone: {restoredRunningError}";
             return false;
         }
 
@@ -267,10 +277,12 @@ public static class DungeonLoopSmokeTest
             return false;
         }
 
-        DungeonSaveData awaitingSave = awaitingExit.ToSaveData();
-        if (!awaitingSave.expeditionSnapshot.MatchesLegacy(awaitingSave))
+        DungeonExpeditionSnapshot restoredAwaitingExit = awaitingExit.Clone();
+        if (!restoredAwaitingExit.TryValidate(out string restoredAwaitingError) ||
+            !restoredAwaitingExit.rewardPending ||
+            restoredAwaitingExit.resumePoint != DungeonRoomResumePoint.AwaitingExit)
         {
-            failure = "Awaiting-exit expedition snapshot does not match its save mirror.";
+            failure = $"Awaiting-exit expedition snapshot did not survive a direct clone: {restoredAwaitingError}";
             return false;
         }
 
@@ -292,22 +304,7 @@ public static class DungeonLoopSmokeTest
             return false;
         }
 
-        string readyError = string.Empty;
-        if (!staleReady.TryRepairStaleReadyRunPlan() ||
-            !staleReady.TryValidate(out readyError))
-        {
-            failure = $"Stale Ready expedition snapshot could not be repaired: {readyError}";
-            return false;
-        }
-
-        DungeonSaveData readySave = staleReady.ToSaveData();
-        if (!readySave.expeditionSnapshot.MatchesLegacy(readySave))
-        {
-            failure = "Repaired Ready expedition snapshot does not match its save mirror.";
-            return false;
-        }
-
-        AppendStep(builder, "Validated running, awaiting-exit, and stale-Ready repair snapshot round trips.");
+        AppendStep(builder, "Validated direct running and awaiting-exit snapshots; stale Ready data is rejected without repair.");
         return true;
     }
 

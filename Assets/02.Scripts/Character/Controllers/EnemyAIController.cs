@@ -20,6 +20,29 @@ public class EnemyAIController : MonoBehaviour
     public event System.Action AttackWindupCanceled;
 
     public bool IsWindingUp => windupTarget != null;
+    public WorldActorAction CurrentWorldAction
+    {
+        get
+        {
+            if (actor == null || actor.Health == null || !actor.Health.IsAlive)
+            {
+                return WorldActorAction.Defeated;
+            }
+
+            if (IsWindingUp)
+            {
+                return WorldActorAction.WindingUp;
+            }
+
+            return actor.Motor != null && actor.Motor.HasPath
+                ? WorldActorAction.ChasingTarget
+                : WorldActorAction.Idle;
+        }
+    }
+
+    public float RemainingActionSeconds => IsWindingUp
+        ? Mathf.Max(0f, windupEndTime - Time.time)
+        : 0f;
 
     private void Awake()
     {
@@ -36,6 +59,11 @@ public class EnemyAIController : MonoBehaviour
 
     private void Update()
     {
+        if (GameRuntimeRestoreGate.IsRestoring)
+        {
+            return;
+        }
+
         ResolveTarget();
 
         if (!CanFightTarget())
@@ -124,6 +152,23 @@ public class EnemyAIController : MonoBehaviour
 
         windupTarget = null;
         AttackWindupCanceled?.Invoke();
+    }
+
+    public void RestoreWorldAction(
+        WorldActorAction action,
+        float remainingActionSeconds,
+        CharacterActor restoredTarget)
+    {
+        windupTarget = null;
+        target = restoredTarget == null ? target : restoredTarget;
+        nextChaseRefreshTime = 0f;
+        nextRetargetTime = 0f;
+
+        if (action == WorldActorAction.WindingUp && target != null && target.Health != null && target.Health.IsAlive)
+        {
+            windupTarget = target;
+            windupEndTime = Time.time + Mathf.Max(0.01f, remainingActionSeconds);
+        }
     }
 
     private void ResolveTarget(bool force = false)

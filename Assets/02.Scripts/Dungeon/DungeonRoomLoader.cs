@@ -36,6 +36,7 @@ public sealed class DungeonRoomLoader : MonoBehaviour
     public string CurrentTemplateId => currentTemplate == null ? string.Empty : currentTemplate.TemplateId;
     public string LastLoadMessage => lastLoadMessage;
     public bool HasLoadedRoom => currentRoomScene.IsValid() && currentRoomScene.isLoaded && currentTemplate != null;
+    public bool IsTransitioning => transition != null || pendingEntry != null || unloadRequested;
     public bool HasLoadedActiveRoom => HasLoadedRoom && expedition != null && expedition.IsSnapshotReady && expedition.RunPlan != null &&
                                        loadedRoomSeed == expedition.RunPlan.currentRoomSeed &&
                                        string.Equals(CurrentTemplateId, expedition.CurrentRoomTemplateId, StringComparison.Ordinal);

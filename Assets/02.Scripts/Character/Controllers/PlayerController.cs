@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.AI;
 
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -31,6 +33,54 @@ public class PlayerController : MonoBehaviour
 
     public string LastClickMessage => lastClickMessage;
 
+    public DungeonActorWorldSnapshot CreateWorldSnapshot()
+    {
+        Health health = actor == null ? GetComponent<Health>() : actor.Health;
+        if (health == null)
+        {
+            return null;
+        }
+
+        return new DungeonActorWorldSnapshot
+        {
+            entityId = "hero",
+            archetypeId = "player",
+            team = CharacterTeam.Player,
+            position = transform.position,
+            rotation = transform.rotation,
+            currentHealth = health.Current,
+            maxHealth = health.Max,
+            action = ResolveWorldAction(health),
+            targetEntityId = GetTargetEntityId(pendingAttackTarget),
+            active = gameObject.activeSelf
+        };
+    }
+
+    public bool TryRestoreWorldSnapshot(
+        DungeonActorWorldSnapshot snapshot,
+        IReadOnlyDictionary<string, Health> actorsById,
+        out string error)
+    {
+        if (!WorldSaveSnapshotValidator.TryValidateDungeonActor(snapshot, "hero", CharacterTeam.Player, out error))
+        {
+            return false;
+        }
+
+        Health health = actor == null ? GetComponent<Health>() : actor.Health;
+        if (health == null)
+        {
+            error = "Dungeon hero restore requires Health.";
+            return false;
+        }
+
+        WarpTo(snapshot.position, snapshot.rotation);
+        health.RestoreCurrent(snapshot.currentHealth);
+        gameObject.SetActive(snapshot.active);
+        RestoreAction(snapshot, actorsById);
+        error = string.Empty;
+        return true;
+    }
+
     private void Awake()
     {
         actor = GetComponent<CharacterActor>();
@@ -43,6 +93,11 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        if (GameRuntimeRestoreGate.IsRestoring)
+        {
+            return;
+        }
+
         if (WasPrimaryClickPressed())
         {
             if (!ignoreClicksOverUi || !IsPointerOverUi())
@@ -215,6 +270,89 @@ public class PlayerController : MonoBehaviour
         pendingAttackTarget = null;
         attackCommandMode = AttackCommandMode.None;
         nextChaseRefreshTime = 0f;
+    }
+
+    private WorldActorAction ResolveWorldAction(Health health)
+    {
+        if (health == null || !health.IsAlive)
+        {
+            return WorldActorAction.Defeated;
+        }
+
+        return attackCommandMode switch
+        {
+            AttackCommandMode.ChaseTarget => WorldActorAction.ChasingTarget,
+            AttackCommandMode.Stationary => WorldActorAction.Attacking,
+            _ => actor != null && actor.Motor != null && actor.Motor.HasPath
+                ? WorldActorAction.Moving
+                : WorldActorAction.Idle
+        };
+    }
+
+    private void RestoreAction(
+        DungeonActorWorldSnapshot snapshot,
+        IReadOnlyDictionary<string, Health> actorsById)
+    {
+        pendingAttackTarget = null;
+        if (!string.IsNullOrWhiteSpace(snapshot.targetEntityId) && actorsById != null)
+        {
+            actorsById.TryGetValue(snapshot.targetEntityId, out pendingAttackTarget);
+        }
+
+        if (snapshot.action == WorldActorAction.ChasingTarget && IsValidAttackTarget(pendingAttackTarget))
+        {
+            attackCommandMode = AttackCommandMode.ChaseTarget;
+            nextChaseRefreshTime = 0f;
+            return;
+        }
+
+        if (snapshot.action == WorldActorAction.Attacking)
+        {
+            attackCommandMode = AttackCommandMode.Stationary;
+            stationaryAttackPoint = pendingAttackTarget == null
+                ? transform.position + transform.forward
+                : pendingAttackTarget.transform.position;
+            return;
+        }
+
+        ClearAttackCommand();
+    }
+
+    private void WarpTo(Vector3 position, Quaternion rotation)
+    {
+        CharacterMotor motor = actor == null ? GetComponent<CharacterMotor>() : actor.Motor;
+        motor?.Stop();
+        NavMeshAgent agent = GetComponent<NavMeshAgent>();
+        if (agent != null && agent.enabled &&
+            NavMesh.SamplePosition(position, out NavMeshHit hit, 2f, agent.areaMask))
+        {
+            if (agent.isOnNavMesh)
+            {
+                agent.Warp(hit.position);
+            }
+            else
+            {
+                agent.enabled = false;
+                transform.position = hit.position;
+                agent.enabled = true;
+            }
+        }
+        else
+        {
+            transform.position = position;
+        }
+
+        transform.rotation = rotation;
+    }
+
+    private static string GetTargetEntityId(Health target)
+    {
+        if (target != null && target.TryGetComponent(out WorldEntityIdentity identity))
+        {
+            return identity.EntityId;
+        }
+
+        return string.Empty;
     }
 
     private bool IsValidAttackTarget(Health target)

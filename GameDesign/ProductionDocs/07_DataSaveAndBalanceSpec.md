@@ -1,22 +1,24 @@
 # Data, Save, And Balance
 
-## 저장 소유권
+## World checkpoint v2 ownership
 
-- `DefenseRuntimeState`는 전선, 벽, 압력, 자원, 진행의 저장 권한이다.
-- 원정 저장의 단일 권한은 v9 `DungeonExpeditionSnapshot`이다. 계약, `runSeed`, 깊이, 현재 방 템플릿 식별자, 방 배치 계획, 미확정 보상, 원정 상태를 한 스냅샷으로 저장하며, 이전 최상위 필드는 마이그레이션 호환 미러일 뿐이다.
-- 아이템/장비/인벤토리와 UI 설정은 기존 저장 스키마와 마이그레이션 경로를 사용한다.
-- 시각 배우, Animator, HUD는 저장 권한을 만들지 않는다.
+- `GameProfileSave` v2 is one checksummed, generation-numbered envelope. It separates `AccountSnapshot` (currencies, defense progression, expedition lifecycle, hero equipment, inventory, UI settings), `DefenseWorldSnapshot`, and the optional open `DungeonWorldSnapshot`.
+- Defense world captures the wall building and every generated defender/enemy by stable ID, faction, transform, home position, health, action, and target. Dungeon world captures the loaded template/room seed, combat lifecycle, hero, and every spawned dungeon enemy with the same physical state.
+- UI result messages and presentation summaries are runtime-only projections; the checkpoint contains no last-result or descriptive text fields.
+- `DefenseSaveManager` writes `incremental_diablo_world_v2.json` after a stable tick barrier only. Additive-room loads, room start countdowns, defeated-unit replacement, actor rebuilds, and active restore projections reject checkpoint capture instead of normalizing data during save.
+- The old `incremental_diablo_profile_v1.json` and `incremental_diablo_save.json` remain untouched evidence. v2 never reads, migrates, or overwrites either file.
 
-## 원정 저장 규칙
+## Write, recovery, and restore rules
 
-- 게임 시작과 불러오기는 검증된 스냅샷 또는 새 `Ready` 스냅샷이 적용되기 전까지 방 로드·전투 시작을 하지 않는다. `Running`은 같은 시드·템플릿·앵커로 입구에서 현재 방을 다시 시작하는 체크포인트이고, `AwaitingExit`은 두 포탈과 미확정 보상을 그대로 복원하는 체크포인트다. 시각 배우, 남은 체력, Animator 시간은 저장하지 않는다.
-- `DungeonRoomLoader`가 카탈로그에서 최초 선택한 템플릿 ID는 `DungeonRunPlan`에 고정하며, 새 난수를 굴리거나 카탈로그의 다른 방으로 바꾸지 않는다. 같은 템플릿이 로드되고 적 앵커가 준비된 뒤에만 전투를 시작한다.
-- 방 정리 뒤에는 `AwaitingExit` 상태와 미확정 보상을 함께 저장한다. 귀환 포탈은 이 보상을 확정한 뒤 준비 상태로 바꾸고, 심층 출구는 미확정 보상을 유지한 채 깊이·방 인덱스·시드 계획을 다음 방으로 전진시킨다. 사망은 미확정 보상을 폐기한 뒤 준비 상태로 바꾼다.
-- 저장 필드를 추가하면 기본값, 이전 저장 마이그레이션, 불러오기 실패 처리를 함께 정의한다.
-- 현재 스키마 v9는 `DungeonExpeditionSnapshot`과 호환 미러의 일치를 검사한다. v8 이하 저장은 기존 깊이·방 인덱스·계약/조우 시드에서 같은 런 계획과 체크포인트를 한 번 구성한다. v7의 미지급 `Cleared` 원정은 `AwaitingExit`로, 이미 지급된 `Cleared` 및 이전 `Failed` 원정은 `Ready`로 마이그레이션한다.
+- Every write seals the payload with SHA-256, flushes a temporary file, rereads and validates that file, then atomically promotes it. A corrupt primary is quarantined; primary and `.bak` are both validated and the highest valid generation wins.
+- Restore is two-pass: validate all account/world snapshots and room catalog first, then enter `GameRuntimeRestoreGate` while account owners, defense actors, additive room, hero, dungeon enemies, and combat state are projected. Autosave, combat, spawning, and simulation remain paused until projection finishes.
+- `Running` resumes the same loaded template with hero/enemy positions, health, action state, and target identities. `AwaitingExit` resumes the open cleared room and portal choice. Return banks reward, deeper retains it, and death discards it before `Ready`.
+- Offline simulation is deliberately skipped for a v2 world checkpoint: it would alter an actual saved battlefield between capture and resume.
 
-## 확장 및 검증
+## Acceptance checks
 
-- 깊이, 적, 보상은 손제작 레벨 표가 아니라 밴드, 공식, 방 템플릿, 시드 계획으로 확장한다.
-- 저장 구조 변경은 새 저장과 기존 저장의 불러오기를 모두 확인한다.
-- 원정 밸런스 모델 변경은 해당 내보내기 검증을 갱신한다.
+- Fresh v2 profile -> save -> restart/load: wall and all visible defense actors retain count, position, and health.
+- During a frontline unit's defeated-body or replacement interval, save waits for the roster to settle; it must not serialize a missing or newly recreated actor.
+- In a running room, save after a partial hit exchange -> restart/load: the same template, hero, enemy count, transforms, health, and combat action resume.
+- Make a second save, corrupt only the primary, then load: the highest valid primary/backup generation is selected without touching the v1 files.
+- Do not accept E3-D until the return, deeper, death, `Running`, and `AwaitingExit` paths pass this checklist in Play Mode.

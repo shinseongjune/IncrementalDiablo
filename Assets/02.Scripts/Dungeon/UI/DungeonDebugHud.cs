@@ -133,7 +133,7 @@ public class DungeonDebugHud : MonoBehaviour
         if (DrawButton("Load", saveManager != null))
         {
             lastActionMessage = saveManager.TryLoad()
-                ? "Loaded playable loop snapshot."
+                ? "Validated world checkpoint; projection is running."
                 : "Load failed; save file missing or invalid.";
             lastSaveValidationMessage = string.Empty;
         }

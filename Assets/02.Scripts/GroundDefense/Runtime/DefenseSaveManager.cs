@@ -1,49 +1,67 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using UnityEngine;
 
 [DefaultExecutionOrder(1000)]
 public class DefenseSaveManager : MonoBehaviour
 {
-    private const int CurrentSaveVersion = 9;
     public const string NoSaveRecoveryGuidance =
-        "No save yet. Start the frontline, choose a contract, clear a room, then save after handling the reward.";
+        "No world checkpoint yet. Start the frontline, choose a contract, enter a room, then save from a stable room state.";
 
+    [Header("Account Owners")]
     [SerializeField] private DefenseDirector director;
     [SerializeField] private ExpeditionDirector expedition;
     [SerializeField] private SimpleInventory inventory;
     [SerializeField] private EquipmentSlots equipmentSlots;
     [SerializeField] private PlayableLoopHud playableHud;
-    [SerializeField] private string saveFileName = "incremental_diablo_save.json";
+
+    [Header("World Owners")]
+    [SerializeField] private GroundDefenseNavMeshBattlefield defenseBattlefield;
+    [SerializeField] private DungeonRoomLoader roomLoader;
+    [SerializeField] private CombatRoom combatRoom;
+    [SerializeField] private EnemySpawner enemySpawner;
+    [SerializeField] private PlayerController player;
+
+    [Header("Checkpoint")]
+    [SerializeField] private string saveFileName = "incremental_diablo_world_v2.json";
     [SerializeField] private bool loadOnStart = true;
-    [SerializeField] private bool simulateOfflineOnLoad = true;
-    [SerializeField] private float maxOfflineSeconds = 28800f;
+    [SerializeField] private bool simulateOfflineOnLoad = false;
     [SerializeField] private float autoSaveIntervalSeconds = 15f;
+    [SerializeField, Min(1f)] private float restoreTimeoutSeconds = 12f;
+
+    private const string LegacySaveFileName = "incremental_diablo_save.json";
+    private const string ProfileV1SaveFileName = "incremental_diablo_profile_v1.json";
 
     private float autoSaveElapsed;
-    private bool lastLoadHasUnresolvedItems;
+    private bool primarySaveIsTrusted = true;
+    private long latestKnownGeneration;
+    private Coroutine restoreRoutine;
 
     public string SavePath => Path.Combine(Application.persistentDataPath, saveFileName);
+    public string BackupSavePath => SavePath + ".bak";
+    public string LegacySavePath => Path.Combine(Application.persistentDataPath, LegacySaveFileName);
+    public string ProfileV1SavePath => Path.Combine(Application.persistentDataPath, ProfileV1SaveFileName);
     public bool HasSaveFile => File.Exists(SavePath);
+    public bool IsRestoreInProgress => restoreRoutine != null || GameRuntimeRestoreGate.IsRestoring;
     public string LastLoadReport { get; private set; } = "Load has not run.";
 
     private void Start()
     {
         ResolveReferences();
-
-        bool restored = loadOnStart && TryLoadAndSimulateOfflineProgress();
-        if (!restored)
+        bool queuedRestore = loadOnStart && TryLoadAndSimulateOfflineProgress();
+        if (!queuedRestore)
         {
-            // Nothing may start a dungeon from the scene's serialized runtime fields. A fresh session is
-            // an explicit Ready snapshot, and a failed restore leaves the old file untouched for recovery.
             expedition?.InitializeFreshSnapshot();
         }
     }
 
     private void Update()
     {
-        if (autoSaveIntervalSeconds <= 0f)
+        if (IsRestoreInProgress || autoSaveIntervalSeconds <= 0f)
         {
             return;
         }
@@ -58,7 +76,7 @@ public class DefenseSaveManager : MonoBehaviour
 
     private void OnApplicationPause(bool paused)
     {
-        if (paused)
+        if (paused && !IsRestoreInProgress)
         {
             TrySave();
         }
@@ -66,58 +84,75 @@ public class DefenseSaveManager : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        TrySave();
+        if (!IsRestoreInProgress)
+        {
+            TrySave();
+        }
     }
 
     public bool TrySave()
     {
-        if (!TryCreateSaveDataSnapshot(out GameSaveData saveData))
+        if (IsRestoreInProgress)
         {
-            Debug.LogWarning("DefenseSaveManager cannot save without a DefenseDirector.", this);
+            Debug.LogWarning("World checkpoint skipped while a restore is still projecting.", this);
             return false;
         }
 
-        try
+        if (!TryCreateProfile(out GameProfileSave profile, out string captureFailure))
         {
-            string saveDirectory = Path.GetDirectoryName(SavePath);
-            if (!string.IsNullOrEmpty(saveDirectory))
-            {
-                Directory.CreateDirectory(saveDirectory);
-            }
-
-            File.WriteAllText(SavePath, JsonUtility.ToJson(saveData, true));
-            autoSaveElapsed = 0f;
-            return true;
-        }
-        catch (Exception exception)
-        {
-            Debug.LogWarning($"DefenseSaveManager failed to save to {SavePath}: {exception.Message}", this);
+            Debug.LogWarning($"DefenseSaveManager cannot capture a stable world checkpoint: {captureFailure}", this);
             return false;
         }
+
+        if (!GameProfileSaveValidator.TryValidate(profile, inventory?.DefinitionRegistry, out string validationReport))
+        {
+            Debug.LogWarning($"DefenseSaveManager refused to write an invalid world checkpoint: {validationReport}", this);
+            return false;
+        }
+
+        if (!TryWriteProfile(profile, out string failureReason))
+        {
+            Debug.LogWarning(failureReason, this);
+            return false;
+        }
+
+        autoSaveElapsed = 0f;
+        return true;
     }
 
-    public GameSaveData CreateSaveDataSnapshot()
+    public GameProfileSave CreateSaveDataSnapshot()
     {
-        return TryCreateSaveDataSnapshot(out GameSaveData saveData) ? saveData : null;
+        return TryCreateProfile(out GameProfileSave profile, out _) ? profile : null;
     }
 
     public bool TryValidateCurrentSaveData(out string report)
     {
         ResolveReferences();
-        GameSaveData saveData = CreateSaveDataSnapshot();
-        return GameSaveDataDiagnostics.TryValidate(saveData, inventory?.DefinitionRegistry, out report);
+        if (!TryCreateProfile(out GameProfileSave profile, out string captureFailure))
+        {
+            report = captureFailure;
+            return false;
+        }
+
+        return GameProfileSaveValidator.TryValidate(profile, inventory?.DefinitionRegistry, out report);
     }
 
     public bool TryValidateSavedFile(out string report)
     {
         ResolveReferences();
-        if (!TryReadSaveFile(out GameSaveData saveData, out string failureReason))
+        if (!TryReadProfile(out GameProfileSave profile, out string source, out string failureReason))
         {
             report = failureReason;
             return false;
         }
 
-        return GameSaveDataDiagnostics.TryValidate(saveData, inventory?.DefinitionRegistry, out report);
+        bool valid = GameProfileSaveValidator.TryValidate(profile, inventory?.DefinitionRegistry, out report);
+        if (valid && source == BackupSavePath)
+        {
+            report = $"Backup recovery candidate. {report}";
+        }
+
+        return valid;
     }
 
     public bool TryLoad()
@@ -133,532 +168,465 @@ public class DefenseSaveManager : MonoBehaviour
     private bool TryLoadInternal(bool applyOfflineProgress)
     {
         ResolveReferences();
-
-        if (director == null)
+        if (IsRestoreInProgress)
         {
-            LastLoadReport = "Load failed: DefenseDirector is missing.";
+            LastLoadReport = "Load blocked: a world restore is already in progress.";
             return false;
         }
 
-        if (!HasSaveFile)
+        if (director == null || expedition == null || defenseBattlefield == null)
         {
-            LastLoadReport = NoSaveRecoveryGuidance;
+            LastLoadReport = "Load failed: one or more account/world owners are missing.";
             return false;
         }
 
-        if (!TryReadSaveFile(out GameSaveData saveData, out string failureReason))
+        if (!HasSaveFile && !File.Exists(BackupSavePath))
+        {
+            LastLoadReport = File.Exists(ProfileV1SavePath) || File.Exists(LegacySavePath)
+                ? $"Older saves remain untouched at {ProfileV1SavePath} / {LegacySavePath}. World v2 starts a separate checkpoint and never imports them."
+                : NoSaveRecoveryGuidance;
+            return false;
+        }
+
+        if (!TryReadProfile(out GameProfileSave profile, out string source, out string failureReason))
         {
             LastLoadReport = failureReason;
             Debug.LogWarning(failureReason, this);
             return false;
         }
 
-        if (!GameSaveDataDiagnostics.TryValidate(saveData, inventory?.DefinitionRegistry, out string validationReport))
+        if (!TryPreflightRestore(profile, out failureReason))
         {
-            LastLoadReport = validationReport;
-            Debug.LogWarning($"DefenseSaveManager refused an invalid save file: {validationReport}", this);
+            LastLoadReport = $"Load preflight failed: {failureReason}";
+            Debug.LogWarning(LastLoadReport, this);
             return false;
         }
 
-        try
+        restoreRoutine = StartCoroutine(RestoreProfileCoroutine(profile, source, applyOfflineProgress));
+        LastLoadReport = $"Validated generation {profile.generation}; restoring world projection.";
+        return true;
+    }
+
+    private bool TryCreateProfile(out GameProfileSave profile, out string failureReason)
+    {
+        ResolveReferences();
+        profile = null;
+        failureReason = string.Empty;
+        if (director == null || expedition == null || defenseBattlefield == null || !expedition.TryCreateStableSnapshot(out DungeonExpeditionSnapshot expeditionSnapshot, out failureReason))
         {
-            if (director.Wallet != null && saveData.currencies != null)
+            failureReason = string.IsNullOrWhiteSpace(failureReason)
+                ? "Account or expedition owner is missing."
+                : failureReason;
+            return false;
+        }
+
+        if (!defenseBattlefield.TryCreateWorldSnapshot(out DefenseWorldSnapshot defenseWorld, out failureReason))
+        {
+            return false;
+        }
+
+        if (!TryCreateDungeonWorldSnapshot(expeditionSnapshot, out DungeonWorldSnapshot dungeonWorld, out failureReason))
+        {
+            return false;
+        }
+
+        profile = new GameProfileSave
+        {
+            formatVersion = GameProfileSave.CurrentFormatVersion,
+            generation = Math.Max(1L, latestKnownGeneration + 1L),
+            savedAtUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
+            account = new AccountSnapshot
             {
-                director.Wallet.ImportAmounts(saveData.currencies);
-            }
+                playTimeSeconds = director.Runtime.TotalElapsed,
+                currencies = director.Wallet == null ? Array.Empty<ResourceAmount>() : director.Wallet.ExportAmounts(),
+                defense = director.CreateSaveData(),
+                expedition = expeditionSnapshot,
+                hero = CreateHeroSaveData(),
+                inventory = inventory == null ? new InventorySaveData() : inventory.CreateSaveData(),
+                uiSettings = playableHud == null ? new UiSettingsSaveData() : playableHud.CreateUiSettingsSaveData()
+            },
+            defenseWorld = defenseWorld,
+            dungeonWorld = dungeonWorld
+        };
+        GameProfileSaveValidator.Seal(profile);
+        return true;
+    }
 
-            director.ApplySaveData(saveData.defense);
-            LastLoadReport = AppendLoadReport(LastLoadReport, BuildDefenseLoadSummary(saveData.defense));
-            if (expedition != null)
-            {
-                if (!expedition.TryApplySaveData(saveData.dungeon, out string dungeonRestoreReport))
-                {
-                    LastLoadReport = $"Load failed: {dungeonRestoreReport}";
-                    Debug.LogWarning(LastLoadReport, this);
-                    return false;
-                }
-
-                LastLoadReport = AppendLoadReport(LastLoadReport, dungeonRestoreReport);
-            }
-
-            if (inventory != null)
-            {
-                inventory.ApplySaveData(saveData.inventory);
-                LastLoadReport = $"{LastLoadReport} {inventory.LastRestoreReport}";
-            }
-
-            RestoreEquipmentState(saveData);
-            if (playableHud != null)
-            {
-                playableHud.ApplyUiSettingsSaveData(saveData.uiSettings);
-                LastLoadReport = AppendLoadReport(LastLoadReport, BuildUiSettingsLoadSummary(saveData.uiSettings));
-            }
-
-            if (applyOfflineProgress)
-            {
-                ApplyOfflineProgress(saveData);
-            }
-
-            autoSaveElapsed = 0f;
-            if (lastLoadHasUnresolvedItems)
-            {
-                Debug.LogWarning(LastLoadReport, this);
-            }
-
+    private bool TryCreateDungeonWorldSnapshot(
+        DungeonExpeditionSnapshot expeditionSnapshot,
+        out DungeonWorldSnapshot snapshot,
+        out string failureReason)
+    {
+        snapshot = null;
+        failureReason = string.Empty;
+        if (expeditionSnapshot.state == DungeonRunState.Ready)
+        {
             return true;
         }
-        catch (Exception exception)
+
+        if (roomLoader == null || combatRoom == null || player == null || roomLoader.IsTransitioning || !roomLoader.HasLoadedActiveRoom ||
+            expeditionSnapshot.runPlan == null || !string.Equals(roomLoader.CurrentTemplateId, expeditionSnapshot.runPlan.currentRoomTemplateId, StringComparison.Ordinal))
         {
-            LastLoadReport = $"Load failed at {SavePath}: {exception.Message}";
-            Debug.LogWarning($"DefenseSaveManager failed to load from {SavePath}: {exception.Message}", this);
+            failureReason = "Dungeon checkpoint blocked until the active additive room and its owner state are stable.";
             return false;
+        }
+
+        if (!combatRoom.TryCreateWorldSnapshot(out DungeonCombatWorldSnapshot combat, out failureReason))
+        {
+            return false;
+        }
+
+        DungeonActorWorldSnapshot hero = player.CreateWorldSnapshot();
+        if (hero == null)
+        {
+            failureReason = "Dungeon checkpoint requires the active hero Health owner.";
+            return false;
+        }
+
+        DungeonActorWorldSnapshot[] actors = Array.Empty<DungeonActorWorldSnapshot>();
+        if (expeditionSnapshot.state == DungeonRunState.Running)
+        {
+            if (enemySpawner == null || !enemySpawner.TryCreateWorldSnapshots(out actors, out failureReason))
+            {
+                return false;
+            }
+        }
+
+        snapshot = new DungeonWorldSnapshot
+        {
+            isOpen = true,
+            templateId = roomLoader.CurrentTemplateId,
+            roomSeed = expeditionSnapshot.runPlan.currentRoomSeed,
+            roomIndex = expeditionSnapshot.currentRoomIndex,
+            combat = combat,
+            hero = hero,
+            actors = actors
+        };
+        return WorldSaveSnapshotValidator.TryValidate(snapshot, expeditionSnapshot, out failureReason);
+    }
+
+    private bool TryPreflightRestore(GameProfileSave profile, out string failureReason)
+    {
+        failureReason = string.Empty;
+        if (!GameProfileSaveValidator.TryValidate(profile, inventory?.DefinitionRegistry, out failureReason))
+        {
+            return false;
+        }
+
+        DungeonExpeditionSnapshot expeditionSnapshot = profile.account?.expedition;
+        if (expeditionSnapshot == null || expeditionSnapshot.state == DungeonRunState.Ready)
+        {
+            return true;
+        }
+
+        if (profile.dungeonWorld == null || roomLoader == null || combatRoom == null || enemySpawner == null || player == null)
+        {
+            failureReason = "Active dungeon restore requires all dungeon world owners.";
+            return false;
+        }
+
+        if (!roomLoader.TryValidateCatalog(out failureReason))
+        {
+            return false;
+        }
+
+        if (!string.Equals(profile.dungeonWorld.templateId, expeditionSnapshot.runPlan?.currentRoomTemplateId, StringComparison.Ordinal))
+        {
+            failureReason = "Dungeon world template does not match its saved run plan.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private IEnumerator RestoreProfileCoroutine(GameProfileSave profile, string source, bool applyOfflineProgress)
+    {
+        bool restored = false;
+        string failure = string.Empty;
+        GameRuntimeRestoreGate.BeginRestore();
+        try
+        {
+            if (!TryApplyAccountSnapshot(profile.account, out failure) ||
+                !defenseBattlefield.TryRestoreWorldSnapshot(profile.defenseWorld, out failure) ||
+                !expedition.TryRestoreSnapshot(profile.account.expedition, out failure))
+            {
+                yield break;
+            }
+
+            if (profile.dungeonWorld != null && profile.dungeonWorld.isOpen)
+            {
+                float deadline = Time.unscaledTime + restoreTimeoutSeconds;
+                while (roomLoader != null && !roomLoader.HasLoadedActiveRoom && Time.unscaledTime < deadline)
+                {
+                    yield return null;
+                }
+
+                if (roomLoader == null || !roomLoader.HasLoadedActiveRoom ||
+                    !string.Equals(roomLoader.CurrentTemplateId, profile.dungeonWorld.templateId, StringComparison.Ordinal))
+                {
+                    failure = "Dungeon restore timed out before its saved additive room became active.";
+                    yield break;
+                }
+
+                CharacterActor heroActor = player.GetComponent<CharacterActor>();
+                if (!enemySpawner.TryRestoreWorldSnapshots(profile.dungeonWorld.actors, heroActor, out List<Health> restoredEnemies, out failure))
+                {
+                    yield break;
+                }
+
+                Dictionary<string, Health> actorsById = new Dictionary<string, Health>(StringComparer.Ordinal)
+                {
+                    ["hero"] = heroActor == null ? null : heroActor.Health
+                };
+                for (int i = 0; i < restoredEnemies.Count; i++)
+                {
+                    Health enemy = restoredEnemies[i];
+                    WorldEntityIdentity identity = enemy == null ? null : enemy.GetComponent<WorldEntityIdentity>();
+                    if (enemy != null && identity != null && !string.IsNullOrWhiteSpace(identity.EntityId))
+                    {
+                        actorsById[identity.EntityId] = enemy;
+                    }
+                }
+
+                if (!player.TryRestoreWorldSnapshot(profile.dungeonWorld.hero, actorsById, out failure) ||
+                    !combatRoom.TryRestoreWorldSnapshot(profile.dungeonWorld.combat, heroActor == null ? null : heroActor.Health, restoredEnemies, out failure))
+                {
+                    yield break;
+                }
+            }
+
+            if (playableHud != null && profile.account.uiSettings != null)
+            {
+                playableHud.ApplyUiSettingsSaveData(profile.account.uiSettings);
+            }
+
+            if (applyOfflineProgress && simulateOfflineOnLoad)
+            {
+                Debug.Log("Offline simulation skipped: a world checkpoint resumes the authored live state exactly.", this);
+            }
+
+            latestKnownGeneration = Math.Max(latestKnownGeneration, profile.generation);
+            autoSaveElapsed = 0f;
+            string recovery = source == BackupSavePath ? "Recovered the highest valid backup generation." : "World checkpoint loaded.";
+            LastLoadReport = $"{recovery} {GameProfileSaveValidator.BuildShortSummary(profile)}";
+            restored = true;
+        }
+        finally
+        {
+            GameRuntimeRestoreGate.EndRestore();
+            restoreRoutine = null;
+            if (!restored)
+            {
+                LastLoadReport = $"Load projection failed without writing a replacement checkpoint: {failure}";
+                Debug.LogWarning(LastLoadReport, this);
+            }
         }
     }
 
-    private bool TryReadSaveFile(out GameSaveData saveData, out string failureReason)
+    private bool TryApplyAccountSnapshot(AccountSnapshot account, out string failureReason)
     {
-        saveData = null;
         failureReason = string.Empty;
-
-        if (!HasSaveFile)
+        if (account == null)
         {
-            failureReason = $"Save file missing at {SavePath}.";
+            failureReason = "Account snapshot is missing.";
             return false;
         }
 
         try
         {
-            string json = File.ReadAllText(SavePath);
-            if (string.IsNullOrWhiteSpace(json))
+            inventory?.ApplySaveData(account.inventory);
+            RestoreEquipmentState(account);
+            if (director.Wallet != null && account.currencies != null)
             {
-                failureReason = $"Save file is empty at {SavePath}.";
-                return false;
+                director.Wallet.ImportAmounts(account.currencies);
             }
 
-            saveData = JsonUtility.FromJson<GameSaveData>(json);
-            if (saveData == null)
-            {
-                failureReason = $"Save file could not be parsed at {SavePath}.";
-                return false;
-            }
-
-            if (!TryMigrateSaveData(saveData, out failureReason))
-            {
-                saveData = null;
-                return false;
-            }
-
+            director.ApplySaveData(account.defense);
             return true;
         }
         catch (Exception exception)
         {
-            failureReason = $"Save file read failed at {SavePath}: {exception.Message}";
+            failureReason = $"Account projection failed: {exception.Message}";
             return false;
         }
     }
 
     private HeroSaveData CreateHeroSaveData()
     {
-        long[] equippedItemInstanceIds = inventory == null
-            ? new long[0]
-            : inventory.GetEquippedItemInstanceIds();
-
+        long[] equippedItemInstanceIds = inventory == null ? Array.Empty<long>() : inventory.GetEquippedItemInstanceIds();
         if (equippedItemInstanceIds.Length == 0 && equipmentSlots != null)
         {
             equippedItemInstanceIds = equipmentSlots.GetEquippedItemInstanceIds();
         }
 
-        return new HeroSaveData
-        {
-            equippedItemInstanceIds = equippedItemInstanceIds
-        };
+        return new HeroSaveData { equippedItemInstanceIds = equippedItemInstanceIds };
     }
 
-    private static string BuildDefenseLoadSummary(DefenseSaveData defense)
+    private bool TryReadProfile(out GameProfileSave profile, out string source, out string failureReason)
     {
-        if (defense == null)
+        profile = null;
+        source = string.Empty;
+        failureReason = string.Empty;
+        bool primaryValid = TryReadCandidate(SavePath, out GameProfileSave primary, out string primaryFailure);
+        bool backupValid = TryReadCandidate(BackupSavePath, out GameProfileSave backup, out string backupFailure);
+        primarySaveIsTrusted = primaryValid;
+
+        if (!primaryValid && !backupValid)
         {
-            return "Defense restore: missing.";
-        }
-
-        int wallHealth = Mathf.CeilToInt(Mathf.Max(0f, defense.wallCurrentHealth));
-        float progress = Mathf.Max(0f, defense.frontlineProgress);
-        return $"Defense restored: FL {Mathf.Max(1, defense.frontlineLevel)}, {defense.state}/{defense.mode}, wall {wallHealth}, progress {progress:0.#}.";
-    }
-
-    private static string BuildUiSettingsLoadSummary(UiSettingsSaveData uiSettings)
-    {
-        if (uiSettings == null)
-        {
-            return "HUD settings restored: default compact guide.";
-        }
-
-        string density = uiSettings.useCompactStatusText ? "compact" : "detailed";
-        string guide = uiSettings.showFirstSessionGuide ? "guide on" : "guide off";
-        return $"HUD settings restored: {density}, {guide}.";
-    }
-
-    private static string AppendLoadReport(string report, string detail)
-    {
-        if (string.IsNullOrWhiteSpace(report))
-        {
-            return detail;
-        }
-
-        if (string.IsNullOrWhiteSpace(detail))
-        {
-            return report;
-        }
-
-        return $"{report} {detail}";
-    }
-
-    private bool TryCreateSaveDataSnapshot(out GameSaveData saveData)
-    {
-        ResolveReferences();
-        saveData = null;
-
-        if (director == null)
-        {
+            failureReason = $"World checkpoint recovery failed. Primary: {primaryFailure} Backup: {backupFailure}";
             return false;
         }
 
-        if (expedition != null && !expedition.IsSnapshotReady)
-        {
-            return false;
-        }
-
-        saveData = new GameSaveData
-        {
-            version = CurrentSaveVersion,
-            savedAtUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
-            playTimeSeconds = director.Runtime.TotalElapsed,
-            currencies = director.Wallet == null ? null : director.Wallet.ExportAmounts(),
-            defense = director.CreateSaveData(),
-            dungeon = expedition == null ? new DungeonSaveData() : expedition.CreateSaveData(),
-            hero = CreateHeroSaveData(),
-            inventory = inventory == null ? new InventorySaveData() : inventory.CreateSaveData(),
-            uiSettings = playableHud == null ? new UiSettingsSaveData() : playableHud.CreateUiSettingsSaveData()
-        };
-
+        profile = WorldCheckpointRecovery.SelectHighestValid(primaryValid ? primary : null, backupValid ? backup : null);
+        bool useBackup = profile == backup;
+        source = useBackup ? BackupSavePath : SavePath;
+        latestKnownGeneration = Math.Max(latestKnownGeneration, profile.generation);
         return true;
     }
 
-    private bool TryMigrateSaveData(GameSaveData saveData, out string failureReason)
+    private bool TryReadCandidate(string path, out GameProfileSave profile, out string failureReason)
+    {
+        profile = null;
+        failureReason = string.Empty;
+        if (!File.Exists(path))
+        {
+            failureReason = $"Missing at {path}.";
+            return false;
+        }
+
+        try
+        {
+            string json = File.ReadAllText(path);
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                failureReason = $"Empty at {path}.";
+                return false;
+            }
+
+            profile = JsonUtility.FromJson<GameProfileSave>(json);
+            if (!GameProfileSaveValidator.TryValidate(profile, inventory?.DefinitionRegistry, out string validationReport))
+            {
+                profile = null;
+                failureReason = $"Invalid at {path}: {validationReport}";
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception exception)
+        {
+            failureReason = $"Read failed at {path}: {exception.Message}";
+            return false;
+        }
+    }
+
+    private bool TryWriteProfile(GameProfileSave profile, out string failureReason)
     {
         failureReason = string.Empty;
-        if (saveData == null)
+        string temporaryPath = SavePath + ".tmp";
+        try
         {
-            failureReason = "Save migration failed: save data is null.";
+            string saveDirectory = Path.GetDirectoryName(SavePath);
+            if (!string.IsNullOrEmpty(saveDirectory))
+            {
+                Directory.CreateDirectory(saveDirectory);
+            }
+
+            GameProfileSaveValidator.Seal(profile);
+            WriteTextAndFlush(temporaryPath, JsonUtility.ToJson(profile, true));
+            if (!TryReadCandidate(temporaryPath, out _, out string tempFailure))
+            {
+                failureReason = $"World checkpoint temporary write did not round-trip: {tempFailure}";
+                return false;
+            }
+
+            if (!HasSaveFile)
+            {
+                File.Move(temporaryPath, SavePath);
+            }
+            else if (primarySaveIsTrusted)
+            {
+                File.Replace(temporaryPath, SavePath, BackupSavePath, ignoreMetadataErrors: true);
+            }
+            else
+            {
+                PromoteAfterInvalidPrimary(temporaryPath);
+            }
+
+            latestKnownGeneration = Math.Max(latestKnownGeneration, profile.generation);
+            primarySaveIsTrusted = true;
+            return true;
+        }
+        catch (Exception exception)
+        {
+            failureReason = $"World checkpoint write failed at {SavePath}: {exception.Message}";
             return false;
         }
-
-        int sourceVersion = saveData.version;
-        if (sourceVersion >= CurrentSaveVersion)
+        finally
         {
-            if (saveData.dungeon?.expeditionSnapshot == null)
+            if (File.Exists(temporaryPath))
             {
-                failureReason = "Save migration failed: v9 dungeon snapshot is missing.";
-                return false;
-            }
-
-            // Ready has no resumable room or pending reward. Recover only this harmless stale mirror
-            // shape before strict validation; active snapshots still fail closed if their plan is invalid.
-            saveData.dungeon.expeditionSnapshot.TryRepairStaleReadyRunPlan();
-
-            if (!saveData.dungeon.expeditionSnapshot.TryValidate(out string snapshotError))
-            {
-                failureReason = $"Save migration failed: {snapshotError}";
-                return false;
+                File.Delete(temporaryPath);
             }
         }
-
-        if (sourceVersion < 2)
-        {
-            saveData.dungeon ??= new DungeonSaveData();
-            int activeDepth = Mathf.Max(1, saveData.dungeon.depth);
-            int highestDepth = Mathf.Max(activeDepth, Mathf.Max(1, saveData.dungeon.highestUnlockedDepth));
-            int selectedDepth = saveData.dungeon.selectedDepth > 0
-                ? saveData.dungeon.selectedDepth
-                : activeDepth;
-
-            saveData.dungeon.depth = activeDepth;
-            saveData.dungeon.highestUnlockedDepth = highestDepth;
-            saveData.dungeon.selectedDepth = Mathf.Clamp(selectedDepth, 1, highestDepth);
-        }
-
-        saveData.uiSettings ??= new UiSettingsSaveData();
-        MigrateDungeonSnapshotSource(saveData.dungeon);
-        MigrateDungeonExitChoiceSaveData(saveData.dungeon);
-        MigrateDungeonContractSaveData(saveData.dungeon);
-        MigrateDungeonEncounterSaveData(saveData.dungeon);
-        MigrateDungeonRunPlanSaveData(saveData.dungeon);
-        FinalizeDungeonSnapshot(saveData.dungeon);
-
-        ItemDefinitionRegistry registry = inventory?.DefinitionRegistry;
-        ItemDefinitionMigrationReport itemReport = registry?.MigrateInventorySaveData(saveData.inventory);
-        lastLoadHasUnresolvedItems = itemReport == null || itemReport.HasUnresolved;
-        LastLoadReport = itemReport == null
-            ? "Item migration blocked: item definition registry is missing."
-            : itemReport.BuildSummary();
-
-        if (sourceVersion < CurrentSaveVersion)
-        {
-            saveData.version = CurrentSaveVersion;
-            LastLoadReport = $"Save schema v{sourceVersion} -> v{CurrentSaveVersion}. {LastLoadReport}";
-        }
-
-        return true;
     }
 
-    private static void MigrateDungeonContractSaveData(DungeonSaveData dungeon)
+    private void PromoteAfterInvalidPrimary(string temporaryPath)
     {
-        if (dungeon == null)
+        string corruptPath = $"{SavePath}.corrupt-{DateTime.UtcNow:yyyyMMddHHmmssfff}";
+        File.Move(SavePath, corruptPath);
+        try
         {
-            return;
+            File.Move(temporaryPath, SavePath);
         }
-
-        dungeon.contractOfferSeed = Mathf.Max(0, dungeon.contractOfferSeed);
-        bool firstValid = DungeonContractModel.TryGetContract(dungeon.offeredContractIdA, out DungeonContractProfile first);
-        bool secondValid = DungeonContractModel.TryGetContract(dungeon.offeredContractIdB, out DungeonContractProfile second);
-        if (!firstValid ||
-            !secondValid ||
-            string.Equals(first.Id, second.Id, StringComparison.OrdinalIgnoreCase))
+        catch
         {
-            DungeonContractModel.BuildOffer(
-                Mathf.Max(1, dungeon.selectedDepth),
-                dungeon.contractOfferSeed,
-                out dungeon.offeredContractIdA,
-                out dungeon.offeredContractIdB);
-        }
-
-        if (!DungeonContractModel.TryGetContract(dungeon.selectedContractId, out DungeonContractProfile selected) ||
-            (!string.Equals(selected.Id, dungeon.offeredContractIdA, StringComparison.OrdinalIgnoreCase) &&
-             !string.Equals(selected.Id, dungeon.offeredContractIdB, StringComparison.OrdinalIgnoreCase)))
-        {
-            dungeon.selectedContractId = dungeon.offeredContractIdA;
-        }
-
-        if (dungeon.state != DungeonRunState.Ready)
-        {
-            if (!DungeonContractModel.TryGetContract(dungeon.activeContractId, out _))
-            {
-                dungeon.activeContractId = dungeon.selectedContractId;
-            }
-        }
-        else if (!DungeonContractModel.TryGetContract(dungeon.activeContractId, out _))
-        {
-            dungeon.activeContractId = string.Empty;
-        }
-
-        if (string.IsNullOrWhiteSpace(dungeon.lastContractSummary))
-        {
-            dungeon.lastContractSummary = DungeonContractModel.FormatOfferText(
-                dungeon.offeredContractIdA,
-                dungeon.offeredContractIdB);
+            File.Move(corruptPath, SavePath);
+            throw;
         }
     }
 
-    private static void MigrateDungeonEncounterSaveData(DungeonSaveData dungeon)
+    private static void WriteTextAndFlush(string path, string text)
     {
-        if (dungeon == null)
-        {
-            return;
-        }
-
-        dungeon.encounterSeed = Mathf.Max(0, dungeon.encounterSeed);
-        if (!DungeonEncounterModel.TryGetEncounter(dungeon.selectedEncounterId, out _))
-        {
-            DungeonEncounterProfile encounter = DungeonEncounterModel.BuildEncounter(
-                Mathf.Max(1, dungeon.selectedDepth),
-                dungeon.encounterSeed,
-                dungeon.selectedContractId);
-            dungeon.selectedEncounterId = encounter.Id;
-        }
-
-        if (dungeon.state != DungeonRunState.Ready)
-        {
-            if (!DungeonEncounterModel.TryGetEncounter(dungeon.activeEncounterId, out _))
-            {
-                dungeon.activeEncounterId = dungeon.selectedEncounterId;
-            }
-        }
-        else if (!DungeonEncounterModel.TryGetEncounter(dungeon.activeEncounterId, out _))
-        {
-            dungeon.activeEncounterId = string.Empty;
-        }
-
-        if (string.IsNullOrWhiteSpace(dungeon.lastEncounterSummary))
-        {
-            dungeon.lastEncounterSummary = DungeonEncounterModel.FormatDetailText(
-                DungeonEncounterModel.GetEncounterOrDefault(dungeon.selectedEncounterId));
-        }
+        using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
+        using StreamWriter writer = new StreamWriter(stream, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        writer.Write(text);
+        writer.Flush();
+        stream.Flush(flushToDisk: true);
     }
 
-    private static void MigrateDungeonRunPlanSaveData(DungeonSaveData dungeon)
-    {
-        if (dungeon == null)
-        {
-            return;
-        }
-
-        bool shouldPersistPlan = dungeon.state != DungeonRunState.Ready || dungeon.rewardPending;
-        if (!shouldPersistPlan)
-        {
-            dungeon.runPlan = null;
-            return;
-        }
-
-        if (dungeon.runPlan == null)
-        {
-            dungeon.runPlan = DungeonRunPlan.CreateMigrated(
-                dungeon.dungeonId,
-                Mathf.Max(1, dungeon.depth),
-                Mathf.Max(0, dungeon.currentRoomIndex),
-                dungeon.contractOfferSeed,
-                dungeon.encounterSeed);
-        }
-        else
-        {
-            dungeon.runPlan.Normalize(
-                dungeon.dungeonId,
-                Mathf.Max(1, dungeon.depth),
-                Mathf.Max(0, dungeon.currentRoomIndex));
-        }
-
-        int rewardDepth = dungeon.rewardPending ? GetPendingRewardDepth(dungeon) : 0;
-        dungeon.runPlan.SetRewardPending(dungeon.rewardPending, rewardDepth);
-    }
-
-    private static void MigrateDungeonExitChoiceSaveData(DungeonSaveData dungeon)
-    {
-        if (dungeon == null)
-        {
-            return;
-        }
-
-        // v7 treated a cleared expedition as its terminal reward state. v8 preserves a pending
-        // reward as a return-or-descend decision and normalizes already-paid clears to Ready.
-        if (dungeon.state == DungeonRunState.Cleared)
-        {
-            dungeon.state = dungeon.rewardPending
-                ? DungeonRunState.AwaitingExit
-                : DungeonRunState.Ready;
-        }
-
-        if (dungeon.state == DungeonRunState.AwaitingExit && !dungeon.rewardPending)
-        {
-            dungeon.state = DungeonRunState.Ready;
-        }
-
-        if (dungeon.state == DungeonRunState.Failed)
-        {
-            dungeon.state = DungeonRunState.Ready;
-            dungeon.rewardPending = false;
-            dungeon.runPlan = null;
-        }
-    }
-
-    private static void MigrateDungeonSnapshotSource(DungeonSaveData dungeon)
-    {
-        if (dungeon?.expeditionSnapshot == null)
-        {
-            return;
-        }
-
-        // v9 writes the nested snapshot and its legacy mirror together. On load the snapshot wins so an
-        // interrupted write cannot combine a newer run plan with stale top-level fields.
-        dungeon.expeditionSnapshot.CopyTo(dungeon);
-    }
-
-    private static void FinalizeDungeonSnapshot(DungeonSaveData dungeon)
-    {
-        if (dungeon == null)
-        {
-            return;
-        }
-
-        dungeon.expeditionSnapshot = DungeonExpeditionSnapshot.FromLegacy(dungeon);
-    }
-
-    private static int GetPendingRewardDepth(DungeonSaveData dungeon)
-    {
-        DungeonContractProfile contract = DungeonContractModel.GetContractOrDefault(dungeon.activeContractId);
-        DungeonEncounterProfile encounter = DungeonEncounterModel.GetEncounterOrDefault(dungeon.activeEncounterId);
-        return Mathf.Max(1, dungeon.depth + contract.RewardDepthOffset + encounter.RewardDepthOffset);
-    }
-
-    private void RestoreEquipmentState(GameSaveData saveData)
+    private void RestoreEquipmentState(AccountSnapshot account)
     {
         if (inventory == null || equipmentSlots == null)
         {
             return;
         }
 
-        long[] equippedItemInstanceIds = saveData?.hero == null
-            ? null
-            : saveData.hero.equippedItemInstanceIds;
-
+        long[] equippedItemInstanceIds = account?.hero?.equippedItemInstanceIds;
         int unresolvedDefinitionCount = inventory.RestoreEquipment(equipmentSlots, equippedItemInstanceIds, out int restoredCount);
         if (unresolvedDefinitionCount > 0)
         {
-            Debug.LogWarning(
-                $"Restored {restoredCount} equipped item(s); skipped {unresolvedDefinitionCount} unresolved saved item(s).",
-                this);
+            Debug.LogWarning($"Restored {restoredCount} equipped item(s); skipped {unresolvedDefinitionCount} unresolved saved item(s).", this);
         }
-    }
-
-    private void ApplyOfflineProgress(GameSaveData saveData)
-    {
-        if (!simulateOfflineOnLoad || saveData == null || string.IsNullOrEmpty(saveData.savedAtUtc))
-        {
-            return;
-        }
-
-        if (!DateTime.TryParse(saveData.savedAtUtc, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out DateTime savedAtUtc))
-        {
-            return;
-        }
-
-        float offlineSeconds = (float)Math.Max(0d, (DateTime.UtcNow - savedAtUtc).TotalSeconds);
-        float cappedOfflineSeconds = Mathf.Min(Mathf.Max(0f, maxOfflineSeconds), offlineSeconds);
-        director.SimulateOffline(cappedOfflineSeconds);
     }
 
     private void ResolveReferences()
     {
-        if (director == null)
+        director ??= FindAnyObjectByType<DefenseDirector>();
+        inventory ??= FindAnyObjectByType<SimpleInventory>();
+        expedition ??= FindAnyObjectByType<ExpeditionDirector>();
+        playableHud ??= FindAnyObjectByType<PlayableLoopHud>();
+        defenseBattlefield ??= FindAnyObjectByType<GroundDefenseNavMeshBattlefield>();
+        roomLoader ??= FindAnyObjectByType<DungeonRoomLoader>();
+        combatRoom ??= FindAnyObjectByType<CombatRoom>();
+        enemySpawner ??= FindAnyObjectByType<EnemySpawner>();
+        player ??= FindAnyObjectByType<PlayerController>();
+
+        if (equipmentSlots == null && player != null)
         {
-            director = FindAnyObjectByType<DefenseDirector>();
+            player.TryGetComponent(out equipmentSlots);
         }
 
-        if (inventory == null)
-        {
-            inventory = FindAnyObjectByType<SimpleInventory>();
-        }
-
-        if (expedition == null)
-        {
-            expedition = FindAnyObjectByType<ExpeditionDirector>();
-        }
-
-        if (equipmentSlots == null)
-        {
-            PlayerController player = FindAnyObjectByType<PlayerController>();
-            if (player != null)
-            {
-                player.TryGetComponent(out equipmentSlots);
-            }
-        }
-
-        if (equipmentSlots == null)
-        {
-            equipmentSlots = FindAnyObjectByType<EquipmentSlots>();
-        }
-
-        if (playableHud == null)
-        {
-            playableHud = FindAnyObjectByType<PlayableLoopHud>();
-        }
+        equipmentSlots ??= FindAnyObjectByType<EquipmentSlots>();
     }
 }
