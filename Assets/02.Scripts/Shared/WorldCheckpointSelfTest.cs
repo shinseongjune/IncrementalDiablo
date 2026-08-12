@@ -37,6 +37,37 @@ public static class WorldCheckpointSelfTest
             return false;
         }
 
+        DungeonExpeditionSnapshot staleReady = new DungeonExpeditionSnapshot
+        {
+            state = DungeonRunState.Ready,
+            resumePoint = DungeonRoomResumePoint.RestartCurrentRoom,
+            depth = 1,
+            selectedDepth = 1,
+            highestUnlockedDepth = 1,
+            rewardPending = true,
+            runPlan = DungeonRunPlan.CreateNew("self_test", 2525, 1)
+        };
+        staleReady.NormalizeReadyStateForCheckpoint();
+        if (!staleReady.TryValidate(out string staleReadyReport) ||
+            staleReady.runPlan != null ||
+            staleReady.rewardPending ||
+            staleReady.resumePoint != DungeonRoomResumePoint.None)
+        {
+            report = $"World checkpoint did not canonicalize a stale Ready runtime snapshot: {staleReadyReport}";
+            return false;
+        }
+
+        GameProfileSave canonicalReady = CreateRunningProfile(9);
+        canonicalReady.account.expedition = staleReady;
+        canonicalReady.dungeonWorld = null;
+        GameProfileSaveValidator.Seal(canonicalReady);
+        GameProfileSave canonicalReadyRoundTrip = JsonUtility.FromJson<GameProfileSave>(JsonUtility.ToJson(canonicalReady));
+        if (!GameProfileSaveValidator.TryValidate(canonicalReadyRoundTrip, null, out string canonicalReadyReport))
+        {
+            report = $"World checkpoint Ready payload did not survive a JSON round-trip: {canonicalReadyReport}";
+            return false;
+        }
+
         GameProfileSave corrupt = JsonUtility.FromJson<GameProfileSave>(json);
         corrupt.integrityHash = "corrupt";
         if (GameProfileSaveValidator.TryValidate(corrupt, null, out _))
@@ -54,7 +85,7 @@ public static class WorldCheckpointSelfTest
             return false;
         }
 
-        report = "World checkpoint self-test passed: running/AwaitingExit lifecycle validation, corruption rejection, and highest-generation recovery.";
+        report = "World checkpoint self-test passed: Ready-state canonicalization, running/AwaitingExit lifecycle validation, corruption rejection, and highest-generation recovery.";
         return true;
     }
 

@@ -96,6 +96,7 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
     private DefenseDirector subscribedDefense;
     private bool shuttingDown;
     private bool isRebuilding;
+    private bool checkpointBarrierActive;
 
     public Vector3 WallPosition => wallAnchor == null ? transform.position : wallAnchor.position;
     public Vector3 WallApproachPosition =>
@@ -103,11 +104,16 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
     public int ActiveDefenderCount => CountAlive(defenders);
     public int ActiveEnemyCount => CountAlive(enemies);
     public GroundDefenseVisualForceProfile ActiveForceProfile => GetReadableActiveForceProfile();
-    public bool UnitsCanAct => !GameRuntimeRestoreGate.IsRestoring && defense != null && defense.Runtime != null && defense.Runtime.IsRunning;
+    public bool UnitsCanAct => !GameRuntimeRestoreGate.IsRestoring &&
+                               !checkpointBarrierActive &&
+                               defense != null &&
+                               defense.Runtime != null &&
+                               defense.Runtime.IsRunning;
     public bool IsStableForWorldSnapshot => generatedRoot != null &&
                                             !isRebuilding &&
                                             !shuttingDown &&
                                             !HasUnsettledUnitTransition();
+    public bool IsCheckpointBarrierActive => checkpointBarrierActive;
 
     private void OnEnable()
     {
@@ -198,6 +204,26 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
         }
 
         StartCoroutine(ReplaceDefeatedUnit(unit, entityId));
+    }
+
+    /// <summary>
+    /// Stops new unit actions while already-defeated bodies finish their replacement cycle. The save
+    /// manager owns the short-lived barrier and writes only after this battlefield becomes stable.
+    /// </summary>
+    public bool TryBeginCheckpointBarrier()
+    {
+        if (generatedRoot == null || isRebuilding || shuttingDown || GameRuntimeRestoreGate.IsRestoring)
+        {
+            return false;
+        }
+
+        checkpointBarrierActive = true;
+        return true;
+    }
+
+    public void EndCheckpointBarrier()
+    {
+        checkpointBarrierActive = false;
     }
 
     public bool TryCreateWorldSnapshot(out DefenseWorldSnapshot snapshot, out string error)
@@ -981,6 +1007,7 @@ public sealed class GroundDefenseNavMeshBattlefield : MonoBehaviour
     private void ClearBattlefield()
     {
         StopAllCoroutines();
+        checkpointBarrierActive = false;
         pendingRespawnEntityIds.Clear();
         defenders.Clear();
         enemies.Clear();

@@ -59,6 +59,25 @@ public sealed class DungeonExpeditionSnapshot
         };
     }
 
+    /// <summary>
+    /// Produces the canonical payload for a closed expedition without touching the runtime owner.
+    /// Old scene serialization can retain a previously allocated run-plan object even after the
+    /// state returns to Ready; that transient plan must never make a Ready checkpoint unwritable.
+    /// </summary>
+    public void NormalizeReadyStateForCheckpoint()
+    {
+        if (state != DungeonRunState.Ready)
+        {
+            return;
+        }
+
+        resumePoint = DungeonRoomResumePoint.None;
+        runPlan = null;
+        rewardPending = false;
+        activeContractId = string.Empty;
+        activeEncounterId = string.Empty;
+    }
+
     public bool TryValidate(out string error)
     {
         if (version != CurrentVersion)

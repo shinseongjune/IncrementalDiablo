@@ -372,9 +372,12 @@ public class PlayableLoopHud : MonoBehaviour
             return;
         }
 
-        SetMessage(saveManager.TrySave()
+        bool saved = saveManager.TryRequestSave(out bool queued);
+        SetMessage(saved
             ? "World checkpoint saved. Primary file and last valid backup are ready."
-            : "Save failed.");
+            : queued
+                ? "Saving after the frontline roster settles; unit actions are briefly held."
+                : "Save failed.");
     }
 
     public void LoadGame()

@@ -468,6 +468,7 @@ public class ExpeditionDirector : MonoBehaviour
         }
 
         DungeonExpeditionSnapshot candidate = runtime.Clone();
+        candidate.NormalizeReadyStateForCheckpoint();
         if (!candidate.TryValidate(out error))
         {
             return false;

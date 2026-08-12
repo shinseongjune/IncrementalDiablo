@@ -5,7 +5,7 @@
 - `GameProfileSave` v2 is one checksummed, generation-numbered envelope. It separates `AccountSnapshot` (currencies, defense progression, expedition lifecycle, hero equipment, inventory, UI settings), `DefenseWorldSnapshot`, and the optional open `DungeonWorldSnapshot`.
 - Defense world captures the wall building and every generated defender/enemy by stable ID, faction, transform, home position, health, action, and target. Dungeon world captures the loaded template/room seed, combat lifecycle, hero, and every spawned dungeon enemy with the same physical state.
 - UI result messages and presentation summaries are runtime-only projections; the checkpoint contains no last-result or descriptive text fields.
-- `DefenseSaveManager` writes `incremental_diablo_world_v2.json` after a stable tick barrier only. Additive-room loads, room start countdowns, defeated-unit replacement, actor rebuilds, and active restore projections reject checkpoint capture instead of normalizing data during save.
+- `DefenseSaveManager` writes `incremental_diablo_world_v2.json` after a stable tick barrier only. A manual save briefly holds new frontline actions while already-defeated units finish replacing, then writes the settled roster. Additive-room loads, room start countdowns, actor rebuilds, and active restore projections still reject checkpoint capture instead of normalizing data during save.
 - The old `incremental_diablo_profile_v1.json` and `incremental_diablo_save.json` remain untouched evidence. v2 never reads, migrates, or overwrites either file.
 
 ## Write, recovery, and restore rules
@@ -18,7 +18,7 @@
 ## Acceptance checks
 
 - Fresh v2 profile -> save -> restart/load: wall and all visible defense actors retain count, position, and health.
-- During a frontline unit's defeated-body or replacement interval, save waits for the roster to settle; it must not serialize a missing or newly recreated actor.
+- During a frontline unit's defeated-body or replacement interval, manual save queues the short roster-settle barrier; it must not serialize a missing or newly recreated actor.
 - In a running room, save after a partial hit exchange -> restart/load: the same template, hero, enemy count, transforms, health, and combat action resume.
 - Make a second save, corrupt only the primary, then load: the highest valid primary/backup generation is selected without touching the v1 files.
 - Do not accept E3-D until the return, deeper, death, `Running`, and `AwaitingExit` paths pass this checklist in Play Mode.

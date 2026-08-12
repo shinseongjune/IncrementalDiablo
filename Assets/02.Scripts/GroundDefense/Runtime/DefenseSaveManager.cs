@@ -40,6 +40,7 @@ public class DefenseSaveManager : MonoBehaviour
     private bool primarySaveIsTrusted = true;
     private long latestKnownGeneration;
     private Coroutine restoreRoutine;
+    private Coroutine queuedCheckpointRoutine;
 
     public string SavePath => Path.Combine(Application.persistentDataPath, saveFileName);
     public string BackupSavePath => SavePath + ".bak";
@@ -90,6 +91,53 @@ public class DefenseSaveManager : MonoBehaviour
         }
     }
 
+    private void OnDisable()
+    {
+        if (queuedCheckpointRoutine != null)
+        {
+            StopCoroutine(queuedCheckpointRoutine);
+            queuedCheckpointRoutine = null;
+        }
+
+        defenseBattlefield?.EndCheckpointBarrier();
+    }
+
+    /// <summary>
+    /// A player-facing save request waits for any already-defeated units to finish replacing while
+    /// the frontline is briefly held. It never serializes a missing or freshly substituted actor.
+    /// </summary>
+    public bool TryRequestSave(out bool queued)
+    {
+        queued = false;
+        ResolveReferences();
+        if (TrySave())
+        {
+            return true;
+        }
+
+        if (IsRestoreInProgress || defenseBattlefield == null)
+        {
+            return false;
+        }
+
+        if (queuedCheckpointRoutine != null)
+        {
+            queued = true;
+            return false;
+        }
+
+        if (!defenseBattlefield.TryBeginCheckpointBarrier())
+        {
+            Debug.LogWarning("Manual world checkpoint could not hold the frontline because the battlefield is rebuilding, shutting down, or restoring.", this);
+            return false;
+        }
+
+        queuedCheckpointRoutine = StartCoroutine(WriteQueuedCheckpointWhenStable());
+        Debug.Log("Manual world checkpoint queued until the frontline roster settles.", this);
+        queued = true;
+        return false;
+    }
+
     public bool TrySave()
     {
         if (IsRestoreInProgress)
@@ -118,6 +166,34 @@ public class DefenseSaveManager : MonoBehaviour
 
         autoSaveElapsed = 0f;
         return true;
+    }
+
+    private IEnumerator WriteQueuedCheckpointWhenStable()
+    {
+        const float maxWaitSeconds = 8f;
+        float deadline = Time.unscaledTime + maxWaitSeconds;
+        bool saved = false;
+        try
+        {
+            while (defenseBattlefield != null &&
+                   !defenseBattlefield.IsStableForWorldSnapshot &&
+                   Time.unscaledTime < deadline)
+            {
+                yield return null;
+            }
+
+            saved = defenseBattlefield != null &&
+                    defenseBattlefield.IsStableForWorldSnapshot &&
+                    TrySave();
+            Debug.Log(saved
+                ? "Queued world checkpoint saved after the frontline roster settled."
+                : "Queued world checkpoint timed out before the frontline roster settled.", this);
+        }
+        finally
+        {
+            defenseBattlefield?.EndCheckpointBarrier();
+            queuedCheckpointRoutine = null;
+        }
     }
 
     public GameProfileSave CreateSaveDataSnapshot()
@@ -248,6 +324,9 @@ public class DefenseSaveManager : MonoBehaviour
             defenseWorld = defenseWorld,
             dungeonWorld = dungeonWorld
         };
+        // Keep the writer authoritative even when a scene serializes an obsolete closed-run plan.
+        // This normalizes the outgoing copy only; it never repairs an active expedition or restore payload.
+        profile.account.expedition.NormalizeReadyStateForCheckpoint();
         GameProfileSaveValidator.Seal(profile);
         return true;
     }
@@ -532,6 +611,7 @@ public class DefenseSaveManager : MonoBehaviour
                 Directory.CreateDirectory(saveDirectory);
             }
 
+            profile.account?.expedition?.NormalizeReadyStateForCheckpoint();
             GameProfileSaveValidator.Seal(profile);
             WriteTextAndFlush(temporaryPath, JsonUtility.ToJson(profile, true));
             if (!TryReadCandidate(temporaryPath, out _, out string tempFailure))
