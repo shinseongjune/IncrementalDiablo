@@ -45,6 +45,7 @@ public static class WorldCheckpointSelfTest
             selectedDepth = 1,
             highestUnlockedDepth = 1,
             rewardPending = true,
+            hasRunPlan = true,
             runPlan = DungeonRunPlan.CreateNew("self_test", 2525, 1)
         };
         staleReady.NormalizeReadyStateForCheckpoint();
@@ -57,14 +58,29 @@ public static class WorldCheckpointSelfTest
             return false;
         }
 
+        // Mirror the writer boundary: Unity first serializes the live scene-owned object, then the
+        // isolated write copy clears closed-run fields before its final hash and write.
         GameProfileSave canonicalReady = CreateRunningProfile(9);
-        canonicalReady.account.expedition = staleReady;
-        canonicalReady.dungeonWorld = null;
-        GameProfileSaveValidator.Seal(canonicalReady);
-        GameProfileSave canonicalReadyRoundTrip = JsonUtility.FromJson<GameProfileSave>(JsonUtility.ToJson(canonicalReady));
-        if (!GameProfileSaveValidator.TryValidate(canonicalReadyRoundTrip, null, out string canonicalReadyReport))
+        canonicalReady.account.expedition = new DungeonExpeditionSnapshot
         {
-            report = $"World checkpoint Ready payload did not survive a JSON round-trip: {canonicalReadyReport}";
+            state = DungeonRunState.Ready,
+            resumePoint = DungeonRoomResumePoint.RestartCurrentRoom,
+            depth = 1,
+            selectedDepth = 1,
+            highestUnlockedDepth = 1,
+            rewardPending = true,
+            hasRunPlan = true,
+            runPlan = DungeonRunPlan.CreateNew("self_test", 2626, 1)
+        };
+        canonicalReady.dungeonWorld = null;
+        GameProfileSave writeCopy = JsonUtility.FromJson<GameProfileSave>(JsonUtility.ToJson(canonicalReady));
+        writeCopy.account.expedition = writeCopy.account.expedition.CreateCheckpointCopy();
+        GameProfileSaveValidator.Seal(writeCopy);
+        GameProfileSave canonicalReadyRoundTrip = JsonUtility.FromJson<GameProfileSave>(JsonUtility.ToJson(writeCopy));
+        if (!GameProfileSaveValidator.TryValidate(canonicalReadyRoundTrip, null, out string canonicalReadyReport) ||
+            canonicalReadyRoundTrip.account.expedition.HasRunPlan)
+        {
+            report = $"World checkpoint Ready write copy did not survive a JSON round-trip: {canonicalReadyReport}";
             return false;
         }
 
@@ -103,6 +119,7 @@ public static class WorldCheckpointSelfTest
             highestUnlockedDepth = 1,
             activeContractId = DungeonContractModel.DefaultContractId,
             activeEncounterId = DungeonEncounterModel.DefaultEncounterId,
+            hasRunPlan = true,
             runPlan = plan,
             totalRooms = 1,
             currentRoomIndex = 0

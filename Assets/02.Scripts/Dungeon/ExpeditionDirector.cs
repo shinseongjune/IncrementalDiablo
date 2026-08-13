@@ -43,7 +43,7 @@ public class ExpeditionDirector : MonoBehaviour
     public int TotalRooms => runtime == null ? Mathf.Max(1, totalRooms) : Mathf.Max(1, runtime.totalRooms);
     public int CurrentRoomIndex => runtime == null ? 0 : Mathf.Max(0, runtime.currentRoomIndex);
     public int RoomsCompleted => runtime == null ? 0 : Mathf.Max(0, runtime.roomsCompleted);
-    public DungeonRunPlan RunPlan => runtime == null ? null : runtime.runPlan;
+    public DungeonRunPlan RunPlan => runtime == null || !runtime.HasRunPlan ? null : runtime.runPlan;
     public DungeonRoomResumePoint ResumePoint => runtime == null ? DungeonRoomResumePoint.None : runtime.resumePoint;
     public int RunSeed => RunPlan == null ? 0 : RunPlan.runSeed;
     public string CurrentRoomTemplateId => RunPlan == null ? string.Empty : RunPlan.currentRoomTemplateId;
@@ -113,7 +113,7 @@ public class ExpeditionDirector : MonoBehaviour
         runtime.totalRooms = Mathf.Max(1, totalRooms);
         runtime.currentRoomIndex = 0;
         runtime.roomsCompleted = 0;
-        runtime.runPlan = null;
+        runtime.SetRunPlan(null);
         runtime.elapsedSeconds = 0f;
         runtime.rewardPending = false;
         runtime.activeContractId = string.Empty;
@@ -164,10 +164,10 @@ public class ExpeditionDirector : MonoBehaviour
         runtime.totalRooms = Mathf.Max(1, totalRooms);
         runtime.currentRoomIndex = 0;
         runtime.roomsCompleted = 0;
-        runtime.runPlan = DungeonRunPlan.CreateNew(
+        runtime.SetRunPlan(DungeonRunPlan.CreateNew(
             dungeonId,
             DungeonRunPlan.CreateRuntimeSeed(),
-            runtime.depth);
+            runtime.depth));
         runtime.elapsedSeconds = 0f;
         runtime.rewardPending = false;
         lastContractSummary = DungeonContractModel.FormatDetailText(contract);
@@ -369,7 +369,7 @@ public class ExpeditionDirector : MonoBehaviour
     {
         EnsureRuntime();
 
-        if (!IsRunning || runtime.runPlan == null || !runtime.runPlan.AssignCurrentRoomTemplate(templateId))
+        if (!IsRunning || !runtime.HasRunPlan || !runtime.runPlan.AssignCurrentRoomTemplate(templateId))
         {
             return false;
         }
@@ -437,7 +437,7 @@ public class ExpeditionDirector : MonoBehaviour
         }
 
         runtime.rewardPending = false;
-        if (runtime.runPlan != null)
+        if (runtime.HasRunPlan)
         {
             runtime.runPlan.SetRewardPending(false, 0);
         }
@@ -467,8 +467,7 @@ public class ExpeditionDirector : MonoBehaviour
             return false;
         }
 
-        DungeonExpeditionSnapshot candidate = runtime.Clone();
-        candidate.NormalizeReadyStateForCheckpoint();
+        DungeonExpeditionSnapshot candidate = runtime.CreateCheckpointCopy();
         if (!candidate.TryValidate(out error))
         {
             return false;
@@ -554,18 +553,18 @@ public class ExpeditionDirector : MonoBehaviour
         bool hasActiveRunState = HasActiveExpedition;
         if (!hasActiveRunState)
         {
-            runtime.runPlan = null;
+            runtime.SetRunPlan(null);
             return;
         }
 
-        if (runtime.runPlan == null)
+        if (!runtime.HasRunPlan)
         {
-            runtime.runPlan = DungeonRunPlan.CreateRestored(
+            runtime.SetRunPlan(DungeonRunPlan.CreateRestored(
                 dungeonId,
                 runtime.depth,
                 runtime.currentRoomIndex,
                 runtime.contractOfferSeed,
-                runtime.encounterSeed);
+                runtime.encounterSeed));
         }
         else
         {

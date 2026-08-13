@@ -27,9 +27,20 @@ public sealed class DungeonExpeditionSnapshot
     public int totalRooms = 1;
     public int currentRoomIndex;
     public int roomsCompleted;
+    // JsonUtility may materialize a serializable reference field even when a Ready payload wrote null.
+    // This explicit presence bit is the lifecycle authority; raw runPlan data is ignored unless true.
+    public bool hasRunPlan;
     public DungeonRunPlan runPlan;
     public float elapsedSeconds;
     public bool rewardPending;
+
+    public bool HasRunPlan => hasRunPlan && runPlan != null;
+
+    public void SetRunPlan(DungeonRunPlan value)
+    {
+        runPlan = value;
+        hasRunPlan = value != null;
+    }
 
     public DungeonExpeditionSnapshot Clone()
     {
@@ -53,9 +64,47 @@ public sealed class DungeonExpeditionSnapshot
             totalRooms = totalRooms,
             currentRoomIndex = currentRoomIndex,
             roomsCompleted = roomsCompleted,
+            hasRunPlan = hasRunPlan,
             runPlan = runPlan == null ? null : runPlan.Clone(),
             elapsedSeconds = elapsedSeconds,
             rewardPending = rewardPending,
+        };
+    }
+
+    /// <summary>
+    /// Produces the only legal persisted form of the current lifecycle. A Ready checkpoint receives a
+    /// fresh value object instead of clearing fields on a scene-owned instance, so Unity serialization
+    /// cannot retain an obsolete closed-run plan in the written payload.
+    /// </summary>
+    public DungeonExpeditionSnapshot CreateCheckpointCopy()
+    {
+        if (state != DungeonRunState.Ready)
+        {
+            return Clone();
+        }
+
+        return new DungeonExpeditionSnapshot
+        {
+            version = version,
+            state = DungeonRunState.Ready,
+            resumePoint = DungeonRoomResumePoint.None,
+            dungeonId = dungeonId,
+            depth = depth,
+            selectedDepth = selectedDepth,
+            highestUnlockedDepth = highestUnlockedDepth,
+            contractOfferSeed = contractOfferSeed,
+            offeredContractIdA = offeredContractIdA,
+            offeredContractIdB = offeredContractIdB,
+            selectedContractId = selectedContractId,
+            activeContractId = string.Empty,
+            encounterSeed = encounterSeed,
+            selectedEncounterId = selectedEncounterId,
+            activeEncounterId = string.Empty,
+            totalRooms = totalRooms,
+            currentRoomIndex = currentRoomIndex,
+            roomsCompleted = roomsCompleted,
+            elapsedSeconds = elapsedSeconds,
+            rewardPending = false
         };
     }
 
@@ -72,7 +121,7 @@ public sealed class DungeonExpeditionSnapshot
         }
 
         resumePoint = DungeonRoomResumePoint.None;
-        runPlan = null;
+        SetRunPlan(null);
         rewardPending = false;
         activeContractId = string.Empty;
         activeEncounterId = string.Empty;
@@ -116,7 +165,7 @@ public sealed class DungeonExpeditionSnapshot
         bool needsRunPlan = state == DungeonRunState.Running || state == DungeonRunState.AwaitingExit;
         if (!needsRunPlan)
         {
-            if (runPlan != null || rewardPending)
+            if (hasRunPlan || rewardPending)
             {
                 error = "Ready expedition snapshot cannot retain a run plan or pending reward.";
                 return false;
@@ -126,7 +175,7 @@ public sealed class DungeonExpeditionSnapshot
             return true;
         }
 
-        if (runPlan == null)
+        if (!HasRunPlan)
         {
             error = "Active expedition snapshot requires a DungeonRunPlan.";
             return false;

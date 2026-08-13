@@ -151,7 +151,7 @@ public static class WorldSaveSnapshotValidator
             return true;
         }
 
-        if (expedition == null || expedition.state == DungeonRunState.Ready || expedition.runPlan == null)
+        if (expedition == null || expedition.state == DungeonRunState.Ready || !expedition.HasRunPlan)
         {
             error = "Open dungeon world requires an active expedition plan.";
             return false;

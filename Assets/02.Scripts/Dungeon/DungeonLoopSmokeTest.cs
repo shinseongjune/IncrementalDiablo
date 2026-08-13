@@ -247,6 +247,7 @@ public static class DungeonLoopSmokeTest
             highestUnlockedDepth = 3,
             totalRooms = 1,
             currentRoomIndex = 0,
+            hasRunPlan = true,
             runPlan = plan,
             rewardPending = false
         };
@@ -295,6 +296,7 @@ public static class DungeonLoopSmokeTest
             selectedDepth = 3,
             highestUnlockedDepth = 3,
             totalRooms = 1,
+            hasRunPlan = true,
             runPlan = DungeonRunPlan.CreateNew("snapshot_test", 654321, 3)
         };
 

@@ -3,6 +3,7 @@
 ## World checkpoint v2 ownership
 
 - `GameProfileSave` v2 is one checksummed, generation-numbered envelope. It separates `AccountSnapshot` (currencies, defense progression, expedition lifecycle, hero equipment, inventory, UI settings), `DefenseWorldSnapshot`, and the optional open `DungeonWorldSnapshot`.
+- Expedition checkpoints persist `hasRunPlan` as the active-run authority. A Ready checkpoint writes it false, so a Unity JSON materialized empty `runPlan` reference is never treated as an active room or restored run.
 - Defense world captures the wall building and every generated defender/enemy by stable ID, faction, transform, home position, health, action, and target. Dungeon world captures the loaded template/room seed, combat lifecycle, hero, and every spawned dungeon enemy with the same physical state.
 - UI result messages and presentation summaries are runtime-only projections; the checkpoint contains no last-result or descriptive text fields.
 - `DefenseSaveManager` writes `incremental_diablo_world_v2.json` after a stable tick barrier only. A manual save briefly holds new frontline actions while already-defeated units finish replacing, then writes the settled roster. Additive-room loads, room start countdowns, actor rebuilds, and active restore projections still reject checkpoint capture instead of normalizing data during save.

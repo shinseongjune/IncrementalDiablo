@@ -212,6 +212,8 @@ if (Test-Path -LiteralPath $expeditionSnapshotPath) {
             Add-Result "World checkpoint purity contract" "PASS" "Transient UI state absent: $transientToken"
         }
     }
+
+    Require-Text "World checkpoint Ready lifecycle contract" $expeditionSnapshotText "hasRunPlan"
 }
 
 $saveManagerPath = Get-ProjectPath "Assets\02.Scripts\GroundDefense\Runtime\DefenseSaveManager.cs"

@@ -325,8 +325,8 @@ public class DefenseSaveManager : MonoBehaviour
             dungeonWorld = dungeonWorld
         };
         // Keep the writer authoritative even when a scene serializes an obsolete closed-run plan.
-        // This normalizes the outgoing copy only; it never repairs an active expedition or restore payload.
-        profile.account.expedition.NormalizeReadyStateForCheckpoint();
+        // This replaces the outgoing copy only; it never repairs an active expedition or restore payload.
+        profile.account.expedition = profile.account.expedition.CreateCheckpointCopy();
         GameProfileSaveValidator.Seal(profile);
         return true;
     }
@@ -344,7 +344,7 @@ public class DefenseSaveManager : MonoBehaviour
         }
 
         if (roomLoader == null || combatRoom == null || player == null || roomLoader.IsTransitioning || !roomLoader.HasLoadedActiveRoom ||
-            expeditionSnapshot.runPlan == null || !string.Equals(roomLoader.CurrentTemplateId, expeditionSnapshot.runPlan.currentRoomTemplateId, StringComparison.Ordinal))
+            !expeditionSnapshot.HasRunPlan || !string.Equals(roomLoader.CurrentTemplateId, expeditionSnapshot.runPlan.currentRoomTemplateId, StringComparison.Ordinal))
         {
             failureReason = "Dungeon checkpoint blocked until the active additive room and its owner state are stable.";
             return false;
@@ -409,7 +409,8 @@ public class DefenseSaveManager : MonoBehaviour
             return false;
         }
 
-        if (!string.Equals(profile.dungeonWorld.templateId, expeditionSnapshot.runPlan?.currentRoomTemplateId, StringComparison.Ordinal))
+        if (!expeditionSnapshot.HasRunPlan ||
+            !string.Equals(profile.dungeonWorld.templateId, expeditionSnapshot.runPlan.currentRoomTemplateId, StringComparison.Ordinal))
         {
             failureReason = "Dungeon world template does not match its saved run plan.";
             return false;
@@ -611,9 +612,12 @@ public class DefenseSaveManager : MonoBehaviour
                 Directory.CreateDirectory(saveDirectory);
             }
 
-            profile.account?.expedition?.NormalizeReadyStateForCheckpoint();
-            GameProfileSaveValidator.Seal(profile);
-            WriteTextAndFlush(temporaryPath, JsonUtility.ToJson(profile, true));
+            if (!TryCreateWritePayload(profile, out string payload, out failureReason))
+            {
+                return false;
+            }
+
+            WriteTextAndFlush(temporaryPath, payload);
             if (!TryReadCandidate(temporaryPath, out _, out string tempFailure))
             {
                 failureReason = $"World checkpoint temporary write did not round-trip: {tempFailure}";
@@ -649,6 +653,43 @@ public class DefenseSaveManager : MonoBehaviour
                 File.Delete(temporaryPath);
             }
         }
+    }
+
+    /// <summary>
+    /// Creates a serialization-owned write copy. Scene serialization can retain a stale Ready run plan
+    /// on the live owner even after a gameplay transition closes it. The write copy is the only place
+    /// where that closed-run representation is canonicalized; loaded files still validate as-is.
+    /// </summary>
+    private bool TryCreateWritePayload(GameProfileSave profile, out string payload, out string failureReason)
+    {
+        payload = string.Empty;
+        failureReason = string.Empty;
+        if (profile == null)
+        {
+            failureReason = "World checkpoint write requires a captured profile.";
+            return false;
+        }
+
+        GameProfileSave writeCopy = JsonUtility.FromJson<GameProfileSave>(JsonUtility.ToJson(profile, false));
+        if (writeCopy?.account?.expedition == null)
+        {
+            failureReason = "World checkpoint write could not create an expedition payload copy.";
+            return false;
+        }
+
+        // This is intentionally after the serialization boundary: replacing a Ready snapshot with a
+        // fresh checkpoint value removes editor-retained run-plan fields from the exact object that
+        // will be hashed and written, without repairing a load input.
+        writeCopy.account.expedition = writeCopy.account.expedition.CreateCheckpointCopy();
+        if (!GameProfileSaveValidator.TryValidate(writeCopy, inventory?.DefinitionRegistry, out string validationReport))
+        {
+            failureReason = $"World checkpoint write copy is invalid: {validationReport}";
+            return false;
+        }
+
+        GameProfileSaveValidator.Seal(writeCopy);
+        payload = JsonUtility.ToJson(writeCopy, true);
+        return true;
     }
 
     private void PromoteAfterInvalidPrimary(string temporaryPath)
